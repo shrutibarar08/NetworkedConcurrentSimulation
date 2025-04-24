@@ -113,10 +113,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)PhysicsLibrary;$(ProjectDir)Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)Lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PhysicsLibrary.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -137,6 +140,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\FileManager\FileLoader\FileSystem.cpp" />
+    <ClCompile Include="Src\SystemManager\DependencyHandler.cpp" />
+    <ClCompile Include="Src\ApplicationManager\Application.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Src\FileManager\FileLoader\SweetLoader.cpp" />
+    <ClCompile Include="Src\WindowManager\WindowsSystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\FileManager\FileLoader\FileSystem.h" />
+    <ClInclude Include="Src\SystemManager\DependencyHandler.h" />
+    <ClInclude Include="Src\ApplicationManager\Application.h" />
+    <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h" />
+    <ClInclude Include="Src\SystemManager\Interface\ISystem.h" />
+    <ClInclude Include="Src\WindowManager\WindowsSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

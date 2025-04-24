@@ -159,7 +159,6 @@
   <ItemGroup>
     <ClCompile Include="ForceGenerator.cpp" />
     <ClCompile Include="Gravity.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

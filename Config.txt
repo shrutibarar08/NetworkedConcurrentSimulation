@@ -1,0 +1,3 @@
+WindowsSystem::name: Concurrent Networked Project
+WindowsSystem::Width: 1280
+WindowsSystem::Height: 720
