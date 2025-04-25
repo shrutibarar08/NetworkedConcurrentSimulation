@@ -1,8 +1,8 @@
-#include "DependencyHandler.h"
+#include "SystemHandler.h"
 
 #include <stdexcept>
 
-void DependencyHandler::Register(const std::string& name, ISystem* instance)
+void SystemHandler::Register(const std::string& name, ISystem* instance)
 {
     // Register system if not already present
     if (!instance || m_registry.contains(name)) return;
@@ -12,7 +12,7 @@ void DependencyHandler::Register(const std::string& name, ISystem* instance)
     m_systemNames.push_back(name);
 }
 
-void DependencyHandler::Clear()
+void SystemHandler::Clear()
 {
     // Clears all registered systems and dependency metadata
     m_registry.clear();
@@ -20,7 +20,7 @@ void DependencyHandler::Clear()
     m_systemNames.clear();
 }
 
-bool DependencyHandler::InitAll()
+bool SystemHandler::BuildAll(SweetLoader& sweetLoader)
 {
     // Compute topological order and initialize each system in order
     m_initOrder = TopologicalSort();
@@ -30,14 +30,20 @@ bool DependencyHandler::InitAll()
     {
         if (auto* system = m_registry.at(name))
         {
-            if (!system->Init()) error = true;
+            if (system->Init())
+            {
+                system->Build(sweetLoader[name]);
+            }else
+            {
+                error = true;
+            }
         }
     }
 
     return !error;
 }
 
-bool DependencyHandler::ShutdownAll()
+bool SystemHandler::ShutdownAll()
 {
     bool error = false;
     // Shutdown systems in reverse order of initialization
@@ -51,7 +57,26 @@ bool DependencyHandler::ShutdownAll()
     return !error;
 }
 
-std::vector<std::string> DependencyHandler::TopologicalSort()
+void SystemHandler::WaitAll()
+{
+    std::vector<HANDLE> handles;
+    for (auto it = m_initOrder.rbegin(); it != m_initOrder.rend(); ++it)
+    {
+        if (auto* system = m_registry.at(*it))
+        {
+            if (HANDLE handle = system->GetThreadHandle())
+            {
+                handles.push_back(handle);
+            }
+        }
+    }
+
+    WaitForMultipleObjects(handles.size(),
+        handles.data(), TRUE,
+        INFINITE);
+}
+
+std::vector<std::string> SystemHandler::TopologicalSort()
 {
     std::unordered_set<std::string> visited;
     std::unordered_set<std::string> recursionStack;
@@ -67,7 +92,7 @@ std::vector<std::string> DependencyHandler::TopologicalSort()
     return sorted;
 }
 
-void DependencyHandler::DFS(const std::string& node, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recursionStack, std::vector<std::string>& sorted)
+void SystemHandler::DFS(const std::string& node, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recursionStack, std::vector<std::string>& sorted)
 {
     // Cycle detection
     if (recursionStack.contains(node))

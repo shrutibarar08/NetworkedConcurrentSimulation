@@ -3,23 +3,25 @@
 #include <memory>
 
 #include "FileManager/FileLoader/SweetLoader.h"
-#include "SystemManager/DependencyHandler.h"
+#include "SystemManager/SystemHandler.h"
 #include "SystemManager/Interface/ISystem.h"
 #include "WindowManager/WindowsSystem.h"
 
-class Application: public ISystem
+class Application
 {
 public:
-	Application() = default;
-	~Application() override = default;
+	Application();
+	~Application();
 
-	bool Init() override;
-	bool Run() override;
-	bool Shutdown() override;
-	bool BuildFromConfig(const SweetLoader* sweetLoader) override;
+	bool Init();
+	bool Run();
+	void Shutdown();
 
 private:
-	DependencyHandler mDependencyHandler{};
+	SystemHandler mSystemHandler{};
 	std::unique_ptr<WindowsSystem> mWindowSystem{ nullptr };
 	SweetLoader mSweetLoader{};
+
+	HANDLE mStartEventHandle;
+	HANDLE mEndEventHandle;
 };

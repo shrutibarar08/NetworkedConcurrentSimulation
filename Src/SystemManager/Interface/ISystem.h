@@ -1,6 +1,13 @@
 #pragma once
 
+#include <windows.h>
 #include "FileManager/FileLoader/SweetLoader.h"
+
+typedef struct SYSTEM_EVENT_HANDLE
+{
+    HANDLE StartEvent;
+    HANDLE EndEvent;
+}SYSTEM_EVENT_HANDLE;
 
 class ISystem
 {
@@ -14,9 +21,26 @@ public:
     ISystem& operator=(ISystem&&) = delete;
 
     // Load initial state/config from some ConfigManager
-    virtual bool BuildFromConfig(const SweetLoader* sweetLoader) = 0;
+    auto SetEvent(const SYSTEM_EVENT_HANDLE* eventHandles) -> void;
 
-	virtual bool Init() = 0;
-    virtual bool Run() = 0;
-    virtual bool Shutdown() = 0;
+	virtual bool Init();
+    virtual bool Shutdown();
+    //~ Will be launched after initializing it. Use Event lock to prevent it.
+    virtual bool Run();
+
+    void SetCreateThread(bool status) { mCreateThread = status; }
+
+    virtual bool Build(SweetLoader& sweetLoader) = 0;
+
+    HANDLE GetThreadHandle() const;
+
+private:
+    static DWORD __stdcall ThreadCall(LPVOID ptr);
+
+protected:
+    HANDLE mThreadHandle;
+    HANDLE mStartEventHandle;
+    HANDLE mEndEventHandle;
+
+    bool mCreateThread{ true };
 };

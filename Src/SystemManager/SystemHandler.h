@@ -9,7 +9,7 @@
 
 
 /// @brief Handles the registration, dependency resolution, and ordered lifecycle (Init/Shutdown) of subsystems.
-class DependencyHandler
+class SystemHandler
 {
 public:
     /// @brief Registers a subsystem instance by name.
@@ -21,7 +21,7 @@ public:
     void Clear();
 
     /// @brief Initializes all subsystems in topologically sorted order.
-    bool InitAll();
+    bool BuildAll(SweetLoader& sweetLoader);
 
     /// @brief Shuts down all subsystems in reverse of initialization order.
     bool ShutdownAll();
@@ -32,6 +32,8 @@ public:
     /// @param deps Names of systems this one depends on.
     template<typename... Args>
     void AddDependency(const std::string& system, const Args&... deps);
+
+    void WaitAll();
 
 private:
     /// @brief Performs topological sort on the dependency graph.
@@ -58,13 +60,13 @@ private:
     /// Ordered list of all registered system names (preserves insertion order).
     std::vector<std::string> m_systemNames;
 
-    /// Final topologically sorted order (cached after InitAll).
+    /// Final topologically sorted order (cached after BuildAll).
     std::vector<std::string> m_initOrder;
 };
 
 // Template implementation for adding multiple dependencies using fold expression.
 template <typename ... Args>
-void DependencyHandler::AddDependency(const std::string& system, const Args&... deps)
+void SystemHandler::AddDependency(const std::string& system, const Args&... deps)
 {
     (m_dependencies[system].push_back(deps), ...);
 }

@@ -17,6 +17,8 @@ public:
 	const std::string& GetValue() const { return mValue; }
 	void SetValue(const std::string& val) { mValue = val; }
 
+	bool Contains(const std::string& key) const;
+
 private:
 	void SaveRecursive(std::ostream& os, const std::string& prefix) const;
 	size_t FindKeyValueSeparator(const std::string& line);

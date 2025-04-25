@@ -27,10 +27,13 @@
     <ClCompile Include="Src\WindowManager\WindowsSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Src\SystemManager\DependencyHandler.cpp">
+    <ClCompile Include="Src\SystemManager\SystemHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Src\FileManager\FileLoader\FileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\SystemManager\Interface\ISystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,13 +47,16 @@
     <ClInclude Include="Src\WindowManager\WindowsSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\SystemManager\DependencyHandler.h">
+    <ClInclude Include="Src\SystemManager\SystemHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\SystemManager\Interface\ISystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\FileManager\FileLoader\FileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Core\DefineDefault.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

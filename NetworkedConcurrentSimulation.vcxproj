@@ -141,15 +141,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\FileManager\FileLoader\FileSystem.cpp" />
-    <ClCompile Include="Src\SystemManager\DependencyHandler.cpp" />
+    <ClCompile Include="Src\SystemManager\SystemHandler.cpp" />
     <ClCompile Include="Src\ApplicationManager\Application.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\FileManager\FileLoader\SweetLoader.cpp" />
+    <ClCompile Include="Src\SystemManager\Interface\ISystem.cpp" />
     <ClCompile Include="Src\WindowManager\WindowsSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Core\DefineDefault.h" />
     <ClInclude Include="Src\FileManager\FileLoader\FileSystem.h" />
-    <ClInclude Include="Src\SystemManager\DependencyHandler.h" />
+    <ClInclude Include="Src\SystemManager\SystemHandler.h" />
     <ClInclude Include="Src\ApplicationManager\Application.h" />
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h" />
     <ClInclude Include="Src\SystemManager\Interface\ISystem.h" />

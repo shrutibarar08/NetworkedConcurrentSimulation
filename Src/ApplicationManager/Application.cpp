@@ -1,34 +1,66 @@
 #include "Application.h"
-
 #include <iostream>
 
-#include "FileManager/FileLoader/FileSystem.h"
 
-bool Application::Run()
+Application::Application()
 {
-	return true;
+	mStartEventHandle = CreateEvent(
+		nullptr,
+		TRUE,
+		FALSE,
+		nullptr);
+
+	mEndEventHandle = CreateEvent(
+		nullptr,
+		TRUE,
+		FALSE,
+		nullptr
+	);
+}
+
+Application::~Application()
+{
+	ResetEvent(mStartEventHandle);
+	SetEvent(mEndEventHandle);
+	Shutdown();
+	CloseHandle(mEndEventHandle);
+	CloseHandle(mStartEventHandle);
 }
 
 bool Application::Init()
 {
 	//~ Loading Configuration
 	mWindowSystem = std::make_unique<WindowsSystem>();
+	mWindowSystem->SetCreateThread(false); // dont need thread for ui.
 
-	mDependencyHandler.Register(
-		"WindowSystem", 
+	mSystemHandler.Register(
+		"WindowSystem",
 		mWindowSystem.get()
 	);
 
 	//~ Initializing Systems in correct order
-	return mDependencyHandler.InitAll();
+	return mSystemHandler.BuildAll(mSweetLoader);
 }
 
-bool Application::Shutdown()
+bool Application::Run()
 {
-	return mDependencyHandler.ShutdownAll();
+	SetEvent(mStartEventHandle);
+
+	while (true)
+	{
+		if (WindowsSystem::ProcessMethod())
+		{
+			SetEvent(mEndEventHandle);
+			break;
+		}
+	}
+
+	mSystemHandler.WaitAll();
+	return true;
 }
 
-bool Application::BuildFromConfig(const SweetLoader* sweetLoader)
+void Application::Shutdown()
 {
-	return false;
+	//~ Shut Down all systems
+	mSystemHandler.ShutdownAll();
 }

@@ -80,6 +80,11 @@ void SweetLoader::DebugPrint(int indent) const
 	}
 }
 
+bool SweetLoader::Contains(const std::string& key) const
+{
+    return mChildren.contains(key);
+}
+
 void SweetLoader::SaveRecursive(std::ostream& os, const std::string& prefix) const
 {
 	if (!mValue.empty())
