@@ -57,7 +57,26 @@ bool SystemHandler::ShutdownAll()
     return !error;
 }
 
-void SystemHandler::WaitAll()
+void SystemHandler::WaitStart()
+{
+    std::vector<HANDLE> handles;
+    for (auto it = m_initOrder.rbegin(); it != m_initOrder.rend(); ++it)
+    {
+        if (auto* system = m_registry.at(*it))
+        {
+            if (HANDLE handle = system->GetInitializedEventHandle())
+            {
+                handles.push_back(handle);
+            }
+        }
+    }
+
+    WaitForMultipleObjects(handles.size(),
+        handles.data(), TRUE,
+        INFINITE);
+}
+
+void SystemHandler::WaitFinish()
 {
     std::vector<HANDLE> handles;
     for (auto it = m_initOrder.rbegin(); it != m_initOrder.rend(); ++it)

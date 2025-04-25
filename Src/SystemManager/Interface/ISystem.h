@@ -5,8 +5,8 @@
 
 typedef struct SYSTEM_EVENT_HANDLE
 {
-    HANDLE StartEvent;
-    HANDLE EndEvent;
+    HANDLE GlobalStartEvent;
+    HANDLE GlobalEndEvent;
 }SYSTEM_EVENT_HANDLE;
 
 class ISystem
@@ -21,26 +21,25 @@ public:
     ISystem& operator=(ISystem&&) = delete;
 
     // Load initial state/config from some ConfigManager
-    auto SetEvent(const SYSTEM_EVENT_HANDLE* eventHandles) -> void;
+    auto SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles) -> void;
 
-	virtual bool Init();
-    virtual bool Shutdown();
+	bool Init();
+	bool Shutdown();
     //~ Will be launched after initializing it. Use Event lock to prevent it.
     virtual bool Run();
-
     void SetCreateThread(bool status) { mCreateThread = status; }
-
     virtual bool Build(SweetLoader& sweetLoader) = 0;
 
     HANDLE GetThreadHandle() const;
+    HANDLE GetInitializedEventHandle() const;
 
 private:
     static DWORD __stdcall ThreadCall(LPVOID ptr);
 
 protected:
-    HANDLE mThreadHandle;
-    HANDLE mStartEventHandle;
-    HANDLE mEndEventHandle;
+    SYSTEM_EVENT_HANDLE mGlobalEvent;
+    HANDLE mInitializedEventHandle;
 
+    HANDLE mThreadHandle;
     bool mCreateThread{ true };
 };

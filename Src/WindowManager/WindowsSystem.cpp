@@ -1,10 +1,5 @@
 #include "WindowsSystem.h"
 
-bool WindowsSystem::Shutdown()
-{
-    return true;
-}
-
 bool WindowsSystem::Build(SweetLoader& sweetLoader)
 {
     if (!InitParameters(sweetLoader)) return false;
@@ -29,6 +24,16 @@ int WindowsSystem::ProcessMethod()
         }
     }
     return quit;
+}
+
+HWND WindowsSystem::GetWindowHandle() const
+{
+    return mHandleWindow;
+}
+
+HINSTANCE WindowsSystem::GetWindowInstance() const
+{
+    return mHandleInstance;
 }
 
 bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)

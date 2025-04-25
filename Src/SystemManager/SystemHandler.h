@@ -33,7 +33,8 @@ public:
     template<typename... Args>
     void AddDependency(const std::string& system, const Args&... deps);
 
-    void WaitAll();
+    void WaitStart();
+    void WaitFinish();
 
 private:
     /// @brief Performs topological sort on the dependency graph.

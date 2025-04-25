@@ -36,6 +36,9 @@
     <ClCompile Include="Src\SystemManager\Interface\ISystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\RenderManager\RenderManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h">
@@ -57,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\Core\DefineDefault.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderManager\RenderManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

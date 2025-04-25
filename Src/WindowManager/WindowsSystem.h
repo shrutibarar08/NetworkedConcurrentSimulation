@@ -16,9 +16,11 @@ public:
 	WindowsSystem& operator=(const WindowsSystem&) = delete;
 	WindowsSystem& operator=(WindowsSystem&&) = delete;
 
-	bool Shutdown() override;
 	bool Build(SweetLoader& sweetLoader) override;
 	static int ProcessMethod();
+	 
+	HWND GetWindowHandle() const;
+	HINSTANCE GetWindowInstance() const;
 
 private:
 	bool InitParameters(SweetLoader& sweetLoader);

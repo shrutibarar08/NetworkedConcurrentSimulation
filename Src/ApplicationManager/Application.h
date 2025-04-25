@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "../../RenderManager.h"
 #include "FileManager/FileLoader/SweetLoader.h"
 #include "SystemManager/SystemHandler.h"
 #include "SystemManager/Interface/ISystem.h"
@@ -20,6 +21,7 @@ public:
 private:
 	SystemHandler mSystemHandler{};
 	std::unique_ptr<WindowsSystem> mWindowSystem{ nullptr };
+	std::unique_ptr<RenderManager> mRenderer{ nullptr };
 	SweetLoader mSweetLoader{};
 
 	HANDLE mStartEventHandle;

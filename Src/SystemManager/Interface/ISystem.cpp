@@ -1,9 +1,9 @@
 #include "ISystem.h"
 
-void ISystem::SetEvent(const SYSTEM_EVENT_HANDLE* eventHandles)
+void ISystem::SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles)
 {
-	mStartEventHandle = eventHandles->StartEvent;
-	mEndEventHandle = eventHandles->EndEvent;
+	mGlobalEvent.GlobalEndEvent = eventHandles->GlobalEndEvent;
+	mGlobalEvent.GlobalStartEvent = eventHandles->GlobalStartEvent;
 }
 
 bool ISystem::Init()
@@ -17,28 +17,46 @@ bool ISystem::Init()
 		0,
 		nullptr
 	);
+
+	mInitializedEventHandle = CreateEvent(
+		nullptr,
+		TRUE,
+		FALSE,
+		nullptr
+	);
+
 	return mThreadHandle != nullptr;
 }
 
 bool ISystem::Shutdown()
 {
-	if (mEndEventHandle)
+	if (mGlobalEvent.GlobalEndEvent)
 	{
-		WaitForSingleObject(mEndEventHandle, INFINITE);
+		WaitForSingleObject(mGlobalEvent.GlobalEndEvent,
+			INFINITE);
 	}
 	if (mThreadHandle)
 	{
 		CloseHandle(mThreadHandle);
 		mThreadHandle = nullptr;
 	}
+
+	if (mInitializedEventHandle)
+	{
+		CloseHandle(mInitializedEventHandle);
+		mInitializedEventHandle = nullptr;
+	}
+
 	return true;
 }
 
 bool ISystem::Run()
 {
-	if (mStartEventHandle)
+	SetEvent(mInitializedEventHandle);
+	if (mGlobalEvent.GlobalStartEvent)
 	{
-		WaitForSingleObject(mStartEventHandle, INFINITE);
+		WaitForSingleObject(mGlobalEvent.GlobalStartEvent,
+			INFINITE);
 	}
 	return true;
 }
@@ -46,6 +64,11 @@ bool ISystem::Run()
 HANDLE ISystem::GetThreadHandle() const
 {
 	return mThreadHandle;
+}
+
+HANDLE ISystem::GetInitializedEventHandle() const
+{
+	return mInitializedEventHandle;
 }
 
 DWORD __stdcall ISystem::ThreadCall(LPVOID ptr)
