@@ -32,6 +32,7 @@ public:
 
 	bool ReadString(std::string& outStr) const;
 	bool WriteString(const std::string& str) const;
+	bool WritePlainText(const std::string& str) const;
 
 	uint64_t GetFileSize() const;
 	bool IsOpen() const;

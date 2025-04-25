@@ -1,6 +1,7 @@
 #include "Application.h"
 #include <iostream>
 
+#include "Utils/Logger.h"
 
 Application::Application()
 {
@@ -16,6 +17,15 @@ Application::Application()
 		FALSE,
 		nullptr
 	);
+
+	if (mStartEventHandle && mEndEventHandle)
+	{
+		LOG_SUCCESS("Application events (Start/End) created successfully.");
+	}
+	else
+	{
+		LOG_FAIL("Failed to create application events.");
+	}
 }
 
 Application::~Application()
@@ -25,10 +35,14 @@ Application::~Application()
 	Shutdown();
 	CloseHandle(mEndEventHandle);
 	CloseHandle(mStartEventHandle);
+
+	LOG_INFO("Application shutdown sequence completed.");
 }
 
 bool Application::Init()
 {
+	LOG_INFO("Application initialization started.");
+
 	SYSTEM_EVENT_HANDLE globalEvent;
 	globalEvent.GlobalStartEvent = mStartEventHandle;
 	globalEvent.GlobalEndEvent = mEndEventHandle;
@@ -53,11 +67,21 @@ bool Application::Init()
 	);
 
 	//~ Initializing Systems in correct order
-	return mSystemHandler.BuildAll(mSweetLoader);
+	if (mSystemHandler.BuildAll(mSweetLoader))
+	{
+		LOG_SUCCESS("All systems initialized successfully.");
+		return true;
+	}
+	else
+	{
+		LOG_FAIL("Failed to initialize all systems.");
+		return false;
+	}
 }
 
 bool Application::Run()
 {
+	LOG_INFO("Application main loop starting.");
 	mSystemHandler.WaitStart();
 	SetEvent(mStartEventHandle);
 	while (true)
@@ -69,11 +93,14 @@ bool Application::Run()
 		}
 	}
 	mSystemHandler.WaitFinish();
+
+	LOG_SUCCESS("Application main loop finished.");
 	return true;
 }
 
 void Application::Shutdown()
 {
 	//~ Shut Down all systems
+	LOG_INFO("Shutting down all systems.");
 	mSystemHandler.ShutdownAll();
 }
