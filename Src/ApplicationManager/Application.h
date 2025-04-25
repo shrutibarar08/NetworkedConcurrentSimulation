@@ -2,10 +2,9 @@
 
 #include <memory>
 
-#include "../../RenderManager.h"
+#include "RenderManager/RenderManager.h"
 #include "FileManager/FileLoader/SweetLoader.h"
 #include "SystemManager/SystemHandler.h"
-#include "SystemManager/Interface/ISystem.h"
 #include "WindowManager/WindowsSystem.h"
 
 class Application

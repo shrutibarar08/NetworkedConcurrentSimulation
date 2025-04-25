@@ -97,6 +97,15 @@ bool FileSystem::WriteString(const std::string& str) const
 	return WriteUInt32(len) && WriteBytes(str.data(), len);
 }
 
+bool FileSystem::WritePlainText(const std::string& str) const
+{
+	if (mReadMode || mHandle == INVALID_HANDLE_VALUE) return false;
+
+	DWORD bytesWritten = 0;
+	std::string line = str + "\n";
+	return WriteFile(mHandle, line.c_str(), static_cast<DWORD>(line.size()), &bytesWritten, nullptr);
+}
+
 uint64_t FileSystem::GetFileSize() const
 {
 	if (mHandle == INVALID_HANDLE_VALUE) return 0;

@@ -37,7 +37,7 @@ private:
     bool BuildRenderTargetView();
     bool BuildDepthStencilView();
     bool BuildRasterizationState();
-    bool BuildViewport();
+    bool BuildViewport() const;
 
 private:
     WindowsSystem* mWindowSystem;

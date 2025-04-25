@@ -1,23 +1,6 @@
 #include <windows.h>
-
 #include "ApplicationManager/Application.h"
-
-void EnableConsole()
-{
-    AllocConsole();
-
-    // Redirect stdout
-    FILE* fpOut;
-    freopen_s(&fpOut, "CONOUT$", "w", stdout);
-    freopen_s(&fpOut, "CONOUT$", "w", stderr);
-
-    // Redirect stdin
-    FILE* fpIn;
-    freopen_s(&fpIn, "CONIN$", "r", stdin);
-
-    // Optional: sync C++ streams with stdio
-    std::ios::sync_with_stdio(true);
-}
+#include "Utils/Logger.h"
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -25,13 +8,22 @@ int WINAPI WinMain(
     LPSTR     lpCmdLine,
     int       nCmdShow)
 {
-    EnableConsole();
-    Application app{};
+#ifdef _DEBUG
+    Logger::Init();
+#endif
+
+	Application app{};
 
     if (!app.Init())
     {
         return E_FAIL;
     }
 
-    return app.Run();
+    bool result = app.Run();
+
+#ifdef _DEBUG
+    Logger::Close();
+#endif
+
+    return result;
 }

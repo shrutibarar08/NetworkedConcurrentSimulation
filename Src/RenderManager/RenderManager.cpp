@@ -3,6 +3,9 @@
 #include <dxgi.h>
 #include <dxgi1_2.h>
 #include <iostream>
+#include <sstream>
+
+#include "Utils/Logger.h"
 
 RenderManager::RenderManager(WindowsSystem* windowSystem)
 	: mWindowSystem(windowSystem)
@@ -40,31 +43,78 @@ bool RenderManager::Run()
 
 bool RenderManager::Build(SweetLoader& sweetLoader)
 {
-    //~ 
-    if (!BuildParameter(sweetLoader)) return false;
+    LOG_INFO("RenderManager::Build() started.");
 
-	if (!QueryAdapter()) return false;
-    if (!QueryMonitorRefreshRate()) return false;
-    if (!BuildDeviceAndContext()) return false;
+    if (!BuildParameter(sweetLoader))
+    {
+        LOG_FAIL("Failed to build parameters.");
+        return false;
+    }
+
+    if (!QueryAdapter())
+    {
+        LOG_FAIL("Failed to query adapter.");
+        return false;
+    }
+
+    if (!QueryMonitorRefreshRate())
+    {
+        LOG_FAIL("Failed to query monitor refresh rate.");
+        return false;
+    }
+
+    if (!BuildDeviceAndContext())
+    {
+        LOG_FAIL("Failed to build device and context.");
+        return false;
+    }
 
     QueryMSAA();
-    if (!BuildSwapChain()) return false;
 
-    if (!BuildRenderTargetView()) return false;
-    if (!BuildDepthStencilView()) return false;
-    if (!BuildRasterizationState()) return false;
-    if (!BuildViewport()) return false;
+    if (!BuildSwapChain())
+    {
+        LOG_FAIL("Failed to build swap chain.");
+        return false;
+    }
+
+    if (!BuildRenderTargetView())
+    {
+        LOG_FAIL("Failed to build render target view.");
+        return false;
+    }
+
+    if (!BuildDepthStencilView())
+    {
+        LOG_FAIL("Failed to build depth stencil view.");
+        return false;
+    }
+
+    if (!BuildRasterizationState())
+    {
+        LOG_FAIL("Failed to build rasterizer state.");
+        return false;
+    }
+
+    if (!BuildViewport())
+    {
+        LOG_FAIL("Failed to build viewport.");
+        return false;
+    }
 
     SetOMRenderAndDepth();
 
+    LOG_SUCCESS("Build completed successfully.");
     return true;
 }
+
 
 void RenderManager::SetOMRenderAndDepth()
 {
     mDeviceContext->OMSetRenderTargets(1,
         mRenderTargetView.GetAddressOf(),
         mDepthStencilView.Get());
+
+    LOG_INFO("Bound render target and depth stencil view.");
 }
 
 bool RenderManager::BuildParameter(SweetLoader& sweetLoader)
@@ -79,7 +129,7 @@ bool RenderManager::QueryAdapter()
 
     if (FAILED(hr))
     {
-        std::cerr << "Failed to create DXGI Factory.\n";
+        LOG_ERROR("Failed to create DXGI Factory.");
         return false;
     }
 
@@ -89,7 +139,8 @@ bool RenderManager::QueryAdapter()
     mAdapters.clear();
     mSelectedAdapterIndex = -1;
 
-    std::wcout << L"--- Enumerating GPU Adapters ---\n";
+    LOG_INFO("Enumerating GPU adapters...");
+
     while (true)
     {
         Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
@@ -99,12 +150,13 @@ bool RenderManager::QueryAdapter()
         DXGI_ADAPTER_DESC desc;
         adapter->GetDesc(&desc);
 
-        std::wcout << L"Adapter " << adapterIndex << L": " << desc.Description << std::endl;
-        std::wcout << L"  VRAM: " << (desc.DedicatedVideoMemory / (1024 * 1024)) << L" MB\n";
+        std::wostringstream adapterInfo;
+        adapterInfo << L"Adapter " << adapterIndex << L": " << desc.Description;
+        adapterInfo << L"\n  VRAM: " << (desc.DedicatedVideoMemory / (1024 * 1024)) << L" MB";
+        OutputDebugStringW((adapterInfo.str() + L"\n").c_str()); // Optional for dev view
 
         mAdapters.push_back(adapter);
 
-        // Track the adapter with the most VRAM
         if (desc.DedicatedVideoMemory > maxDedicatedVideoMemory)
         {
             maxDedicatedVideoMemory = desc.DedicatedVideoMemory;
@@ -116,39 +168,44 @@ bool RenderManager::QueryAdapter()
 
     if (mSelectedAdapterIndex == -1)
     {
-        std::cerr << "No suitable adapter found.\n";
+        LOG_FAIL("No suitable GPU adapter found.");
         return false;
     }
 
     DXGI_ADAPTER_DESC selectedDesc;
     mAdapters[mSelectedAdapterIndex]->GetDesc(&selectedDesc);
 
-    std::wcout << L"\nSelected Adapter [" << mSelectedAdapterIndex << L"]: " << selectedDesc.Description << std::endl;
-    std::wcout << L"  VRAM: " << (selectedDesc.DedicatedVideoMemory / (1024 * 1024)) << L" MB\n";
+    std::ostringstream selectedInfo;
+    selectedInfo << "Selected Adapter [" << mSelectedAdapterIndex << "]: ";
+
+    std::wstring descWStr = selectedDesc.Description;
+    selectedInfo << std::string(descWStr.begin(), descWStr.end()); // Convert to UTF-8-ish (rough)
+
+    selectedInfo << " | VRAM: " << (selectedDesc.DedicatedVideoMemory / (1024 * 1024)) << " MB";
+
+    LOG_SUCCESS(selectedInfo.str());
 
     return true;
 }
-
 bool RenderManager::QueryMonitorRefreshRate()
 {
     Microsoft::WRL::ComPtr<IDXGIOutput> output;
 
-    // Try primary output from selected adapter
+    // Try to get output from selected adapter
     HRESULT hr = mAdapters[mSelectedAdapterIndex]->EnumOutputs(0, &output);
 
     if (FAILED(hr) || !output)
     {
-        std::cerr << "Selected adapter has no outputs. Trying adapter 0 for monitor info...\n";
+        LOG_WARNING("Selected adapter has no monitor output. Falling back to adapter 0.");
 
-        // Fall back to adapter 0 (usually Intel GPU with monitor attached)
-        if (mAdapters.size() > 0)
+        if (!mAdapters.empty())
         {
             hr = mAdapters[0]->EnumOutputs(0, &output);
         }
 
         if (FAILED(hr) || !output)
         {
-            std::cerr << "No monitor/output found on any adapter.\n";
+            LOG_FAIL("No monitor/output found on any adapter.");
             return false;
         }
     }
@@ -156,7 +213,9 @@ bool RenderManager::QueryMonitorRefreshRate()
     DXGI_OUTPUT_DESC outputDesc;
     output->GetDesc(&outputDesc);
 
-    std::wcout << L"Monitor: " << outputDesc.DeviceName << std::endl;
+    std::wstring wideName = outputDesc.DeviceName;
+    std::string monitorName(wideName.begin(), wideName.end()); // Convert to narrow string
+    LOG_INFO("Monitor: " + monitorName);
 
     DXGI_MODE_DESC desiredMode = {};
     desiredMode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -166,16 +225,15 @@ bool RenderManager::QueryMonitorRefreshRate()
 
     if (FAILED(hr))
     {
-        std::cerr << "Failed to find closest matching mode.\n";
+        LOG_ERROR("Failed to find closest matching display mode.");
         return false;
     }
 
     UINT refreshRate = closestMatch.RefreshRate.Numerator / closestMatch.RefreshRate.Denominator;
-    std::cout << "Monitor Refresh Rate: " << refreshRate << " Hz" << std::endl;
-
     mRefreshRateNumerator = closestMatch.RefreshRate.Numerator;
     mRefreshRateDenominator = closestMatch.RefreshRate.Denominator;
 
+    LOG_SUCCESS("Monitor refresh rate: " + std::to_string(refreshRate) + " Hz");
     return true;
 }
 
@@ -183,7 +241,7 @@ bool RenderManager::BuildDeviceAndContext()
 {
     if (mSelectedAdapterIndex < 0 || mSelectedAdapterIndex >= mAdapters.size())
     {
-        std::cerr << "Invalid adapter index.\n";
+        LOG_FAIL("Invalid adapter index for device creation.");
         return false;
     }
 
@@ -216,11 +274,14 @@ bool RenderManager::BuildDeviceAndContext()
 
     if (FAILED(hr))
     {
-        std::cerr << "Failed to create D3D11 device and context.\n";
+        LOG_ERROR("Failed to create D3D11 device and context.");
         return false;
     }
 
-    std::cout << "D3D11 Device created. Feature Level: 0x" << std::hex << selectedFeatureLevel << std::dec << "\n";
+    std::ostringstream oss;
+    oss << "D3D11 Device created. Feature Level: 0x" << std::hex << selectedFeatureLevel;
+    LOG_SUCCESS(oss.str());
+
     return true;
 }
 
@@ -228,13 +289,12 @@ bool RenderManager::QueryMSAA()
 {
     if (!mDevice)
     {
-        std::cerr << "Device not initialized. Cannot query MSAA.\n";
+        LOG_ERROR("Device not initialized. Cannot query MSAA.");
         return false;
     }
 
     mSupportedMSAA.clear();
-
-    std::cout << "Querying supported MSAA sample counts...\n";
+    LOG_INFO("Querying supported MSAA sample counts...");
 
     for (UINT samples = 1; samples <= D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT; ++samples)
     {
@@ -242,15 +302,22 @@ bool RenderManager::QueryMSAA()
         if (SUCCEEDED(mDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, samples, &quality)) && quality > 0)
         {
             mSupportedMSAA.push_back(samples);
-            std::cout << "  " << samples << "x MSAA supported with quality levels: " << quality << "\n";
+
+            std::ostringstream oss;
+            oss << "  " << samples << "x MSAA supported (Quality levels: " << quality << ")";
+            LOG_INFO(oss.str());
         }
     }
 
     if (mSupportedMSAA.empty())
     {
-        std::cout << "No MSAA sample counts supported.\n";
+        LOG_WARNING("No MSAA sample counts supported.");
         return false;
     }
+
+    std::ostringstream oss;
+    oss << "MSAA support query complete. " << mSupportedMSAA.size() << " levels detected.";
+    LOG_SUCCESS(oss.str());
 
     return true;
 }
@@ -259,14 +326,14 @@ bool RenderManager::SetMSAA(UINT msaaValue)
 {
     if (!mDevice)
     {
-        std::cerr << "Device not initialized. Cannot set MSAA.\n";
+        LOG_ERROR("Device not initialized. Cannot set MSAA.");
         return false;
     }
 
     // Check if requested value is supported
     if (std::find(mSupportedMSAA.begin(), mSupportedMSAA.end(), msaaValue) == mSupportedMSAA.end())
     {
-        std::cerr << "MSAA " << msaaValue << "x is not supported on this device.\n";
+        LOG_FAIL("MSAA " + std::to_string(msaaValue) + "x is not supported on this device.");
         return false;
     }
 
@@ -274,33 +341,46 @@ bool RenderManager::SetMSAA(UINT msaaValue)
     HRESULT hr = mDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, msaaValue, &quality);
     if (FAILED(hr) || quality == 0)
     {
-        std::cerr << "Failed to retrieve MSAA quality level for " << msaaValue << "x.\n";
+        LOG_FAIL("Failed to retrieve MSAA quality level for " + std::to_string(msaaValue) + "x.");
         return false;
     }
 
     mCurrentMSAA = msaaValue;
     mMSAACount = msaaValue;
-    mMSAAQuality = quality - 1; // DirectX expects this to be [0, quality-1]
+    mMSAAQuality = quality - 1; // DX expects [0..quality-1]
 
-    std::cout << "MSAA set to " << mMSAACount << "x (quality level: " << mMSAAQuality << ")\n";
+    std::ostringstream oss;
+    oss << "MSAA set to " << mMSAACount << "x (quality level: " << mMSAAQuality << ")";
+    LOG_SUCCESS(oss.str());
+
     return true;
 }
 
-
 bool RenderManager::BuildSwapChain()
 {
-    SetMSAA(8);
-
-    if (!mDevice || mSelectedAdapterIndex < 0)
+    if (!SetMSAA(8))
     {
-        std::cerr << "Cannot build swap chain. Missing device or window handle.\n";
+        LOG_WARNING("Requested MSAA 8x not supported. Falling back to previous/default setting.");
+    }
+
+    if (!mDevice || mSelectedAdapterIndex < 0 || !mWindowSystem)
+    {
+        LOG_FAIL("Cannot build swap chain. Missing device, adapter, or window handle.");
         return false;
     }
 
     Microsoft::WRL::ComPtr<IDXGIFactory> dxgiFactory;
-    mAdapters[mSelectedAdapterIndex]->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(dxgiFactory.GetAddressOf()));
+    HRESULT hr = mAdapters[mSelectedAdapterIndex]->GetParent(__uuidof(IDXGIFactory),
+        reinterpret_cast<void**>(dxgiFactory.GetAddressOf()));
 
-    RECT rt; GetClientRect(mWindowSystem->GetWindowHandle(), &rt);
+    if (FAILED(hr) || !dxgiFactory)
+    {
+        LOG_ERROR("Failed to retrieve DXGI factory from adapter.");
+        return false;
+    }
+
+    RECT rt;
+    GetClientRect(mWindowSystem->GetWindowHandle(), &rt);
 
     DXGI_SWAP_CHAIN_DESC scDesc = {};
     scDesc.BufferCount = 2;
@@ -317,19 +397,20 @@ bool RenderManager::BuildSwapChain()
     scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     scDesc.Flags = 0;
 
-    HRESULT hr = dxgiFactory->CreateSwapChain(
-        mDevice.Get(),
-        &scDesc,
-        &mSwapChain
-    );
-
+    hr = dxgiFactory->CreateSwapChain(mDevice.Get(), &scDesc, &mSwapChain);
     if (FAILED(hr))
     {
-        std::cerr << "Failed to create SwapChain.\n";
+        LOG_ERROR("Failed to create SwapChain.");
         return false;
     }
 
-    std::cout << "SwapChain created successfully.\n";
+    std::ostringstream oss;
+    oss << "SwapChain created successfully: "
+        << scDesc.BufferDesc.Width << "x" << scDesc.BufferDesc.Height
+        << " @ " << (scDesc.BufferDesc.RefreshRate.Numerator / scDesc.BufferDesc.RefreshRate.Denominator)
+        << "Hz with " << mMSAACount << "x MSAA (Q" << mMSAAQuality << ")";
+
+    LOG_SUCCESS(oss.str());
     return true;
 }
 
@@ -337,27 +418,35 @@ bool RenderManager::BuildRenderTargetView()
 {
     if (!mSwapChain)
     {
-        std::cerr << "[RenderManager] SwapChain is null. Cannot build render target view.\n";
+        LOG_FAIL("SwapChain is null. Cannot build render target view.");
         return false;
     }
 
-    HRESULT hr = mSwapChain->GetBuffer(0,
+    HRESULT hr = mSwapChain->GetBuffer(
+        0,
         __uuidof(ID3D11Texture2D),
-        reinterpret_cast<void**>(mRenderBuffer.GetAddressOf()));
+        reinterpret_cast<void**>(mRenderBuffer.GetAddressOf())
+    );
+
     if (FAILED(hr))
     {
-        std::cerr << "[RenderManager] Failed to get back buffer from swap chain.\n";
+        LOG_ERROR("Failed to retrieve back buffer from swap chain.");
         return false;
     }
 
-    hr = mDevice->CreateRenderTargetView(mRenderBuffer.Get(),
-        nullptr, &mRenderTargetView);
+    hr = mDevice->CreateRenderTargetView(
+        mRenderBuffer.Get(),
+        nullptr,
+        &mRenderTargetView
+    );
+
     if (FAILED(hr))
     {
-        std::cerr << "[RenderManager] Failed to create render target view.\n";
+        LOG_ERROR("Failed to create render target view.");
         return false;
     }
 
+    LOG_SUCCESS("Render target view created successfully.");
     return true;
 }
 
@@ -379,11 +468,10 @@ bool RenderManager::BuildDepthStencilView()
     depthDesc.Usage = D3D11_USAGE_DEFAULT;
     depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    HRESULT hr = mDevice->CreateTexture2D(&depthDesc,
-        nullptr, &mDepthBuffer);
+    HRESULT hr = mDevice->CreateTexture2D(&depthDesc, nullptr, &mDepthBuffer);
     if (FAILED(hr))
     {
-        std::cerr << "[RenderManager] Failed to create depth buffer texture.\n";
+        LOG_ERROR("Failed to create depth buffer texture.");
         return false;
     }
 
@@ -396,13 +484,13 @@ bool RenderManager::BuildDepthStencilView()
     depthStencilDesc.StencilReadMask = 0xFF;
     depthStencilDesc.StencilWriteMask = 0xFF;
 
-    // Stencil operations if pixel is front-facing.
+    // Front-facing stencil ops
     depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
     depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
-    // Stencil operations if pixel is back-facing.
+    // Back-facing stencil ops
     depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
     depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
     depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
@@ -411,16 +499,11 @@ bool RenderManager::BuildDepthStencilView()
     hr = mDevice->CreateDepthStencilState(&depthStencilDesc, &mDepthStencilState);
     if (FAILED(hr))
     {
-        std::cout << "Failed To Create Depth Stencil State!\n";
+        LOG_ERROR("Failed to create depth stencil state.");
         return false;
-    }else
-    {
-        std::cout << "Created Depth Stencil State!\n";
     }
 
-    // Set the depth stencil state.
-    mDeviceContext->OMSetDepthStencilState(mDepthStencilState.Get(),
-        1);
+    mDeviceContext->OMSetDepthStencilState(mDepthStencilState.Get(), 1);
 
     D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
     dsvDesc.Format = depthDesc.Format;
@@ -430,10 +513,11 @@ bool RenderManager::BuildDepthStencilView()
     hr = mDevice->CreateDepthStencilView(mDepthBuffer.Get(), &dsvDesc, &mDepthStencilView);
     if (FAILED(hr))
     {
-        std::cerr << "[RenderManager] Failed to create depth stencil view.\n";
+        LOG_ERROR("Failed to create depth stencil view.");
         return false;
     }
 
+    LOG_SUCCESS("Depth stencil buffer, state, and view created successfully.");
     return true;
 }
 
@@ -448,27 +532,48 @@ bool RenderManager::BuildRasterizationState()
     HRESULT hr = mDevice->CreateRasterizerState(&rasterDesc, &mRasterizerState);
     if (FAILED(hr))
     {
-        std::cerr << "[RenderManager] Failed to create rasterizer state.\n";
+        LOG_ERROR("Failed to create rasterizer state.");
         return false;
     }
 
     mDeviceContext->RSSetState(mRasterizerState.Get());
+
+    LOG_SUCCESS("Rasterizer state created and bound to pipeline.");
     return true;
 }
 
-bool RenderManager::BuildViewport()
+bool RenderManager::BuildViewport() const
 {
+    if (!mWindowSystem)
+    {
+        LOG_FAIL("Window system is not initialized. Cannot build viewport.");
+        return false;
+    }
+
     RECT rt;
     GetClientRect(mWindowSystem->GetWindowHandle(), &rt);
+    UINT width = rt.right - rt.left;
+    UINT height = rt.bottom - rt.top;
+
+    if (width == 0 || height == 0)
+    {
+        LOG_FAIL("Invalid viewport dimensions (0x0).");
+        return false;
+    }
 
     D3D11_VIEWPORT viewport = {};
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
-    viewport.Width = static_cast<float>(rt.right - rt.left);
-    viewport.Height = static_cast<float>(rt.bottom - rt.top);
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    viewport.Width = static_cast<float>(width);
+    viewport.Height = static_cast<float>(height);
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
 
     mDeviceContext->RSSetViewports(1, &viewport);
+
+    std::ostringstream oss;
+    oss << "Viewport set to " << width << "x" << height;
+    LOG_SUCCESS(oss.str());
+
     return true;
 }

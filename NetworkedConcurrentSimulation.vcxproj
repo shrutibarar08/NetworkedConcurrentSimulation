@@ -147,6 +147,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\FileManager\FileLoader\SweetLoader.cpp" />
     <ClCompile Include="Src\SystemManager\Interface\ISystem.cpp" />
+    <ClCompile Include="Src\Utils\Logger.cpp" />
     <ClCompile Include="Src\WindowManager\WindowsSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +158,7 @@
     <ClInclude Include="Src\ApplicationManager\Application.h" />
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h" />
     <ClInclude Include="Src\SystemManager\Interface\ISystem.h" />
+    <ClInclude Include="Src\Utils\Logger.h" />
     <ClInclude Include="Src\WindowManager\WindowsSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
