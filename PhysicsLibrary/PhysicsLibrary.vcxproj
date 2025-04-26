@@ -149,7 +149,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AnchoredSpring.h" />
     <ClInclude Include="Drag.h" />
     <ClInclude Include="ForceGenerator.h" />
     <ClInclude Include="framework.h" />
@@ -159,7 +158,6 @@
     <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AnchoredSpring.cpp" />
     <ClCompile Include="Drag.cpp" />
     <ClCompile Include="ForceGenerator.cpp" />
     <ClCompile Include="Gravity.cpp" />
