@@ -1,5 +1,7 @@
 #include "WindowsSystem.h"
 
+#include "ExceptionManager/WindowsException.h"
+
 bool WindowsSystem::Build(SweetLoader& sweetLoader)
 {
     if (!InitParameters(sweetLoader)) return false;
@@ -98,13 +100,8 @@ bool WindowsSystem::InitWindowClass()
         mWindowWidth, mWindowHeight };
 
     // Adjust window rectangle to fit the desired client size
-    if (!AdjustWindowRect(&rect, style, FALSE))
-        return false;
-
-    if (!RegisterClass(&wc))
-    {
-        return false;
-    }
+    THROW_WINDOWS_EXCEPTION_IF_FAILED(AdjustWindowRect(&rect, style, FALSE));
+    THROW_WINDOWS_EXCEPTION_IF_FAILED(RegisterClass(&wc));
 
     int winWidth = rect.right - rect.left;
     int winHeight = rect.bottom - rect.top;
@@ -121,7 +118,7 @@ bool WindowsSystem::InitWindowClass()
         this
     );
 
-    if (mHandleWindow == nullptr) return false;
+    THROW_WINDOWS_EXCEPTION_IF_FAILED(mHandleWindow);
 
     ShowWindow(mHandleWindow, SW_SHOW);
     UpdateWindow(mHandleWindow);

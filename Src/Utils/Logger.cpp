@@ -8,20 +8,26 @@
 #include <fstream>
 #include <iostream>
 
-HANDLE Logger::s_ConsoleHandle = nullptr;
-HANDLE Logger::m_MutexHandle = nullptr;
-bool Logger::s_Initialized = false;
+Logger* gLogger = nullptr;
 
-void Logger::Init()
+Logger::Logger(const LOGGER_INITIALIZE_DESC* desc)
 {
-    if (!s_Initialized)
-        EnableTerminal();
+    if (desc->EnableTerminal) EnableTerminal();
 
-    mFileSystem.OpenForWrite(GetTimestampForLogPath());
+    mLoggerDesc.FilePath = desc->FilePath;
+    mLoggerDesc.EnableTerminal = desc->EnableTerminal;
+    mLoggerDesc.FolderPath = desc->FolderPath;
 
-    m_MutexHandle = CreateMutex(nullptr,
+    mMutexHandle = CreateMutex(nullptr,
         FALSE,
         nullptr);
+
+    mFileSystem.OpenForWrite(GetTimestampForLogPath());
+}
+
+Logger::~Logger()
+{
+    Close();
 }
 
 void Logger::EnableTerminal()
@@ -35,16 +41,12 @@ void Logger::EnableTerminal()
     freopen_s(&dummy, "CONOUT$", "w", stderr);
     freopen_s(&dummy, "CONIN$", "r", stdin);
 
-    s_ConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    s_Initialized = true;
+    mConsoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 }
 
 bool Logger::Log(const std::string& prefix, const std::string& message, WORD color,
     const char* file, int line, const char* func)
 {
-    if (!s_Initialized)
-        EnableTerminal();
-
     std::ostringstream oss;
 
     // Optional: Add timestamp
@@ -66,28 +68,26 @@ bool Logger::Log(const std::string& prefix, const std::string& message, WORD col
     std::string refinedMessage = oss.str();
     bool saved = false;
 
-    DWORD res = WaitForSingleObject(m_MutexHandle, 2000);
+    DWORD res = WaitForSingleObject(mMutexHandle, 2000);
 
     if (res == WAIT_OBJECT_0)
     {
         // Got the lock
-        SetConsoleTextAttribute(s_ConsoleHandle, color);
+        SetConsoleTextAttribute(mConsoleHandle, color);
         std::cout << refinedMessage;
-        SetConsoleTextAttribute(s_ConsoleHandle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        SetConsoleTextAttribute(mConsoleHandle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
         saved = mFileSystem.WritePlainText(refinedMessage);
 
-        ReleaseMutex(m_MutexHandle);
+        ReleaseMutex(mMutexHandle);
     }
     else if (res == WAIT_TIMEOUT)
     {
-        // Couldn't acquire the lock in time (don't ReleaseMutex!)
         saved = mFileSystem.WritePlainText("[FAILURE] Logger timeout.\n");
         return false;
     }
     else
     {
-        // Some other error (OPTIONAL: You can log it too)
         return false;
     }
     return saved;
@@ -95,37 +95,31 @@ bool Logger::Log(const std::string& prefix, const std::string& message, WORD col
 
 bool Logger::Info(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("INFO", message, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
 }
 
 bool Logger::Print(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, file, line, func);
 }
 
 bool Logger::Warning(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("WARNING", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
 }
 
 bool Logger::Error(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("ERROR", message, FOREGROUND_RED | FOREGROUND_INTENSITY, file, line, func);
 }
 
 bool Logger::Success(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("SUCCESS", message, FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
 }
 
 bool Logger::Fail(const std::string& message, const char* file, int line, const char* func)
 {
-    if (!s_Initialized) return false;
     return Log("FAIL", message, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY, file, line, func);
 }
 
@@ -137,9 +131,22 @@ std::string Logger::GetTimestampForLogPath()
 
     localtime_s(&localTime, &timeNow);
 
+
+    std::string folder = mLoggerDesc.FolderPath;
+    if (*folder.rbegin() != '/')
+    {
+	    folder += "/";
+    }
+
+    std::string file = mLoggerDesc.FilePath;
+    if (*file.rbegin() != '_')
+    {
+        file += "_";
+    }
+
     std::ostringstream oss;
-    oss << Barar::Log::DEFAULT_PATH
-        <<"Log_"
+    oss << folder
+        << file
         << std::put_time(&localTime, "%Y-%m-%d_%H-%M-%S")
         << ".txt";
 

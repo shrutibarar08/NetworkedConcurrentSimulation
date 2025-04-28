@@ -49,7 +49,7 @@ bool Application::Init()
 
 	//~ Loading Configuration
 	mWindowSystem = std::make_unique<WindowsSystem>();
-	mWindowSystem->SetCreateThread(false); // dont need thread for ui.
+	mWindowSystem->SetCreateThread(false); // don't need thread for ui.
 
 	mSystemHandler.Register(
 		"WindowSystem",
@@ -58,7 +58,7 @@ bool Application::Init()
 
 	// Rendering Engine.
 	mRenderer = std::make_unique<RenderManager>(mWindowSystem.get());
-	mRenderer->SetGlobalEvent(&globalEvent);
+	mRenderer->SetCreateThread(false); // MainThread.
 
 	mSystemHandler.Register("RenderManager", mRenderer.get());
 	mSystemHandler.AddDependency(
@@ -72,11 +72,8 @@ bool Application::Init()
 		LOG_SUCCESS("All systems initialized successfully.");
 		return true;
 	}
-	else
-	{
-		LOG_FAIL("Failed to initialize all systems.");
-		return false;
-	}
+	LOG_FAIL("Failed to initialize all systems.");
+	return false;
 }
 
 bool Application::Run()
@@ -91,7 +88,9 @@ bool Application::Run()
 			SetEvent(mEndEventHandle);
 			break;
 		}
+		mRenderer->Run();
 	}
+	std::cout << "Waiting for Finishing\n";
 	mSystemHandler.WaitFinish();
 
 	LOG_SUCCESS("Application main loop finished.");
