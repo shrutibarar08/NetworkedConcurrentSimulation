@@ -1,2 +1,0 @@
-[20:17:19] [ERROR] (C:\Users\niffo\Desktop\Workspace\NetworkedConcurrentSimulation\Src\RenderManager\RenderManager.cpp:282 | RenderManager::BuildDeviceAndContext) - RenderException: DirectX call 'D3D11CreateDevice' failed with HRESULT 0x80070057: The parameter is incorrect.
-

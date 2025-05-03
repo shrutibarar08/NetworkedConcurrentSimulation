@@ -140,9 +140,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCube.cpp" />
+    <ClCompile Include="Src\RenderManager\Render\Render3DQueue.cpp" />
+    <ClCompile Include="Src\Utils\Helper.cpp" />
     <ClCompile Include="Src\RenderManager\Camera\CameraController.cpp" />
     <ClCompile Include="Src\ExceptionManager\IException.cpp" />
     <ClCompile Include="Src\ExceptionManager\RenderException.cpp" />
+    <ClCompile Include="Src\RenderManager\Model\IModel.cpp" />
     <ClCompile Include="Src\RenderManager\RenderManager.cpp" />
     <ClCompile Include="Src\FileManager\FileLoader\FileSystem.cpp" />
     <ClCompile Include="Src\SystemManager\SystemHandler.cpp" />
@@ -153,11 +157,16 @@
     <ClCompile Include="Src\Utils\Logger.cpp" />
     <ClCompile Include="Src\WindowManager\WindowsSystem.cpp" />
     <ClCompile Include="Src\ExceptionManager\WindowsException.cpp" />
+    <ClCompile Include="Src\FileManager\ImageLoader\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\RenderManager\Render\Render3DQueue.h" />
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCube.h" />
+    <ClInclude Include="Src\Utils\Helper.h" />
     <ClInclude Include="Src\RenderManager\Camera\CameraController.h" />
     <ClInclude Include="Src\ExceptionManager\RenderException.h" />
     <ClInclude Include="Src\ExceptionManager\IException.h" />
+    <ClInclude Include="Src\RenderManager\Model\IModel.h" />
     <ClInclude Include="Src\RenderManager\RenderManager.h" />
     <ClInclude Include="Src\Core\DefineDefault.h" />
     <ClInclude Include="Src\FileManager\FileLoader\FileSystem.h" />
@@ -168,6 +177,28 @@
     <ClInclude Include="Src\Utils\Logger.h" />
     <ClInclude Include="Src\WindowManager\WindowsSystem.h" />
     <ClInclude Include="Src\ExceptionManager\WindowsException.h" />
+    <ClInclude Include="Src\FileManager\ImageLoader\TextureLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="todo.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\CubeShader\CubePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\CubeShader\CubeVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

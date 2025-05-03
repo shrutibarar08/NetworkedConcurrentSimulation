@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "Utils/Logger.h"
+#include "Utils/Helper.h"
 
 Application::Application()
 {
@@ -18,14 +19,15 @@ Application::Application()
 		nullptr
 	);
 
-	if (mStartEventHandle && mEndEventHandle)
-	{
+	if (mStartEventHandle && mEndEventHandle) 
 		LOG_SUCCESS("Application events (Start/End) created successfully.");
-	}
-	else
-	{
-		LOG_FAIL("Failed to create application events.");
-	}
+	else LOG_FAIL("Failed to create application events.");
+
+	MODEL_INIT_DESC desc{};
+	desc.ModelName = "Cube Model";
+	desc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
+	desc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
+	m_Cube = std::make_unique<ModelCube>(&desc);
 }
 
 Application::~Application()
@@ -49,7 +51,6 @@ bool Application::Init()
 
 	//~ Loading Configuration
 	mWindowSystem = std::make_unique<WindowsSystem>();
-	mWindowSystem->SetCreateThread(false); // don't need thread for ui.
 
 	mSystemHandler.Register(
 		"WindowSystem",
@@ -58,7 +59,6 @@ bool Application::Init()
 
 	// Rendering Engine.
 	mRenderer = std::make_unique<RenderManager>(mWindowSystem.get());
-	mRenderer->SetCreateThread(false); // MainThread.
 
 	mSystemHandler.Register("RenderManager", mRenderer.get());
 	mSystemHandler.AddDependency(
@@ -78,8 +78,13 @@ bool Application::Init()
 
 bool Application::Run()
 {
+	//~ Test only
+	mRenderer->BuildModel(m_Cube.get());
+	Render3DQueue::AddModel(m_Cube.get());
+
+	//~ Test End
 	LOG_INFO("Application main loop starting.");
-	mSystemHandler.WaitStart();
+	mSystemHandler.WaitStart(); 
 	SetEvent(mStartEventHandle);
 	while (true)
 	{

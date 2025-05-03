@@ -1,6 +1,6 @@
 #include "WindowsSystem.h"
-
 #include "ExceptionManager/WindowsException.h"
+#include "Core/DefineDefault.h"
 
 bool WindowsSystem::Build(SweetLoader& sweetLoader)
 {
@@ -26,6 +26,11 @@ int WindowsSystem::ProcessMethod()
         }
     }
     return quit;
+}
+
+float WindowsSystem::GetAspectRatio() const
+{
+    return mWindowWidth / mWindowHeight;
 }
 
 HWND WindowsSystem::GetWindowHandle() const

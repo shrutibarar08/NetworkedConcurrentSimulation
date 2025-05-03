@@ -1,3 +1,0 @@
-[20:19:00] [ERROR] (C:\Users\niffo\Desktop\Workspace\NetworkedConcurrentSimulation\Src\RenderManager\RenderManager.cpp:405 | RenderManager::BuildSwapChain) - RenderException: DirectX call 'FACTORY::CreateSwapChain' failed with HRESULT 0x887A0001: The application made a call that is invalid. Either the parameters of the call or the state of some object was incorrect.
-Enable the D3D debug layer in order to see details via debug messages.
-

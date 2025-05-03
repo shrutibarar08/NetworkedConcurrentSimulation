@@ -1,8 +1,6 @@
 #pragma once
 #include <windows.h>
-
 #include "SystemManager/Interface/ISystem.h"
-#include "Core/DefineDefault.h"
 
 
 class WindowsSystem final: public ISystem
@@ -18,7 +16,9 @@ public:
 
 	bool Build(SweetLoader& sweetLoader) override;
 	static int ProcessMethod();
-	 
+
+	float GetAspectRatio() const;
+
 	HWND GetWindowHandle() const;
 	HINSTANCE GetWindowInstance() const;
 

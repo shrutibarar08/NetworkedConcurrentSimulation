@@ -4,6 +4,7 @@
 
 #include "RenderManager/RenderManager.h"
 #include "FileManager/FileLoader/SweetLoader.h"
+#include "RenderManager/Model/Shapes/ModelCube.h"
 #include "SystemManager/SystemHandler.h"
 #include "WindowManager/WindowsSystem.h"
 
@@ -30,4 +31,6 @@ private:
 
 	HANDLE mStartEventHandle;
 	HANDLE mEndEventHandle;
+
+	std::unique_ptr<ModelCube> m_Cube;
 };

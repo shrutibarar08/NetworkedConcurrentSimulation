@@ -11,8 +11,29 @@
 RenderManager::RenderManager(WindowsSystem* windowSystem)
 	: m_WindowSystem(windowSystem)
 {
-    m_CameraManager.AddCamera("3DCam");
-    m_CameraManager.AddCamera("2DCam");
+    m_DeviceMutex = CreateMutex
+	(
+        nullptr,
+        FALSE,
+        nullptr
+    );
+
+    if (m_DeviceMutex == INVALID_HANDLE_VALUE)
+    {
+        throw std::runtime_error("failed to build device mutex!");
+    }
+
+    m_2dCamId = m_CameraManager.AddCamera("2DCam");
+    m_3dCamId = m_CameraManager.AddCamera("3DCam");
+
+    m_CameraManager.SetActiveCamera(m_3dCamId);
+
+    auto* cam = m_CameraManager.GetActiveCamera();
+	cam->SetPosition(0.0f, 0.0f, 0.0f);
+	cam->SetOrientation(0.0f, 0.0f);
+    cam->SetLens(60.0f, 1280.f / 720.f ,
+        0.1f, 1000.0f);
+    m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
 }
 
 bool RenderManager::Run()
@@ -25,7 +46,7 @@ bool RenderManager::Run()
 
 bool RenderManager::ClearScene()
 {
-    static float color[4]{ 0.25f, 0.50f, 0.75f, 1.0f };
+    static float color[4]{ 0.25f, 0.20f, 0.75f, 1.0f };
     m_DeviceContext->ClearRenderTargetView(
         m_RenderTargetView.Get(),
         color);
@@ -42,7 +63,10 @@ bool RenderManager::ClearScene()
 
 bool RenderManager::SceneBegin()
 {
-    return false;
+    m_Render3DQueue->UpdatePixelConstantBuffer(m_DeviceContext.Get());
+    m_Render3DQueue->UpdateVertexConstantBuffer(m_DeviceContext.Get());
+    m_Render3DQueue->RenderAll(m_DeviceContext.Get());
+    return true;
 }
 
 bool RenderManager::SceneEnd()
@@ -117,6 +141,17 @@ bool RenderManager::Build(SweetLoader& sweetLoader)
     return true;
 }
 
+bool RenderManager::BuildModel(IModel* model) const
+{
+    bool buildStatus = false;
+    WaitForSingleObject(m_DeviceMutex, INFINITE);
+
+    model->Build(m_Device.Get());
+    buildStatus = true;
+
+    ReleaseMutex(m_DeviceMutex);
+    return buildStatus;
+}
 
 void RenderManager::SetOMRenderAndDepth()
 {
@@ -206,7 +241,13 @@ bool RenderManager::QueryMonitorRefreshRate()
 
     if (FAILED(hr) || !output)
     {
-        LOG_WARNING("Selected adapter has no monitor output. Falling back to adapter 0.");
+        DXGI_ADAPTER_DESC desc{};
+        m_Adapters[0]->GetDesc(&desc);
+        std::string name = std::string(
+            std::begin(desc.Description),
+            std::end(desc.Description));
+
+        LOG_WARNING("Selected adapter has no monitor output. Falling back to: " + name);
 
         if (!m_Adapters.empty())
         {

@@ -7,10 +7,9 @@
 #include <string>
 #include <memory>
 
-using namespace DirectX;
 
-
-class CameraController {
+class CameraController
+{
 public:
     // Constructor initializes camera with given ID and name
     CameraController(int id, const std::string& name);
@@ -25,21 +24,21 @@ public:
 	int GetID();
     std::string GetName();
 
-    XMFLOAT3 GetPosition();
-	XMMATRIX GetViewMatrix();
-	XMMATRIX GetProjectionMatrix();
-    XMMATRIX GetOrthogonalMatrix();
+    DirectX::XMFLOAT3 GetPosition();
+    DirectX::XMMATRIX GetViewMatrix();
+    DirectX::XMMATRIX GetProjectionMatrix();
+    DirectX::XMMATRIX GetOrthogonalMatrix();
 
 private:
     // CameraController state
     int m_id;
     std::string m_name;
-    XMFLOAT3 m_position;
+    DirectX::XMFLOAT3 m_position;
     float m_yaw, m_pitch;         // Orientation angles in radians
-    XMFLOAT4X4 m_viewMatrix;      // Cached view matrix
+    DirectX::XMFLOAT4X4 m_viewMatrix;      // Cached view matrix
     bool m_viewDirty;             // Flag to recompute view matrix
     float m_fov, m_aspect, m_nearZ, m_farZ;
-    XMFLOAT4X4 m_projMatrix;      // Cached projection matrix
+    DirectX::XMFLOAT4X4 m_projMatrix;      // Cached projection matrix
     bool m_projDirty;             // Flag to recompute projection matrix
 
     SRWLOCK m_lock;              // Protects camera data for thread safety
@@ -50,7 +49,8 @@ private:
 // CameraManager Class - Manages multiple CameraController instances (thread-safe).
 // Uses SRWLOCK for protecting camera list and a Win32 Mutex for ID generation.
 //-----------------------------------------------------------------------------
-class CameraManager {
+class CameraManager
+{
 public:
     CameraManager();
     ~CameraManager();

@@ -12,13 +12,13 @@ CameraController::CameraController(int id, const std::string& name)
     m_viewDirty(true), m_projDirty(true)
 {
     // Initialize default lens (45-degree FOV, 4:3 aspect, near=0.1, far=1000)
-    m_fov = XMConvertToRadians(45.0f);
+    m_fov = DirectX::XMConvertToRadians(45.0f);
     m_aspect = 4.0f / 3.0f;
     m_nearZ = 0.1f;
     m_farZ = 1000.0f;
     // Initialize view/projection matrices to identity
-    XMStoreFloat4x4(&m_viewMatrix, XMMatrixIdentity());
-    XMStoreFloat4x4(&m_projMatrix, XMMatrixIdentity());
+    XMStoreFloat4x4(&m_viewMatrix, DirectX::XMMatrixIdentity());
+    XMStoreFloat4x4(&m_projMatrix, DirectX::XMMatrixIdentity());
     // Initialize the SRWLOCK for thread safety
     InitializeSRWLock(&m_lock);
 }
@@ -42,15 +42,15 @@ std::string CameraController::GetName()
 void CameraController::SetPosition(float x, float y, float z)
 {
     AcquireSRWLockExclusive(&m_lock);
-    m_position = XMFLOAT3(x, y, z);
+    m_position = DirectX::XMFLOAT3(x, y, z);
     m_viewDirty = true;
     ReleaseSRWLockExclusive(&m_lock);
 }
 
-XMFLOAT3 CameraController::GetPosition()
+DirectX::XMFLOAT3 CameraController::GetPosition()
 {
     AcquireSRWLockShared(&m_lock);
-    XMFLOAT3 pos = m_position;
+    DirectX::XMFLOAT3 pos = m_position;
     ReleaseSRWLockShared(&m_lock);
     return pos;
 }
@@ -75,7 +75,7 @@ void CameraController::GetOrientation(float& yaw, float& pitch)
 void CameraController::SetLens(float fovDegrees, float aspect, float nearZ, float farZ)
 {
     AcquireSRWLockExclusive(&m_lock);
-    m_fov = XMConvertToRadians(fovDegrees);
+    m_fov = DirectX::XMConvertToRadians(fovDegrees);
     m_aspect = aspect;
     m_nearZ = nearZ;
     m_farZ = farZ;
@@ -99,20 +99,20 @@ void CameraController::SetOrthogonalBounds(float left, float right, float bottom
 void CameraController::GetLens(float& fovDegrees, float& aspect, float& nearZ, float& farZ)
 {
     AcquireSRWLockShared(&m_lock);
-    fovDegrees = XMConvertToDegrees(m_fov);
+    fovDegrees = DirectX::XMConvertToDegrees(m_fov);
     aspect = m_aspect;
     nearZ = m_nearZ;
     farZ = m_farZ;
     ReleaseSRWLockShared(&m_lock);
 }
 
-XMMATRIX CameraController::GetViewMatrix()
+DirectX::XMMATRIX CameraController::GetViewMatrix()
 {
     // First check without exclusive lock for performance
     AcquireSRWLockShared(&m_lock);
     if (!m_viewDirty) {
         // View matrix is up-to-date
-        XMMATRIX view = XMLoadFloat4x4(&m_viewMatrix);
+        DirectX::XMMATRIX view = XMLoadFloat4x4(&m_viewMatrix);
         ReleaseSRWLockShared(&m_lock);
         return view;
     }
@@ -122,35 +122,35 @@ XMMATRIX CameraController::GetViewMatrix()
     AcquireSRWLockExclusive(&m_lock);
     if (m_viewDirty) {
         // Recompute the view matrix
-        XMVECTOR posVec = XMLoadFloat3(&m_position);
+        DirectX::XMVECTOR posVec = XMLoadFloat3(&m_position);
         // Calculate forward vector from yaw & pitch
         float cosPitch = cosf(m_pitch);
         float sinPitch = sinf(m_pitch);
         float cosYaw = cosf(m_yaw);
         float sinYaw = sinf(m_yaw);
-        XMVECTOR forward = XMVectorSet(
+        DirectX::XMVECTOR forward = DirectX::XMVectorSet(
             sinYaw * cosPitch,
             sinPitch,
             cosPitch * cosYaw,
             0.0f
         );
-        XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-        XMMATRIX viewMat = XMMatrixLookToLH(posVec, forward, up);
+        DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(posVec, forward, up);
         XMStoreFloat4x4(&m_viewMatrix, viewMat);
         m_viewDirty = false;
     }
     // Load the view matrix to return it
-    XMMATRIX result = XMLoadFloat4x4(&m_viewMatrix);
+    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_viewMatrix);
     ReleaseSRWLockExclusive(&m_lock);
     return result;
 }
 
-XMMATRIX CameraController::GetProjectionMatrix()
+DirectX::XMMATRIX CameraController::GetProjectionMatrix()
 {
     AcquireSRWLockShared(&m_lock);
     if (!m_projDirty) {
         // Projection matrix is up-to-date
-        XMMATRIX proj = XMLoadFloat4x4(&m_projMatrix);
+        DirectX::XMMATRIX proj = XMLoadFloat4x4(&m_projMatrix);
         ReleaseSRWLockShared(&m_lock);
         return proj;
     }
@@ -159,21 +159,21 @@ XMMATRIX CameraController::GetProjectionMatrix()
     AcquireSRWLockExclusive(&m_lock);
     if (m_projDirty) {
         // Recompute the projection matrix
-        XMMATRIX projMat = XMMatrixPerspectiveFovLH(m_fov, m_aspect, m_nearZ, m_farZ);
+        DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspect, m_nearZ, m_farZ);
         XMStoreFloat4x4(&m_projMatrix, projMat);
         m_projDirty = false;
     }
-    XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
+    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
     ReleaseSRWLockExclusive(&m_lock);
     return result;
 }
 
-XMMATRIX CameraController::GetOrthogonalMatrix()
+DirectX::XMMATRIX CameraController::GetOrthogonalMatrix()
 {
     AcquireSRWLockShared(&m_lock);
     if (!m_projDirty) {
         // Projection matrix is up-to-date
-        XMMATRIX ortho = XMLoadFloat4x4(&m_projMatrix);
+        DirectX::XMMATRIX ortho = XMLoadFloat4x4(&m_projMatrix);
         ReleaseSRWLockShared(&m_lock);
         return ortho;
     }
@@ -182,15 +182,15 @@ XMMATRIX CameraController::GetOrthogonalMatrix()
     AcquireSRWLockExclusive(&m_lock);
     if (m_projDirty) {
         // Recompute the orthographic projection matrix
-        XMMATRIX orthoMat = XMMatrixOrthographicOffCenterLH(m_left,
-            m_right,
-            m_bottom,
-            m_top,
-            m_nearZ, m_farZ);
+        DirectX::XMMATRIX orthoMat = DirectX::XMMatrixOrthographicOffCenterLH(m_left,
+                                                                              m_right,
+                                                                              m_bottom,
+                                                                              m_top,
+                                                                              m_nearZ, m_farZ);
         XMStoreFloat4x4(&m_projMatrix, orthoMat);
         m_projDirty = false;
     }
-    XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
+    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
     ReleaseSRWLockExclusive(&m_lock);
     return result;
 }

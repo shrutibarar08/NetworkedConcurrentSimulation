@@ -11,7 +11,7 @@ int WINAPI WinMain(
 {
 #ifdef _DEBUG
     LOGGER_INITIALIZE_DESC desc{};
-    desc.FilePath = "Log";
+    desc.FilePath = "SweetLog";
     desc.EnableTerminal = true;
     desc.FolderPath = "Logs";
     INIT_GLOBAL_LOGGER(&desc);

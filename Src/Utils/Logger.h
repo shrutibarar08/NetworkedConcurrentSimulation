@@ -1,15 +1,10 @@
 #pragma once
 
+#include "Core/DefineDefault.h"
+
 #include <windows.h>
 #include "FileManager/FileLoader/FileSystem.h"
 
-
-typedef struct LOGGER_INITIALIZE_DESC
-{
-	std::string FolderPath;
-	std::string FilePath;
-	bool EnableTerminal;
-}LOGGER_INITIALIZE_DESC;
 
 class Logger
 {

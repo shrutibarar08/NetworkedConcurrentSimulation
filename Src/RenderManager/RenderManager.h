@@ -4,14 +4,16 @@
 #include <wrl/client.h>
 
 #include "Camera/CameraController.h"
+#include "Render/Render3DQueue.h"
 #include "SystemManager/Interface/ISystem.h"
 #include "WindowManager/WindowsSystem.h"
+
 
 class RenderManager : public ISystem
 {
 public:
     RenderManager(WindowsSystem* windowSystem);
-    virtual ~RenderManager() override = default;
+	~RenderManager() override = default;
 
     RenderManager(const RenderManager&) = delete;
     RenderManager(RenderManager&&) = delete;
@@ -26,6 +28,7 @@ public:
 
     // Build render config from SweetLoader
 	bool Build(SweetLoader& sweetLoader) override;
+    bool BuildModel(IModel* model) const;
 
     void SetOMRenderAndDepth();
 
@@ -45,8 +48,13 @@ private:
     bool BuildViewport() const;
 
 private:
-    WindowsSystem* m_WindowSystem;
     CameraManager m_CameraManager{};
+    int m_2dCamId;
+    int m_3dCamId;
+
+    HANDLE m_DeviceMutex;
+    std::unique_ptr<Render3DQueue> m_Render3DQueue;
+    WindowsSystem* m_WindowSystem;
 
     std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter>> m_Adapters;
     int m_SelectedAdapterIndex{ -1 };
