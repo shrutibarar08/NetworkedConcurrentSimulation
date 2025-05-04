@@ -1,25 +1,28 @@
 #include "pch.h"
 #include "Particle.h"
 
-Particle::Particle() : position(), velocity(), acceleration(), forceAccum(),
-inverseMass(1.0f), damping(0.99f) {
+Particle::Particle() : position(), velocity(), acceleration(),
+                       forceAccum(),inverseMass(1.0f), damping(0.99f) {
 }
 
 void Particle::integrate(float duration)
 {
 	if (inverseMass <= 0.0f) return;
 
-	//update position
+	// LINEAR MOTION
 	position += velocity * duration;
 
-	Vector3 resultingAcc = acceleration;
-	resultingAcc += forceAccum * inverseMass;
-
-	//update velocity
+	Vector3 resultingAcc = acceleration + forceAccum * inverseMass;
 	velocity += resultingAcc * duration;
-	//damping apply
 	velocity *= std::pow(damping, duration);
-	//clear the forces
+
+	// ANGULAR MOTION
+	orientation.addScaledVector(angularVelocity, duration);
+	orientation.normalize();
+
+	Vector3 angularAcc = inverseInertiaTensor * torqueAccum;
+	angularVelocity += angularAcc * duration;
+
 	clearAccumulator();
 }
 
@@ -28,9 +31,15 @@ void Particle::addForce(const Vector3& force)
 	forceAccum += force;
 }
 
+void Particle::addTorque(const Vector3& torque)
+{
+	torqueAccum += torque;
+}
+
 void Particle::clearAccumulator()
 {
 	forceAccum.clear();
+	torqueAccum.clear();
 }
 
 void Particle::setPosition(const Vector3& pos)
@@ -61,6 +70,21 @@ void Particle::setInverseMass(float invMass)
 void Particle::setDamping(float d)
 {
 	damping = d;
+}
+
+void Particle::setOrientation(const Quaternion& q)
+{
+	orientation = q; orientation.normalize();
+}
+
+void Particle::setAngularVelocity(const Vector3& av)
+{
+	angularVelocity = av;
+}
+
+void Particle::setInverseInertiaTensor(const Matrix3& tensor)
+{
+	inverseInertiaTensor = tensor;
 }
 
 Vector3 Particle::getPosition() const
@@ -97,3 +121,17 @@ bool Particle::hasFiniteMass() const
 {
 	return inverseMass > 0.0f;
 }
+
+Quaternion Particle::getOrientation() const
+{
+	return orientation;
+}
+
+Vector3 Particle::getAngularVelocity() const
+{
+	return angularVelocity;
+}
+
+Matrix3 Particle::getInverseInertiaTensor() const
+{
+	return inverseInertiaTensor;
