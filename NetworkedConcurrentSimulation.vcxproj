@@ -131,15 +131,22 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Src;$(ProjectDir)PhysicsLibrary</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)Lib\x64\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PhysicsLibrary.lib;d3d11.lib;D3DCompiler.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GuiManager\Components\ButtonElement.cpp" />
+    <ClCompile Include="Src\GuiManager\GuiManager.cpp" />
+    <ClCompile Include="Src\WindowManager\Components\MouseHandler.cpp" />
+    <ClCompile Include="Src\WindowManager\Components\KeyboardHandler.cpp" />
     <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCube.cpp" />
     <ClCompile Include="Src\RenderManager\Render\Render3DQueue.cpp" />
     <ClCompile Include="Src\Utils\Helper.cpp" />
@@ -160,6 +167,10 @@
     <ClCompile Include="Src\FileManager\ImageLoader\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\GuiManager\Components\ButtonElement.h" />
+    <ClInclude Include="Src\GuiManager\GuiManager.h" />
+    <ClInclude Include="Src\WindowManager\Components\MouseHandler.h" />
+    <ClInclude Include="Src\WindowManager\Components\KeyboardHandler.h" />
     <ClInclude Include="Src\RenderManager\Render\Render3DQueue.h" />
     <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCube.h" />
     <ClInclude Include="Src\Utils\Helper.h" />
@@ -178,6 +189,7 @@
     <ClInclude Include="Src\WindowManager\WindowsSystem.h" />
     <ClInclude Include="Src\ExceptionManager\WindowsException.h" />
     <ClInclude Include="Src\FileManager\ImageLoader\TextureLoader.h" />
+    <ClInclude Include="Src\GuiManager\Components\UIElement.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="todo.md" />

@@ -28,9 +28,11 @@ public:
 
     // Build render config from SweetLoader
 	bool Build(SweetLoader& sweetLoader) override;
+    bool Shutdown() override;
     bool BuildModel(IModel* model) const;
 
     void SetOMRenderAndDepth();
+    void ResizeSwapChain();
 
 private:
     bool BuildParameter(SweetLoader& sweetLoader);

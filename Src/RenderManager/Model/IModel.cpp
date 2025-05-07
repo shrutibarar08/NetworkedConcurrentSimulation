@@ -81,15 +81,14 @@ void IModel::UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB*
 	AcquireSRWLockExclusive(&m_Lock);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		context->Map(
-			m_VertexConstantBuffer.Get(),
-			0,
-			D3D11_MAP_WRITE_DISCARD,
-			0,
-			&mappedResource
-		)
+	HRESULT hr = context->Map(
+		m_VertexConstantBuffer.Get(),
+		0,
+		D3D11_MAP_WRITE_DISCARD,
+		0,
+		&mappedResource
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	memcpy(mappedResource.pData, cb, sizeof(MODEL_VERTEX_CB));
 
@@ -106,15 +105,15 @@ void IModel::UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* c
 	AcquireSRWLockExclusive(&m_Lock);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource = {};
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		context->Map(
-			m_PixelConstantBuffer.Get(),
-			0,
-			D3D11_MAP_WRITE_DISCARD,
-			0,
-			&mappedResource
-		)
+
+	HRESULT hr = context->Map(
+		m_PixelConstantBuffer.Get(),
+		0,
+		D3D11_MAP_WRITE_DISCARD,
+		0,
+		&mappedResource
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	memcpy(mappedResource.pData, cb, sizeof(MODEL_PIXEL_CB));
 
@@ -136,21 +135,20 @@ void IModel::BuildVertexBuffer(ID3D11Device* device)
 	D3D11_BUFFER_DESC desc{};
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	desc.ByteWidth = sizeof(VERTEX) * vertices.size();
-	desc.CPUAccessFlags = 0u;
-	desc.MiscFlags = 0u;
+	desc.CPUAccessFlags = static_cast<UINT>(0);
+	desc.MiscFlags = static_cast<UINT>(0);
 	desc.StructureByteStride = sizeof(VERTEX);
 	desc.Usage = D3D11_USAGE_DEFAULT;
 
 	D3D11_SUBRESOURCE_DATA data{};
 	data.pSysMem = vertices.data();
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateBuffer(
-			&desc,
-			&data,
-			&m_VertexBuffer
-		)
+	HRESULT hr = device->CreateBuffer(
+		&desc,
+		&data,
+		&m_VertexBuffer
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	LOG_INFO("VertexBuffer Built");
 }
@@ -161,13 +159,10 @@ void IModel::BuildVertexShaderBlob(ID3D11Device* device)
 
 	if (Help_IsSrcExtensionOf(m_VertexShaderPath, "cso"))
 	{
-		THROW_RENDER_EXCEPTION_IF_FAILED(
-			D3DReadFileToBlob
-			(
-				wPath.c_str(), 
-				&m_VertexShaderBlob
-			)
-		);
+		
+		HRESULT hr = D3DReadFileToBlob(wPath.c_str(),&m_VertexShaderBlob);
+		THROW_RENDER_EXCEPTION_IF_FAILED(hr);
+
 	}else if (Help_IsSrcExtensionOf(m_VertexShaderPath, "hlsl"))
 	{
 		UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -199,13 +194,13 @@ void IModel::BuildVertexShaderBlob(ID3D11Device* device)
 		throw std::invalid_argument("Unsupported shader file extension.");
 	}
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateVertexShader(
-			m_VertexShaderBlob->GetBufferPointer(),
-			m_VertexShaderBlob->GetBufferSize(),
-			nullptr,
-			&m_VertexShader)
-	);
+	HRESULT hr = device->CreateVertexShader(
+		m_VertexShaderBlob->GetBufferPointer(),
+		m_VertexShaderBlob->GetBufferSize(),
+		nullptr,
+		&m_VertexShader);
+	
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	LOG_INFO("Vertex Shader Built");
 }
@@ -219,13 +214,15 @@ void IModel::BuildPixelShaderBlob(ID3D11Device* device)
 
 	if (Help_IsSrcExtensionOf(m_PixelShaderPath, "cso"))
 	{
-		THROW_RENDER_EXCEPTION_IF_FAILED(
-			D3DReadFileToBlob
-			(
-				wPath.c_str(),
-				&m_PixelShaderBlob
-			)
+
+		HRESULT hr = D3DReadFileToBlob
+		(
+			wPath.c_str(),
+			&m_PixelShaderBlob
 		);
+		
+		THROW_RENDER_EXCEPTION_IF_FAILED(hr);
+
 	}
 	else if (Help_IsSrcExtensionOf(m_PixelShaderPath, "hlsl"))
 	{
@@ -258,13 +255,15 @@ void IModel::BuildPixelShaderBlob(ID3D11Device* device)
 		throw std::invalid_argument("Unsupported shader file extension.");
 	}
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreatePixelShader(
-			m_PixelShaderBlob->GetBufferPointer(),
-			m_PixelShaderBlob->GetBufferSize(),
-			nullptr,
-			&m_PixelShader)
-	);
+
+	HRESULT hr = device->CreatePixelShader(
+		m_PixelShaderBlob->GetBufferPointer(),
+		m_PixelShaderBlob->GetBufferSize(),
+		nullptr,
+		&m_PixelShader);
+
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
+
 
 	LOG_INFO("Pixel Shader Built");
 }
@@ -273,27 +272,26 @@ void IModel::BuildIndexBuffer(ID3D11Device* device)
 {
 	auto indices = BuildIndex();
 
-	m_IndexCount = indices.size();
+	m_IndexCount = static_cast<UINT>(indices.size());
 	LOG_INFO("Index Count: " + std::to_string(m_IndexCount));
 
 	D3D11_BUFFER_DESC desc{};
 	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	desc.ByteWidth = sizeof(UINT) * indices.size();
-	desc.CPUAccessFlags = 0u;
-	desc.MiscFlags = 0u;
+	desc.CPUAccessFlags = static_cast<UINT>(0);
+	desc.MiscFlags = static_cast<UINT>(0);
 	desc.StructureByteStride = sizeof(UINT);
 	desc.Usage = D3D11_USAGE_DEFAULT;
 
 	D3D11_SUBRESOURCE_DATA data{};
 	data.pSysMem = indices.data();
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateBuffer(
-			&desc,
-			&data,
-			&m_IndexBuffer
-		)
+	HRESULT hr = device->CreateBuffer(
+		&desc,
+		&data,
+		&m_IndexBuffer
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	LOG_INFO("Index Buffer Built");
 }
@@ -318,15 +316,16 @@ void IModel::BuildInputLayout(ID3D11Device* device)
 
 	if (m_VertexShaderBlob == nullptr) BuildVertexShaderBlob(device);
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateInputLayout(
-			inputDesc,
-			size,
+
+	HRESULT hr = device->CreateInputLayout(
+		inputDesc,
+		size,
 		m_VertexShaderBlob->GetBufferPointer(),
 		m_VertexShaderBlob->GetBufferSize(),
 		&m_InputLayout
-		)
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
+
 
 	LOG_INFO("InputLayout Built");
 }
@@ -341,13 +340,14 @@ void IModel::BuildVertexConstantBuffer(ID3D11Device* device)
 	desc.StructureByteStride = 0u;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateBuffer(
-			&desc,
-			nullptr,
-			&m_VertexConstantBuffer
-		)
+
+	HRESULT hr = device->CreateBuffer(
+		&desc,
+		nullptr,
+		&m_VertexConstantBuffer
 	);
+
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	LOG_INFO("Vertex Constant Buffer Built");
 }
@@ -362,13 +362,13 @@ void IModel::BuildPixelConstantBuffer(ID3D11Device* device)
 	desc.StructureByteStride = 0u;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
 
-	THROW_RENDER_EXCEPTION_IF_FAILED(
-		device->CreateBuffer(
-			&desc,
-			nullptr,
-			&m_PixelConstantBuffer
-		)
+
+	HRESULT hr = device->CreateBuffer(
+		&desc,
+		nullptr,
+		&m_PixelConstantBuffer
 	);
+	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
 	LOG_INFO("Pixel Constant Buffer Built");
 }

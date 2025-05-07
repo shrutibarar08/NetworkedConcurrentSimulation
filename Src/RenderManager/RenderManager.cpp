@@ -22,22 +22,11 @@ RenderManager::RenderManager(WindowsSystem* windowSystem)
     {
         throw std::runtime_error("failed to build device mutex!");
     }
-
-    m_2dCamId = m_CameraManager.AddCamera("2DCam");
-    m_3dCamId = m_CameraManager.AddCamera("3DCam");
-
-    m_CameraManager.SetActiveCamera(m_3dCamId);
-
-    auto* cam = m_CameraManager.GetActiveCamera();
-	cam->SetPosition(0.0f, 0.0f, 0.0f);
-	cam->SetOrientation(0.0f, 0.0f);
-    cam->SetLens(60.0f, 1280.f / 720.f ,
-        0.1f, 1000.0f);
-    m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
 }
 
 bool RenderManager::Run()
 {
+    m_CameraManager.UpdateAllCameras();
     ClearScene();
     SceneBegin();
     SceneEnd();
@@ -55,7 +44,7 @@ bool RenderManager::ClearScene()
         m_DepthStencilView.Get(),
         D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
         1.0f,
-        0.0f
+        0
     );
 
     return true;
@@ -71,12 +60,32 @@ bool RenderManager::SceneBegin()
 
 bool RenderManager::SceneEnd()
 {
-    m_SwapChain->Present(0, 0);
+    if (Draco::Renderer::VSYNC_ENABLED)
+    {
+        m_SwapChain->Present(1, 0);
+    }else
+    {
+        m_SwapChain->Present(0, 0);
+    }
     return true;
 }
 
 bool RenderManager::Build(SweetLoader& sweetLoader)
 {
+    // TODO: Test only;
+    m_2dCamId = m_CameraManager.AddCamera("2DCam");
+    m_3dCamId = m_CameraManager.AddCamera("3DCam");
+
+    m_CameraManager.SetActiveCamera(m_3dCamId);
+
+    auto* cam = m_CameraManager.GetActiveCamera();
+    cam->SetPosition(0.0f, 1.0f, -10.0f);
+    cam->SetOrientation(0.0f, 0.0f);
+    cam->SetLens(60.0f, m_WindowSystem->GetAspectRatio(),
+        0.1f, 1000.0f);
+    m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
+    // TODO: Test End;
+
     LOG_INFO("RenderManager::Build() started.");
 
     if (!BuildParameter(sweetLoader))
@@ -141,6 +150,15 @@ bool RenderManager::Build(SweetLoader& sweetLoader)
     return true;
 }
 
+bool RenderManager::Shutdown()
+{
+    if (m_SwapChain)
+    {
+        m_SwapChain->SetFullscreenState(false, nullptr);
+    }
+	return ISystem::Shutdown();
+}
+
 bool RenderManager::BuildModel(IModel* model) const
 {
     bool buildStatus = false;
@@ -160,6 +178,37 @@ void RenderManager::SetOMRenderAndDepth()
         m_DepthStencilView.Get());
 
     LOG_INFO("Bound render target and depth stencil view.");
+}
+
+void RenderManager::ResizeSwapChain()
+{
+    m_RenderTargetView.Reset();
+    m_DepthBuffer.Reset();
+    m_RenderBuffer.Reset();
+    m_DepthStencilView.Reset();
+    m_DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+    RECT rc;
+    GetClientRect(m_WindowSystem->GetWindowHandle(), &rc);
+    UINT width = rc.right - rc.left;
+    UINT height = rc.bottom - rc.top; 
+
+    LOG_INFO("Resized Swap Chain Width: " + std::to_string(width));
+    LOG_INFO("Resized Swap Chain Height: " + std::to_string(height));
+
+    LOG_INFO("Resized OG Width: " + std::to_string(m_WindowSystem->GetWindowsWidth()));
+    LOG_INFO("Resized OG Height: " + std::to_string(m_WindowSystem->GetWindowsHeight()));
+
+    m_SwapChain->ResizeBuffers(
+        0, width, height,
+        DXGI_FORMAT_UNKNOWN,
+        DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+    );
+
+    BuildRenderTargetView();
+    BuildDepthStencilView();
+    BuildViewport();
+    SetOMRenderAndDepth();
 }
 
 bool RenderManager::BuildParameter(SweetLoader& sweetLoader)
@@ -213,7 +262,7 @@ bool RenderManager::QueryAdapter()
 
     if (m_SelectedAdapterIndex == -1)
     {
-        THROW_EXCEPTION("No suitable GPU adapter found.");
+        THROW_EXCEPTION();
     }
 
     DXGI_ADAPTER_DESC selectedDesc;
@@ -433,15 +482,25 @@ bool RenderManager::BuildSwapChain()
     scDesc.BufferDesc.Width = rt.right - rt.left;
     scDesc.BufferDesc.Height = rt.bottom - rt.top;
     scDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    scDesc.BufferDesc.RefreshRate.Numerator = m_RefreshRateNumerator;
-    scDesc.BufferDesc.RefreshRate.Denominator = m_RefreshRateDenominator;
+
+    if (Draco::Renderer::VSYNC_ENABLED)
+    {
+        scDesc.BufferDesc.RefreshRate.Numerator = m_RefreshRateNumerator;
+        scDesc.BufferDesc.RefreshRate.Denominator = m_RefreshRateDenominator;
+    }else
+    {
+        scDesc.BufferDesc.RefreshRate.Numerator = 0;
+        scDesc.BufferDesc.RefreshRate.Denominator = 1;
+    }
     scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scDesc.OutputWindow = m_WindowSystem->GetWindowHandle();
     scDesc.SampleDesc.Count = m_MSAACount;
     scDesc.SampleDesc.Quality = m_MSAAQuality;
-    scDesc.Windowed = TRUE;
+    scDesc.Windowed = m_WindowSystem->IsFullScreen();
     scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    scDesc.Flags = 0;
+    scDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    scDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    scDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
     hr = dxgiFactory->CreateSwapChain(m_Device.Get(), &scDesc, &m_SwapChain);
     THROW_RENDER_EXCEPTION_IF_FAILED(hr);
@@ -453,6 +512,15 @@ bool RenderManager::BuildSwapChain()
         << "Hz with " << m_MSAACount << "x MSAA (Q" << m_MSAAQuality << ")";
 
     LOG_SUCCESS(oss.str());
+
+    if (m_WindowSystem->IsFullScreen())
+    {
+        m_SwapChain->SetFullscreenState(TRUE, nullptr);
+    }else
+    {
+        m_SwapChain->SetFullscreenState(FALSE, nullptr);
+    }
+
     return true;
 }
 
@@ -460,7 +528,7 @@ bool RenderManager::BuildRenderTargetView()
 {
     if (!m_SwapChain)
     {
-        THROW_EXCEPTION("SwapChain is null. Cannot Build render target view.");
+        THROW_EXCEPTION();
     }
 
     HRESULT hr = m_SwapChain->GetBuffer(
@@ -490,6 +558,9 @@ bool RenderManager::BuildDepthStencilView()
     UINT width = rt.right - rt.left;
     UINT height = rt.bottom - rt.top;
 
+    LOG_INFO("Resized Depth View Width: " + std::to_string(width));
+    LOG_INFO("Resized Depth View Height: " + std::to_string(height));
+
     D3D11_TEXTURE2D_DESC depthDesc = {};
     depthDesc.Width = width;
     depthDesc.Height = height;
@@ -501,7 +572,8 @@ bool RenderManager::BuildDepthStencilView()
     depthDesc.Usage = D3D11_USAGE_DEFAULT;
     depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    HRESULT hr = m_Device->CreateTexture2D(&depthDesc, nullptr, &m_DepthBuffer);
+    HRESULT hr = m_Device->CreateTexture2D(&depthDesc,
+        nullptr, &m_DepthBuffer);
     THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
@@ -563,7 +635,7 @@ bool RenderManager::BuildViewport() const
 {
     if (!m_WindowSystem)
     {
-        THROW_EXCEPTION("Window System is not initialized. Cannot build viewport.");
+        THROW_EXCEPTION();
     }
 
     RECT rt;
@@ -571,9 +643,12 @@ bool RenderManager::BuildViewport() const
     UINT width = rt.right - rt.left;
     UINT height = rt.bottom - rt.top;
 
+    LOG_INFO("Resized View Port Width: " + std::to_string(width));
+    LOG_INFO("Resized View Port Height: " + std::to_string(height));
+
     if (width == 0 || height == 0)
     {
-        THROW_EXCEPTION("Invalid viewpoet dimensions (0x0)");
+        THROW_EXCEPTION();
     }
 
     D3D11_VIEWPORT viewport = {};

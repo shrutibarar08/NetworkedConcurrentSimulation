@@ -21,7 +21,7 @@ public:
     auto SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles) -> void;
 
 	bool Init();
-	bool Shutdown();
+	virtual bool Shutdown();
     //~ Will be launched after initializing it. Use Event lock to prevent it.
     virtual bool Run();
     void CreateOnThread(bool status) { mCreateThread = status; }

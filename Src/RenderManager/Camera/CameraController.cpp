@@ -1,6 +1,7 @@
 #include "CameraController.h"
 
 #include <cmath>
+#include <format>
 
 #include "Utils/Logger.h"
 
@@ -9,11 +10,11 @@ CameraController::CameraController(int id, const std::string& name)
     m_position(0.0f, 0.0f, 0.0f),
     m_yaw(0.0f), m_pitch(0.0f),
     m_fov(0.0f), m_aspect(0.0f), m_nearZ(0.0f), m_farZ(0.0f),
-    m_viewDirty(true), m_projDirty(true)
+    m_viewDirty(true), m_projDirty(true), m_top(0.0), m_left(0.0), m_right(0.0), m_bottom(0.0)
 {
     // Initialize default lens (45-degree FOV, 4:3 aspect, near=0.1, far=1000)
     m_fov = DirectX::XMConvertToRadians(45.0f);
-    m_aspect = 4.0f / 3.0f;
+    m_aspect = 1280.0f / 720.0f;
     m_nearZ = 0.1f;
     m_farZ = 1000.0f;
     // Initialize view/projection matrices to identity
@@ -70,6 +71,39 @@ void CameraController::GetOrientation(float& yaw, float& pitch)
     yaw = m_yaw;
     pitch = m_pitch;
     ReleaseSRWLockShared(&m_lock);
+}
+
+void CameraController::Log() const
+{
+    LOG_INFO("Logging CameraController state:");
+
+    LOG_INFO(std::format("ID: {}", m_id));
+    LOG_INFO(std::format("Name: {}", m_name));
+    LOG_INFO(std::format("Position: x = {}, y = {}, z = {}", m_position.x, m_position.y, m_position.z));
+    LOG_INFO(std::format("Yaw: {} radians, Pitch: {} radians", m_yaw, m_pitch));
+    LOG_INFO(std::format("FOV: {} rad, Aspect: {}, NearZ: {}, FarZ: {}", m_fov, m_aspect, m_nearZ, m_farZ));
+    LOG_INFO(std::format("Ortho Bounds: left = {}, right = {}, bottom = {}, top = {}", m_left, m_right, m_bottom, m_top));
+    LOG_INFO(std::format("Dirty Flags: ViewDirty = {}, ProjDirty = {}", m_viewDirty, m_projDirty));
+
+    LOG_INFO("View Matrix:");
+    const float* viewPtr = reinterpret_cast<const float*>(&m_viewMatrix);
+    for (int i = 0; i < 4; ++i)
+    {
+        std::string row = std::format("  [{:.4f}, {:.4f}, {:.4f}, {:.4f}]",
+            viewPtr[i * 4 + 0], viewPtr[i * 4 + 1],
+            viewPtr[i * 4 + 2], viewPtr[i * 4 + 3]);
+        LOG_INFO(row);
+    }
+
+    LOG_INFO("Projection Matrix:");
+    const float* projPtr = reinterpret_cast<const float*>(&m_projMatrix);
+    for (int i = 0; i < 4; ++i)
+    {
+        std::string row = std::format("  [{:.4f}, {:.4f}, {:.4f}, {:.4f}]",
+            projPtr[i * 4 + 0], projPtr[i * 4 + 1],
+            projPtr[i * 4 + 2], projPtr[i * 4 + 3]);
+        LOG_INFO(row);
+    }
 }
 
 void CameraController::SetLens(float fovDegrees, float aspect, float nearZ, float farZ)

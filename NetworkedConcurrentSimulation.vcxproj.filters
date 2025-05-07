@@ -69,6 +69,18 @@
     <ClCompile Include="Src\RenderManager\Render\Render3DQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\WindowManager\Components\KeyboardHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\WindowManager\Components\MouseHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GuiManager\GuiManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GuiManager\Components\ButtonElement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h">
@@ -123,6 +135,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\FileManager\ImageLoader\TextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\WindowManager\Components\KeyboardHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\WindowManager\Components\MouseHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\GuiManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Components\UIElement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Components\ButtonElement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

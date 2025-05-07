@@ -3,6 +3,7 @@
 #include "Core/DefineDefault.h"
 
 #include <windows.h>
+
 #include "FileManager/FileLoader/FileSystem.h"
 
 
@@ -18,11 +19,11 @@ public:
 	Logger& operator=(Logger&&) = delete;
 
 	// Logging methods
-    bool Info(const std::string& message, const char* file, int line, const char* func);
-    bool Print(const std::string& message, const char* file, int line, const char* func);
-    bool Warning(const std::string& message, const char* file, int line, const char* func);
+    bool Info(const std::string& message);
+    bool Print(const std::string& message);
+    bool Warning(const std::string& message);
 	bool Error(const std::string& message, const char* file, int line, const char* func);
-	bool Success(const std::string& message, const char* file, int line, const char* func);
+	bool Success(const std::string& message);
 	bool Fail(const std::string& message, const char* file, int line, const char* func);
 	std::string GetTimestampForLogPath();
 	void Close();
@@ -45,9 +46,9 @@ extern Logger* gLogger;
 #define INIT_GLOBAL_LOGGER(desc) \
     do { gLogger = new Logger(desc); } while(0)
 
-#define LOG_INFO(msg)    (gLogger ? gLogger->Info(msg, __FILE__, __LINE__, __func__) : false)
-#define LOG_PRINT(msg)   (gLogger ? gLogger->Print(msg, __FILE__, __LINE__, __func__) : false)
-#define LOG_WARNING(msg) (gLogger ? gLogger->Warning(msg, __FILE__, __LINE__, __func__) : false)
+#define LOG_INFO(msg)    (gLogger ? gLogger->Info(msg) : false)
+#define LOG_PRINT(msg)   (gLogger ? gLogger->Print(msg) : false)
+#define LOG_WARNING(msg) (gLogger ? gLogger->Warning(msg) : false)
 #define LOG_ERROR(msg)   (gLogger ? gLogger->Error(msg, __FILE__, __LINE__, __func__) : false)
-#define LOG_SUCCESS(msg) (gLogger ? gLogger->Success(msg, __FILE__, __LINE__, __func__) : false)
+#define LOG_SUCCESS(msg) (gLogger ? gLogger->Success(msg) : false)
 #define LOG_FAIL(msg)    (gLogger ? gLogger->Fail(msg, __FILE__, __LINE__, __func__) : false)

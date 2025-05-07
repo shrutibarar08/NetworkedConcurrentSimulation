@@ -24,13 +24,13 @@ public:
 	void Shutdown();
 
 private:
-	SystemHandler mSystemHandler{};
-	std::unique_ptr<WindowsSystem> mWindowSystem{ nullptr };
-	std::unique_ptr<RenderManager> mRenderer{ nullptr };
+	SystemHandler m_SystemHandler{};
+	std::unique_ptr<WindowsSystem> m_WindowSystem{ nullptr };
+	std::unique_ptr<RenderManager> m_Renderer{ nullptr };
 	SweetLoader mSweetLoader{};
 
-	HANDLE mStartEventHandle;
-	HANDLE mEndEventHandle;
+	HANDLE m_StartEventHandle;
+	HANDLE m_EndEventHandle;
 
 	std::unique_ptr<ModelCube> m_Cube;
 };

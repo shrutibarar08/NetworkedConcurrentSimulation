@@ -6,7 +6,7 @@
 
 #include "Utils/Logger.h"
 
-namespace Barar
+namespace Draco
 {
     namespace Exception
     {

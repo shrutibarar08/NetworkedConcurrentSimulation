@@ -70,8 +70,8 @@ void SystemHandler::WaitStart()
             }
         }
     }
-
-    WaitForMultipleObjects(handles.size(),
+    DWORD objectCount = static_cast<DWORD>(handles.size());
+    WaitForMultipleObjects(objectCount,
         handles.data(), TRUE,
         INFINITE);
 }
@@ -90,7 +90,8 @@ void SystemHandler::WaitFinish()
         }
     }
 
-    WaitForMultipleObjects(handles.size(),
+    DWORD size = static_cast<DWORD>(handles.size());
+    WaitForMultipleObjects(size,
         handles.data(), TRUE,
         INFINITE);
 }

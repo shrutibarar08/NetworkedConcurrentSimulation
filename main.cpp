@@ -2,6 +2,8 @@
 #include "ApplicationManager/Application.h"
 #include "ExceptionManager/IException.h"
 #include "Utils/Logger.h"
+#include "WindowManager/Components/KeyboardHandler.h"
+#include "WindowManager/Components/MouseHandler.h"
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -15,9 +17,12 @@ int WINAPI WinMain(
     desc.EnableTerminal = true;
     desc.FolderPath = "Logs";
     INIT_GLOBAL_LOGGER(&desc);
+
+    MouseHandler::SetDebug(false);
+    KeyboardHandler::SetDebug(true);
 #endif
 
-    bool result = E_FAIL;
+    HRESULT result = E_FAIL;
     try
     {
         Application app{};
@@ -39,7 +44,7 @@ int WINAPI WinMain(
         // Catch any standard C++ exceptions
         LOGGER_INITIALIZE_DESC logDesc{};
         logDesc.FilePath = "BasicException";
-        logDesc.FolderPath = Barar::Exception::DEFAULT_CRASH_FOLDER;
+        logDesc.FolderPath = Draco::Exception::DEFAULT_CRASH_FOLDER;
 
         Logger logger{&logDesc};
         logger.Error(e.what(),
@@ -59,7 +64,7 @@ int WINAPI WinMain(
         // Catch absolutely everything else
         LOGGER_INITIALIZE_DESC logDesc{};
         logDesc.FilePath = "BasicException";
-        logDesc.FolderPath = Barar::Exception::DEFAULT_CRASH_FOLDER;
+        logDesc.FolderPath = Draco::Exception::DEFAULT_CRASH_FOLDER;
 
         Logger logger{ &logDesc };
         logger.Error("Unknown fatal error occurred.",

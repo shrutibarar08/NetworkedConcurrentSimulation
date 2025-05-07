@@ -1,9 +1,9 @@
 cbuffer VertexCB : register(b0)
 {
     matrix Transformation;
+    matrix WorldMatrix;
     matrix ViewMatrix;
     matrix ProjectionMatrix;
-    matrix WorldMatrix;
 };
 
 struct VSInput
@@ -21,10 +21,14 @@ struct VSOutput
 VSOutput main(VSInput input)
 {
     VSOutput output;
-    float4 pos = mul(float4(input.position, 1.0f), Transformation);
-    pos = mul(pos, WorldMatrix);
-    pos = mul(pos, ViewMatrix);
-    pos = mul(pos, ProjectionMatrix);
+
+    float4 pos = float4(input.position, 1.0f);
+
+    pos = mul(Transformation, pos);
+    pos = mul(WorldMatrix, pos);
+    pos = mul(ViewMatrix, pos);
+    pos = mul(ProjectionMatrix, pos);
+
     output.position = pos;
     output.color = input.color;
     return output;

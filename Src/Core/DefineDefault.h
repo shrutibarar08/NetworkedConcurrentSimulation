@@ -5,14 +5,25 @@
 #include <windows.h>
 
 
-namespace Barar
+namespace Draco
 {
 	namespace Windows
 	{
 		constexpr int DEFAULT_WIDTH{ 1280 };
 		constexpr int DEFAULT_HEIGHT{ 720 };
 		static std::wstring DEFAULT_WINDOW_NAME{ L"Concurrent Networked Simulation" };
-	}	
+
+#ifdef _DEBUG
+		constexpr bool FULL_SCREEN{ false };
+#else
+		constexpr bool FULL_SCREEN{ false };
+#endif
+	}
+
+	namespace Renderer
+	{
+		constexpr bool VSYNC_ENABLED = true;
+	}
 }
 
 typedef struct VERTEX
@@ -41,7 +52,6 @@ typedef struct alignas(16) MODEL_VERTEX_CB
 	DirectX::XMMATRIX WorldMatrix;
 }MODEL_VERTEX_CB;
 
-
 typedef struct alignas(16) MODEL_PIXEL_CB
 {
 	float TotalTime;
@@ -60,3 +70,10 @@ typedef struct LOGGER_INITIALIZE_DESC
 	std::string FilePath;
 	bool EnableTerminal;
 }LOGGER_INITIALIZE_DESC;
+
+enum class MOUSE_BUTTON: uint8_t
+{
+	LEFT_MOUSE,
+	MIDDLE_MOUSE,
+	RIGHT_MOUSE
+};

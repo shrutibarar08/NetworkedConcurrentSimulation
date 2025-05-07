@@ -8,6 +8,7 @@
 Render3DQueue::Render3DQueue(CameraController* controller)
 {
 	m_CameraController = controller;
+	m_CameraController->Log();
 }
 
 bool Render3DQueue::AddModel(IModel* model)
@@ -53,8 +54,27 @@ bool Render3DQueue::RemoveModel(uint64_t modelId)
 bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 {
 	MODEL_VERTEX_CB cb{};
-	cb.ProjectionMatrix = XMMatrixInverse(nullptr, m_CameraController->GetProjectionMatrix());
-	cb.ViewMatrix = XMMatrixInverse(nullptr, m_CameraController->GetViewMatrix());
+
+	// Build view matrix (camera at z = -10)
+	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
+		DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f),  // Eye position
+		DirectX::XMVectorZero(),                         // Target
+		DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)      // Up vector
+	);
+
+	// Build projection matrix (60° FOV, 16:9 aspect)
+	DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovLH(
+		DirectX::XMConvertToRadians(60.0f),
+		1280.0f / 720.0f,
+		0.1f,
+		1000.0f
+	);
+
+	// Invert them
+	cb.ViewMatrix = m_CameraController->GetViewMatrix();
+	cb.ProjectionMatrix = m_CameraController->GetProjectionMatrix();
+
+	// World & transformation remain identity
 	cb.WorldMatrix = DirectX::XMMatrixIdentity();
 	cb.Transformation = DirectX::XMMatrixIdentity();
 

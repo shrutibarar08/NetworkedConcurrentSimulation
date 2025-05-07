@@ -3,23 +3,24 @@
 
 #include "Utils/Logger.h"
 #include "Utils/Helper.h"
+#include "WindowManager/Components/KeyboardHandler.h"
 
 Application::Application()
 {
-	mStartEventHandle = CreateEvent(
+	m_StartEventHandle = CreateEvent(
 		nullptr,
 		TRUE,
 		FALSE,
 		nullptr);
 
-	mEndEventHandle = CreateEvent(
+	m_EndEventHandle = CreateEvent(
 		nullptr,
 		TRUE,
 		FALSE,
 		nullptr
 	);
 
-	if (mStartEventHandle && mEndEventHandle) 
+	if (m_StartEventHandle && m_EndEventHandle) 
 		LOG_SUCCESS("Application events (Start/End) created successfully.");
 	else LOG_FAIL("Failed to create application events.");
 
@@ -32,11 +33,11 @@ Application::Application()
 
 Application::~Application()
 {
-	ResetEvent(mStartEventHandle);
-	SetEvent(mEndEventHandle);
+	ResetEvent(m_StartEventHandle);
+	SetEvent(m_EndEventHandle);
 	Shutdown();
-	CloseHandle(mEndEventHandle);
-	CloseHandle(mStartEventHandle);
+	CloseHandle(m_EndEventHandle);
+	CloseHandle(m_StartEventHandle);
 
 	LOG_INFO("Application shutdown sequence completed.");
 }
@@ -46,28 +47,28 @@ bool Application::Init()
 	LOG_INFO("Application initialization started.");
 
 	SYSTEM_EVENT_HANDLE globalEvent;
-	globalEvent.GlobalStartEvent = mStartEventHandle;
-	globalEvent.GlobalEndEvent = mEndEventHandle;
+	globalEvent.GlobalStartEvent = m_StartEventHandle;
+	globalEvent.GlobalEndEvent = m_EndEventHandle;
 
 	//~ Loading Configuration
-	mWindowSystem = std::make_unique<WindowsSystem>();
+	m_WindowSystem = std::make_unique<WindowsSystem>();
 
-	mSystemHandler.Register(
+	m_SystemHandler.Register(
 		"WindowSystem",
-		mWindowSystem.get()
+		m_WindowSystem.get()
 	);
 
 	// Rendering Engine.
-	mRenderer = std::make_unique<RenderManager>(mWindowSystem.get());
+	m_Renderer = std::make_unique<RenderManager>(m_WindowSystem.get());
 
-	mSystemHandler.Register("RenderManager", mRenderer.get());
-	mSystemHandler.AddDependency(
+	m_SystemHandler.Register("RenderManager", m_Renderer.get());
+	m_SystemHandler.AddDependency(
 		"RenderManager",
 		"WindowSystem"	// RenderManager Depends upon.
 	);
 
 	//~ Initializing Systems in correct order
-	if (mSystemHandler.BuildAll(mSweetLoader))
+	if (m_SystemHandler.BuildAll(mSweetLoader))
 	{
 		LOG_SUCCESS("All systems initialized successfully.");
 		return true;
@@ -79,24 +80,46 @@ bool Application::Init()
 bool Application::Run()
 {
 	//~ Test only
-	mRenderer->BuildModel(m_Cube.get());
+	m_Renderer->BuildModel(m_Cube.get());
 	Render3DQueue::AddModel(m_Cube.get());
 
 	//~ Test End
 	LOG_INFO("Application main loop starting.");
-	mSystemHandler.WaitStart(); 
-	SetEvent(mStartEventHandle);
+	m_SystemHandler.WaitStart(); 
+	SetEvent(m_StartEventHandle);
 	while (true)
 	{
-		if (WindowsSystem::ProcessMethod())
+		if (KeyboardHandler::IsKeyDown(VK_ESCAPE))
 		{
-			SetEvent(mEndEventHandle);
+			PostQuitMessage(0);
+			SetEvent(m_EndEventHandle);
 			break;
 		}
-		mRenderer->Run();
+
+		if (KeyboardHandler::IsKeyDown(VK_RETURN) 
+			&& KeyboardHandler::IsAltPressedOnLastKey())
+		{
+			if (m_WindowSystem->IsFullScreen())
+			{
+				m_WindowSystem->SetFullScreen(false);
+				m_Renderer->ResizeSwapChain();
+			}
+			else
+			{
+				m_WindowSystem->SetFullScreen(true);
+				m_Renderer->ResizeSwapChain();
+			}
+		}
+
+		if (WindowsSystem::ProcessMethod())
+		{
+			SetEvent(m_EndEventHandle);
+			break;
+		}
+		m_Renderer->Run();
 	}
 	std::cout << "Waiting for Finishing\n";
-	mSystemHandler.WaitFinish();
+	m_SystemHandler.WaitFinish();
 
 	LOG_SUCCESS("Application main loop finished.");
 	return true;
@@ -106,5 +129,5 @@ void Application::Shutdown()
 {
 	//~ Shut Down all systems
 	LOG_INFO("Shutting down all systems.");
-	mSystemHandler.ShutdownAll();
+	m_SystemHandler.ShutdownAll();
 }

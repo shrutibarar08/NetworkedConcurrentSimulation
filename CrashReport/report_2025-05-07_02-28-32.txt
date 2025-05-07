@@ -1,0 +1,2 @@
+[02:28:32] [ERROR] (C:\Users\niffo\Desktop\Workspace\NetworkedConcurrentSimulation\Src\RenderManager\RenderManager.cpp:561 | RenderManager::BuildDepthStencilView) - RenderException: DirectX call '' failed with HRESULT 0x80070057: The parameter is incorrect.
+

@@ -22,7 +22,7 @@ void IException::SaveCrashReport()
     {
         LOGGER_INITIALIZE_DESC desc{};
         desc.FilePath = "report";
-        desc.FolderPath = Barar::Exception::DEFAULT_CRASH_FOLDER;
+        desc.FolderPath = Draco::Exception::DEFAULT_CRASH_FOLDER;
         mLogger = std::make_unique<Logger>(&desc);
     }
     if (mLogger)

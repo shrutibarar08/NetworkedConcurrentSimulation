@@ -93,19 +93,19 @@ bool Logger::Log(const std::string& prefix, const std::string& message, WORD col
     return saved;
 }
 
-bool Logger::Info(const std::string& message, const char* file, int line, const char* func)
+bool Logger::Info(const std::string& message)
 {
-    return Log("INFO", message, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
+    return Log("INFO", message, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 }
 
-bool Logger::Print(const std::string& message, const char* file, int line, const char* func)
+bool Logger::Print(const std::string& message)
 {
-    return Log("", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, file, line, func);
+    return Log("", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 }
 
-bool Logger::Warning(const std::string& message, const char* file, int line, const char* func)
+bool Logger::Warning(const std::string& message)
 {
-    return Log("WARNING", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
+    return Log("WARNING", message, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 }
 
 bool Logger::Error(const std::string& message, const char* file, int line, const char* func)
@@ -113,9 +113,9 @@ bool Logger::Error(const std::string& message, const char* file, int line, const
     return Log("ERROR", message, FOREGROUND_RED | FOREGROUND_INTENSITY, file, line, func);
 }
 
-bool Logger::Success(const std::string& message, const char* file, int line, const char* func)
+bool Logger::Success(const std::string& message)
 {
-    return Log("SUCCESS", message, FOREGROUND_GREEN | FOREGROUND_INTENSITY, file, line, func);
+    return Log("SUCCESS", message, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 }
 
 bool Logger::Fail(const std::string& message, const char* file, int line, const char* func)

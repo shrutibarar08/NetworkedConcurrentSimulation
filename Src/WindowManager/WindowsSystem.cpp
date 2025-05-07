@@ -2,13 +2,42 @@
 #include "ExceptionManager/WindowsException.h"
 #include "Core/DefineDefault.h"
 
+#include "Components/KeyboardHandler.h"
+#include "Components/MouseHandler.h"
+
+#include <windowsx.h>
+
+WindowsSystem::WindowsSystem()
+{
+    InitializeSRWLock(&m_Lock);
+    m_Fullscreen = Draco::Windows::FULL_SCREEN;
+}
+
 bool WindowsSystem::Build(SweetLoader& sweetLoader)
 {
     if (!InitParameters(sweetLoader)) return false;
     //~ Initializing Window
     if (!InitWindowClass()) return false;
 
+    LOG_SUCCESS("Built Windows System!");
+
     return true;
+}
+
+bool WindowsSystem::Shutdown()
+{
+    ShowCursor(true);
+    if (Draco::Windows::FULL_SCREEN)
+    {
+        ChangeDisplaySettings(nullptr, 0);
+    }
+    DestroyWindow(m_HandleWindow);
+    m_HandleWindow = nullptr;
+
+    UnregisterClass(m_WindowName.c_str(), m_HandleInstance);
+    m_HandleInstance = nullptr;
+
+    return ISystem::Shutdown();
 }
 
 int WindowsSystem::ProcessMethod()
@@ -30,17 +59,40 @@ int WindowsSystem::ProcessMethod()
 
 float WindowsSystem::GetAspectRatio() const
 {
-    return mWindowWidth / mWindowHeight;
+    return static_cast<float>(m_WindowWidth) / static_cast<float>(m_WindowHeight);
+}
+
+bool WindowsSystem::IsFullScreen()
+{
+    bool status = false;
+
+    AcquireSRWLockShared(&m_Lock);
+    status = m_Fullscreen;
+    ReleaseSRWLockShared(&m_Lock);
+
+    return status;
+}
+
+void WindowsSystem::SetFullScreen(bool val)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    if (val != m_Fullscreen)
+    {
+        m_Fullscreen = val;
+        m_Fullscreen ? ApplyFullScreen() : ApplyWindowedScreen();
+        UpdateWindow(GetWindowHandle());
+    }
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 HWND WindowsSystem::GetWindowHandle() const
 {
-    return mHandleWindow;
+    return m_HandleWindow;
 }
 
-HINSTANCE WindowsSystem::GetWindowInstance() const
+HINSTANCE WindowsSystem::GetWindowManagerInstance() const
 {
-    return mHandleInstance;
+    return m_HandleInstance;
 }
 
 bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)
@@ -52,83 +104,146 @@ bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)
     //~ Loading / Saving Width
     if (sweetLoader.Contains(widthKey))
     {
-        mWindowWidth = std::stoi(sweetLoader[widthKey].GetValue());
+        m_WindowWidth = std::stoi(sweetLoader[widthKey].GetValue());
     }
     else
     {
-        mWindowWidth = Barar::Windows::DEFAULT_WIDTH;
-        sweetLoader[widthKey] = std::to_string(mWindowWidth);
+        m_WindowWidth = Draco::Windows::DEFAULT_WIDTH;
+        sweetLoader[widthKey] = std::to_string(m_WindowWidth);
     }
 
     //~ Loading / Saving Height
     if (sweetLoader.Contains(heightKey))
     {
-        mWindowHeight = std::stoi(sweetLoader[heightKey].GetValue());
+        m_WindowHeight = std::stoi(sweetLoader[heightKey].GetValue());
     }
     else
     {
-        mWindowHeight = Barar::Windows::DEFAULT_HEIGHT;
-        sweetLoader[heightKey] = std::to_string(mWindowHeight);
+        m_WindowHeight = Draco::Windows::DEFAULT_HEIGHT;
+        sweetLoader[heightKey] = std::to_string(m_WindowHeight);
     }
 
     //~ Loading / Saving Windows Name
     if (sweetLoader.Contains(windowNameKey))
     {
         std::string name = sweetLoader[windowNameKey].GetValue();
-        mWindowName = std::wstring(name.begin(), name.end());
+        m_WindowName = std::wstring(name.begin(), name.end());
     }
     else
     {
-        mWindowName = Barar::Windows::DEFAULT_WINDOW_NAME;
-        sweetLoader[windowNameKey] = std::string(mWindowName.begin(), mWindowName.end());
+        m_WindowName = Draco::Windows::DEFAULT_WINDOW_NAME;
+        sweetLoader[windowNameKey] = std::string(m_WindowName.begin(), m_WindowName.end());
     }
     return true;
 }
 
 bool WindowsSystem::InitWindowClass()
 {
-    mHandleInstance = GetModuleHandle(nullptr);
+    int posX = 0, posY = 0;
+
+    m_HandleInstance = GetModuleHandle(nullptr);
+
+    // Define the window class
     WNDCLASS wc = {};
-    wc.style = CS_OWNDC;
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.lpfnWndProc = HandleMsgSetup;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = mHandleInstance;
+    wc.hInstance = m_HandleInstance;
     wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-    wc.lpszMenuName = nullptr;
     wc.lpszClassName = L"RunningWindowClass";
 
-    DWORD style = WS_OVERLAPPEDWINDOW;
-    RECT rect = { 0, 0,
-        mWindowWidth, mWindowHeight };
+    // Register the window class
+    BOOL result = RegisterClass(&wc);
+    THROW_WINDOWS_EXCEPTION_IF_FAILED(result);
 
-    // Adjust window rectangle to fit the desired client size
-    THROW_WINDOWS_EXCEPTION_IF_FAILED(AdjustWindowRect(&rect, style, FALSE));
-    THROW_WINDOWS_EXCEPTION_IF_FAILED(RegisterClass(&wc));
+    // Set up style and dimensions
+    DWORD style = Draco::Windows::FULL_SCREEN ? WS_POPUP : WS_OVERLAPPEDWINDOW;
 
-    int winWidth = rect.right - rect.left;
-    int winHeight = rect.bottom - rect.top;
+    // Fullscreen uses native resolution
+    if (Draco::Windows::FULL_SCREEN)
+    {
+        m_WindowWidth = GetSystemMetrics(SM_CXSCREEN);
+        m_WindowHeight = GetSystemMetrics(SM_CYSCREEN);
+        posX = 0;
+        posY = 0;
+        m_Fullscreen = true;
+    }
+    else
+    {
+        // Calculate adjusted window rectangle for desired client size
+        RECT rect = { 0, 0, m_WindowWidth, m_WindowHeight };
+        AdjustWindowRect(&rect, style, FALSE);
+        m_WindowWidth = rect.right - rect.left;
+        m_WindowHeight = rect.bottom - rect.top;
 
-    mHandleWindow = CreateWindowEx(
-        0,
+        posX = (GetSystemMetrics(SM_CXSCREEN) - m_WindowWidth) / 2;
+        posY = (GetSystemMetrics(SM_CYSCREEN) - m_WindowHeight) / 2;
+    }
+
+    // Create the actual window
+    m_HandleWindow = CreateWindowEx(
+        WS_EX_APPWINDOW,
         wc.lpszClassName,
-        mWindowName.c_str(),
+        m_WindowName.c_str(),
         style,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        winWidth, winHeight,
+        posX, posY,
+        m_WindowWidth, m_WindowHeight,
         nullptr, nullptr,
         wc.hInstance,
         this
     );
 
-    THROW_WINDOWS_EXCEPTION_IF_FAILED(mHandleWindow);
+    result = m_HandleWindow != nullptr;
+    THROW_WINDOWS_EXCEPTION_IF_FAILED(result);
 
-    ShowWindow(mHandleWindow, SW_SHOW);
-    UpdateWindow(mHandleWindow);
+    // Show and activate the window
+    ShowWindow(m_HandleWindow, SW_SHOW);
+    SetForegroundWindow(m_HandleWindow);
+    SetFocus(m_HandleWindow);
+    UpdateWindow(m_HandleWindow);
 
     return true;
+}
+
+
+void WindowsSystem::ApplyFullScreen()
+{
+    if (m_Fullscreen)
+    {
+        GetWindowPlacement
+    	(
+            GetWindowHandle(),
+            &m_WindowPlacement
+        );
+
+        SetWindowLong(GetWindowHandle(), GWL_STYLE, WS_POPUP);
+        SetWindowPos(
+            GetWindowHandle(),
+            HWND_TOP,
+            0, 0,
+            GetSystemMetrics(SM_CXSCREEN),
+            GetSystemMetrics(SM_CYSCREEN),
+            SWP_FRAMECHANGED | SWP_SHOWWINDOW
+        );
+    }
+}
+
+void WindowsSystem::ApplyWindowedScreen() const
+{
+    if (!m_Fullscreen)
+    {
+        SetWindowLong(GetWindowHandle(), GWL_STYLE, WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(GetWindowHandle(), &m_WindowPlacement);
+        SetWindowPos
+        (
+            GetWindowHandle(),
+            nullptr,
+            0, 0,
+            0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW
+        );
+    }
 }
 
 LRESULT WindowsSystem::HandleMsgSetup(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept
@@ -154,6 +269,52 @@ LRESULT WindowsSystem::HandleMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 {
     switch (message)
     {
+    // mKeyboard input
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+        KeyboardHandler::KeyDown(static_cast<unsigned int>(wParam), lParam);
+        return 0;
+
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+        KeyboardHandler::KeyUp(static_cast<unsigned int>(wParam), lParam);
+    	return 0;
+
+    // mMouse buttons
+    case WM_LBUTTONDOWN:
+        MouseHandler::ButtonDown(MOUSE_BUTTON::LEFT_MOUSE);
+        return 0;
+
+    case WM_LBUTTONUP:
+        MouseHandler::ButtonUp(MOUSE_BUTTON::LEFT_MOUSE);
+        return 0;
+
+    case WM_RBUTTONDOWN:
+        MouseHandler::ButtonDown(MOUSE_BUTTON::RIGHT_MOUSE);
+        return 0;
+
+    case WM_RBUTTONUP:
+        MouseHandler::ButtonUp(MOUSE_BUTTON::RIGHT_MOUSE);
+        return 0;
+
+    case WM_MBUTTONDOWN:
+        MouseHandler::ButtonDown(MOUSE_BUTTON::MIDDLE_MOUSE);
+        return 0;
+
+    case WM_MBUTTONUP:
+        MouseHandler::ButtonUp(MOUSE_BUTTON::MIDDLE_MOUSE);
+        return 0;
+
+    // mMouse movement
+    case WM_MOUSEMOVE:
+    {
+        int x = GET_X_LPARAM(lParam);
+        int y = GET_Y_LPARAM(lParam);
+        MouseHandler::SetPosition(x, y);
+        return 0;
+    }
+
+    // Window messages
     case WM_CLOSE:
         PostQuitMessage(0);
         return 0;

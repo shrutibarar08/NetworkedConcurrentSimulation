@@ -1,6 +1,5 @@
 #pragma once
 
-#define NOMINMAX
 #include <windows.h>
 #include <DirectXMath.h>
 #include <vector>
@@ -20,6 +19,8 @@ public:
     void SetOrthogonalBounds(float left, float right, float bottom, float top, float nearZ, float farZ);
     void GetLens(float& fovDegrees, float& aspect, float& nearZ, float& farZ);
     void GetOrientation(float& yaw, float& pitch);
+
+    void Log() const;
 
 	int GetID();
     std::string GetName();
