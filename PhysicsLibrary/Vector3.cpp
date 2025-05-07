@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Vector3.h"
+#include "Quaternion.h"
 
 Vector3::Vector3() : x(0), y(0), z(0) {}
 
