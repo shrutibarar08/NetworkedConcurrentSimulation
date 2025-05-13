@@ -8,7 +8,6 @@
 Render3DQueue::Render3DQueue(CameraController* controller)
 {
 	m_CameraController = controller;
-	m_CameraController->Log();
 }
 
 bool Render3DQueue::AddModel(IModel* model)

@@ -17,7 +17,7 @@ public:
 
 	bool Build(SweetLoader& sweetLoader) override;
 	bool Shutdown() override;
-	static int ProcessMethod();
+	int ProcessMethod() const;
 
 	float GetAspectRatio() const;
 	bool IsFullScreen();
@@ -50,3 +50,4 @@ private:
 	WINDOWPLACEMENT m_WindowPlacement = { sizeof(m_WindowPlacement) };
 	SRWLOCK m_Lock;
 };
+

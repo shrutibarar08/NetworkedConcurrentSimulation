@@ -5,7 +5,6 @@
 #include "FileManager/FileLoader/SweetLoader.h"
 
 
-
 class ISystem
 {
 public:

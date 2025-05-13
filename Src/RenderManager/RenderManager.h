@@ -34,6 +34,17 @@ public:
     void SetOMRenderAndDepth();
     void ResizeSwapChain();
 
+    ID3D11DeviceContext* GetContext() const;
+    ID3D11Device* GetDevice() const;
+
+    //~ Infos
+    DXGI_ADAPTER_DESC GetAdapterInformation();
+    int GetRefreshRate() const;
+    int GetSelectedMSAA();
+    std::vector<UINT> GetAllAvailableMSAA() const;
+
+    CameraController* GetActiveCamera();
+
 private:
     bool BuildParameter(SweetLoader& sweetLoader);
     bool QueryAdapter();
@@ -50,6 +61,9 @@ private:
     bool BuildViewport() const;
 
 private:
+
+    SRWLOCK m_Lock;
+
     CameraManager m_CameraManager{};
     int m_2dCamId;
     int m_3dCamId;
@@ -62,6 +76,7 @@ private:
     int m_SelectedAdapterIndex{ -1 };
     UINT m_RefreshRateNumerator{ 60 };   // Default HZ
     UINT m_RefreshRateDenominator{ 1 };
+    DXGI_ADAPTER_DESC m_CurrentAdapterDesc{};
 
     std::vector<UINT> m_SupportedMSAA;
 	UINT m_CurrentMSAA{ 8 };
@@ -80,4 +95,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
 
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_RasterizerState;
+
+    //~ Cache for ignoring resizing calls if same width and height
+    UINT m_PrevHeight{ 0 };
+    UINT m_PrevWidth{ 0 };
 };

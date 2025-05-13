@@ -21,13 +21,8 @@ public:
     static bool IsAltPressedOnLastKey();
 
 private:
-    inline static SRWLOCK m_Lock = SRWLOCK_INIT;
     inline static bool m_DebugInfo = false;
-
-    // Tracks whether a key is currently pressed
-    static bool m_Keys[256];
-
-    // Tracks last lParam received for each key
-    inline static LPARAM m_LastLParam = 0;
+	static bool m_Keys[256];
+	inline static LPARAM m_LastLParam = 0;
     inline static bool m_LPramActive{ false };
 };

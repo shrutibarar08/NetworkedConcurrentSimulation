@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "imgui_impl_dx11.h"
 #include "ExceptionManager/RenderException.h"
 #include "Utils/Logger.h"
 
@@ -18,15 +19,22 @@ RenderManager::RenderManager(WindowsSystem* windowSystem)
         nullptr
     );
 
+    InitializeSRWLock(&m_Lock);
+
     if (m_DeviceMutex == INVALID_HANDLE_VALUE)
     {
         throw std::runtime_error("failed to build device mutex!");
     }
+
+    m_2dCamId = m_CameraManager.AddCamera("2DCam");
+    m_3dCamId = m_CameraManager.AddCamera("3DCam");
+
+    m_CameraManager.SetActiveCamera(m_3dCamId);
+    m_CameraManager.GetActiveCamera()->SetAspectRatio(windowSystem->GetAspectRatio());
 }
 
 bool RenderManager::Run()
 {
-    m_CameraManager.UpdateAllCameras();
     ClearScene();
     SceneBegin();
     SceneEnd();
@@ -55,6 +63,7 @@ bool RenderManager::SceneBegin()
     m_Render3DQueue->UpdatePixelConstantBuffer(m_DeviceContext.Get());
     m_Render3DQueue->UpdateVertexConstantBuffer(m_DeviceContext.Get());
     m_Render3DQueue->RenderAll(m_DeviceContext.Get());
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     return true;
 }
 
@@ -72,19 +81,11 @@ bool RenderManager::SceneEnd()
 
 bool RenderManager::Build(SweetLoader& sweetLoader)
 {
-    // TODO: Test only;
-    m_2dCamId = m_CameraManager.AddCamera("2DCam");
-    m_3dCamId = m_CameraManager.AddCamera("3DCam");
-
-    m_CameraManager.SetActiveCamera(m_3dCamId);
-
     auto* cam = m_CameraManager.GetActiveCamera();
-    cam->SetPosition(0.0f, 1.0f, -10.0f);
-    cam->SetOrientation(0.0f, 0.0f);
-    cam->SetLens(60.0f, m_WindowSystem->GetAspectRatio(),
-        0.1f, 1000.0f);
-    m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
-    // TODO: Test End;
+    cam->AddTranslationY(1.0f);
+    cam->AddTranslationZ(-10.0f);
+
+	m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
 
     LOG_INFO("RenderManager::Build() started.");
 
@@ -182,16 +183,23 @@ void RenderManager::SetOMRenderAndDepth()
 
 void RenderManager::ResizeSwapChain()
 {
+    RECT rc;
+    GetClientRect(m_WindowSystem->GetWindowHandle(), &rc);
+    UINT width = rc.right - rc.left;
+    UINT height = rc.bottom - rc.top;
+
+    if (m_PrevHeight != height && m_PrevWidth != width)
+    {
+        m_PrevHeight = height;
+        m_PrevWidth = width;
+    }
+    else return;
+
     m_RenderTargetView.Reset();
     m_DepthBuffer.Reset();
     m_RenderBuffer.Reset();
     m_DepthStencilView.Reset();
     m_DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-    RECT rc;
-    GetClientRect(m_WindowSystem->GetWindowHandle(), &rc);
-    UINT width = rc.right - rc.left;
-    UINT height = rc.bottom - rc.top; 
 
     LOG_INFO("Resized Swap Chain Width: " + std::to_string(width));
     LOG_INFO("Resized Swap Chain Height: " + std::to_string(height));
@@ -209,6 +217,50 @@ void RenderManager::ResizeSwapChain()
     BuildDepthStencilView();
     BuildViewport();
     SetOMRenderAndDepth();
+    m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
+}
+
+ID3D11DeviceContext* RenderManager::GetContext() const
+{
+    return m_DeviceContext.Get();
+}
+
+ID3D11Device* RenderManager::GetDevice() const
+{
+    return m_Device.Get();
+}
+
+DXGI_ADAPTER_DESC RenderManager::GetAdapterInformation()
+{
+    AcquireSRWLockShared(&m_Lock);
+    DXGI_ADAPTER_DESC desc = m_CurrentAdapterDesc;
+    ReleaseSRWLockShared(&m_Lock);
+    return desc;
+}
+
+int RenderManager::GetRefreshRate() const
+{
+    return m_RefreshRateDenominator != 0
+        ? m_RefreshRateNumerator / m_RefreshRateDenominator
+        : 60;
+}
+
+int RenderManager::GetSelectedMSAA()
+{
+    AcquireSRWLockShared(&m_Lock);
+    int val = m_CurrentMSAA;
+    ReleaseSRWLockShared(&m_Lock);
+    return m_CurrentMSAA;
+}
+
+std::vector<UINT> RenderManager::GetAllAvailableMSAA() const
+{
+    return m_SupportedMSAA;
+}
+
+CameraController* RenderManager::GetActiveCamera()
+{
+    return m_CameraManager.GetActiveCamera();
 }
 
 bool RenderManager::BuildParameter(SweetLoader& sweetLoader)
@@ -265,16 +317,15 @@ bool RenderManager::QueryAdapter()
         THROW_EXCEPTION();
     }
 
-    DXGI_ADAPTER_DESC selectedDesc;
-    m_Adapters[m_SelectedAdapterIndex]->GetDesc(&selectedDesc);
+    m_Adapters[m_SelectedAdapterIndex]->GetDesc(&m_CurrentAdapterDesc);
 
     std::ostringstream selectedInfo;
     selectedInfo << "Selected Adapter [" << m_SelectedAdapterIndex << "]: ";
 
-    std::wstring descWStr = selectedDesc.Description;
+    std::wstring descWStr = m_CurrentAdapterDesc.Description;
     selectedInfo << std::string(descWStr.begin(), descWStr.end()); // Convert to UTF-8-ish (rough)
 
-    selectedInfo << " | VRAM: " << (selectedDesc.DedicatedVideoMemory / (1024 * 1024)) << " MB";
+    selectedInfo << " | VRAM: " << (m_CurrentAdapterDesc.DedicatedVideoMemory / (1024 * 1024)) << " MB";
 
     LOG_SUCCESS(selectedInfo.str());
 
