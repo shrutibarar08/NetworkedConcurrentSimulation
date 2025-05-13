@@ -118,3 +118,20 @@ void MouseHandler::ResetDelta()
         LOG_INFO("Mouse delta reset to 0.");
     }
 }
+
+void MouseHandler::AddRawDelta(int dx, int dy)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_RawDeltaX += dx;
+    m_RawDeltaY += dy;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void MouseHandler::GetRawDelta(int& dx, int& dy)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    dx = m_RawDeltaX;
+    dy = m_RawDeltaY;
+    m_RawDeltaX = m_RawDeltaY = 0;
+    ReleaseSRWLockExclusive(&m_Lock);
+}

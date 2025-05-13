@@ -23,6 +23,9 @@ public:
     static void GetDelta(int& dx, int& dy);
     static void ResetDelta();
 
+    static void AddRawDelta(int dx, int dy);
+    static void GetRawDelta(int& dx, int& dy);
+
 private:
     inline static SRWLOCK m_Lock = SRWLOCK_INIT;
 
@@ -32,5 +35,9 @@ private:
     static int m_DeltaX, m_DeltaY;
     inline static int m_LastX = 0, m_LastY = 0;
 
-    inline  static bool m_DebugInfo = false;
+    inline static bool m_DebugInfo{ false };
+    inline static bool m_IsCursorHidden{ false };
+
+    inline static int m_RawDeltaX{ 0 };
+    inline static int m_RawDeltaY{ 0 };
 };

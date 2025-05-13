@@ -1,267 +1,250 @@
 #include "CameraController.h"
+#include "Utils/Logger.h"
 
 #include <cmath>
 #include <format>
+#include <algorithm>
 
-#include "Utils/Logger.h"
+using namespace DirectX;
 
 CameraController::CameraController(int id, const std::string& name)
-    : m_id(id), m_name(name),
-    m_position(0.0f, 0.0f, 0.0f),
-    m_yaw(0.0f), m_pitch(0.0f),
-    m_fov(0.0f), m_aspect(0.0f), m_nearZ(0.0f), m_farZ(0.0f),
-    m_viewDirty(true), m_projDirty(true), m_top(0.0), m_left(0.0), m_right(0.0), m_bottom(0.0)
+    : m_id(id), m_name(name)
 {
-    // Initialize default lens (45-degree FOV, 4:3 aspect, near=0.1, far=1000)
-    m_fov = DirectX::XMConvertToRadians(45.0f);
-    m_aspect = 1280.0f / 720.0f;
-    m_nearZ = 0.1f;
-    m_farZ = 1000.0f;
-    // Initialize view/projection matrices to identity
-    XMStoreFloat4x4(&m_viewMatrix, DirectX::XMMatrixIdentity());
-    XMStoreFloat4x4(&m_projMatrix, DirectX::XMMatrixIdentity());
-    // Initialize the SRWLOCK for thread safety
-    InitializeSRWLock(&m_lock);
+    mCameraEyePosition = XMVectorSet(0.0f, 1.0f, -10.0f, 0.0f);
+    mCameraLookingAt = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    mCameraUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    mCameraRotationQuaternion = XMQuaternionIdentity();
 }
 
-int CameraController::GetID()
+int CameraController::GetID() const
 {
-    AcquireSRWLockShared(&m_lock);
-    int id = m_id;
-    ReleaseSRWLockShared(&m_lock);
-    return id;
+    return m_id;
 }
 
-std::string CameraController::GetName()
+std::string CameraController::GetName() const
 {
-    AcquireSRWLockShared(&m_lock);
-    std::string name = m_name;
-    ReleaseSRWLockShared(&m_lock);
-    return name;
+    return m_name;
 }
 
-void CameraController::SetPosition(float x, float y, float z)
+void CameraController::SetTranslationX(float x)
 {
-    AcquireSRWLockExclusive(&m_lock);
-    m_position = DirectX::XMFLOAT3(x, y, z);
-    m_viewDirty = true;
-    ReleaseSRWLockExclusive(&m_lock);
+    mCameraEyePosition = XMVectorSetX(mCameraEyePosition, x);
 }
 
-DirectX::XMFLOAT3 CameraController::GetPosition()
+void CameraController::AddTranslationX(float x)
 {
-    AcquireSRWLockShared(&m_lock);
-    DirectX::XMFLOAT3 pos = m_position;
-    ReleaseSRWLockShared(&m_lock);
-    return pos;
+    mCameraEyePosition = DirectX::XMVectorSetX(mCameraEyePosition, x + GetTranslationX());
 }
 
-void CameraController::SetOrientation(float yaw, float pitch)
+float CameraController::GetTranslationX() const
 {
-    AcquireSRWLockExclusive(&m_lock);
-    m_yaw = yaw;
-    m_pitch = pitch;
-    m_viewDirty = true;
-    ReleaseSRWLockExclusive(&m_lock);
+    return DirectX::XMVectorGetX(mCameraEyePosition);
 }
 
-void CameraController::GetOrientation(float& yaw, float& pitch)
+void CameraController::SetTranslationY(float y)
 {
-    AcquireSRWLockShared(&m_lock);
-    yaw = m_yaw;
-    pitch = m_pitch;
-    ReleaseSRWLockShared(&m_lock);
+    mCameraEyePosition = DirectX::XMVectorSetY(mCameraEyePosition, y);
 }
 
-void CameraController::Log() const
+void CameraController::AddTranslationY(float y)
 {
-    LOG_INFO("Logging CameraController state:");
-
-    LOG_INFO(std::format("ID: {}", m_id));
-    LOG_INFO(std::format("Name: {}", m_name));
-    LOG_INFO(std::format("Position: x = {}, y = {}, z = {}", m_position.x, m_position.y, m_position.z));
-    LOG_INFO(std::format("Yaw: {} radians, Pitch: {} radians", m_yaw, m_pitch));
-    LOG_INFO(std::format("FOV: {} rad, Aspect: {}, NearZ: {}, FarZ: {}", m_fov, m_aspect, m_nearZ, m_farZ));
-    LOG_INFO(std::format("Ortho Bounds: left = {}, right = {}, bottom = {}, top = {}", m_left, m_right, m_bottom, m_top));
-    LOG_INFO(std::format("Dirty Flags: ViewDirty = {}, ProjDirty = {}", m_viewDirty, m_projDirty));
-
-    LOG_INFO("View Matrix:");
-    const float* viewPtr = reinterpret_cast<const float*>(&m_viewMatrix);
-    for (int i = 0; i < 4; ++i)
-    {
-        std::string row = std::format("  [{:.4f}, {:.4f}, {:.4f}, {:.4f}]",
-            viewPtr[i * 4 + 0], viewPtr[i * 4 + 1],
-            viewPtr[i * 4 + 2], viewPtr[i * 4 + 3]);
-        LOG_INFO(row);
-    }
-
-    LOG_INFO("Projection Matrix:");
-    const float* projPtr = reinterpret_cast<const float*>(&m_projMatrix);
-    for (int i = 0; i < 4; ++i)
-    {
-        std::string row = std::format("  [{:.4f}, {:.4f}, {:.4f}, {:.4f}]",
-            projPtr[i * 4 + 0], projPtr[i * 4 + 1],
-            projPtr[i * 4 + 2], projPtr[i * 4 + 3]);
-        LOG_INFO(row);
-    }
+    mCameraEyePosition = DirectX::XMVectorSetY(mCameraEyePosition, y + GetTranslationY());
 }
 
-void CameraController::SetLens(float fovDegrees, float aspect, float nearZ, float farZ)
+float CameraController::GetTranslationY() const
 {
-    AcquireSRWLockExclusive(&m_lock);
-    m_fov = DirectX::XMConvertToRadians(fovDegrees);
-    m_aspect = aspect;
-    m_nearZ = nearZ;
-    m_farZ = farZ;
-    m_projDirty = true;
-    ReleaseSRWLockExclusive(&m_lock);
+    return DirectX::XMVectorGetY(mCameraEyePosition);
 }
 
-void CameraController::SetOrthogonalBounds(float left, float right, float bottom, float top, float nearZ, float farZ)
+void CameraController::SetTranslationZ(float z)
 {
-    AcquireSRWLockExclusive(&m_lock);
-    m_left = left;
-    m_right = right;
-    m_bottom = bottom;
-    m_top = top;
-    m_nearZ = nearZ;
-    m_farZ = farZ;
-    m_projDirty = true;
-    ReleaseSRWLockExclusive(&m_lock);
+    mCameraEyePosition = DirectX::XMVectorSetZ(mCameraEyePosition, z);
 }
 
-void CameraController::GetLens(float& fovDegrees, float& aspect, float& nearZ, float& farZ)
+void CameraController::AddTranslationZ(float z)
 {
-    AcquireSRWLockShared(&m_lock);
-    fovDegrees = DirectX::XMConvertToDegrees(m_fov);
-    aspect = m_aspect;
-    nearZ = m_nearZ;
-    farZ = m_farZ;
-    ReleaseSRWLockShared(&m_lock);
+    mCameraEyePosition = DirectX::XMVectorSetZ(mCameraEyePosition, z + GetTranslationZ());
 }
 
-DirectX::XMMATRIX CameraController::GetViewMatrix()
+float CameraController::GetTranslationZ() const
 {
-    // First check without exclusive lock for performance
-    AcquireSRWLockShared(&m_lock);
-    if (!m_viewDirty) {
-        // View matrix is up-to-date
-        DirectX::XMMATRIX view = XMLoadFloat4x4(&m_viewMatrix);
-        ReleaseSRWLockShared(&m_lock);
-        return view;
-    }
-    ReleaseSRWLockShared(&m_lock);
-
-    // View is dirty: recompute under exclusive lock
-    AcquireSRWLockExclusive(&m_lock);
-    if (m_viewDirty) {
-        // Recompute the view matrix
-        DirectX::XMVECTOR posVec = XMLoadFloat3(&m_position);
-        // Calculate forward vector from yaw & pitch
-        float cosPitch = cosf(m_pitch);
-        float sinPitch = sinf(m_pitch);
-        float cosYaw = cosf(m_yaw);
-        float sinYaw = sinf(m_yaw);
-        DirectX::XMVECTOR forward = DirectX::XMVectorSet(
-            sinYaw * cosPitch,
-            sinPitch,
-            cosPitch * cosYaw,
-            0.0f
-        );
-        DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-        DirectX::XMMATRIX viewMat = DirectX::XMMatrixLookToLH(posVec, forward, up);
-        XMStoreFloat4x4(&m_viewMatrix, viewMat);
-        m_viewDirty = false;
-    }
-    // Load the view matrix to return it
-    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_viewMatrix);
-    ReleaseSRWLockExclusive(&m_lock);
-    return result;
+    return DirectX::XMVectorGetZ(mCameraEyePosition);
 }
 
-DirectX::XMMATRIX CameraController::GetProjectionMatrix()
+void CameraController::AddTranslation(int axis, float value)
 {
-    AcquireSRWLockShared(&m_lock);
-    if (!m_projDirty) {
-        // Projection matrix is up-to-date
-        DirectX::XMMATRIX proj = XMLoadFloat4x4(&m_projMatrix);
-        ReleaseSRWLockShared(&m_lock);
-        return proj;
-    }
-    ReleaseSRWLockShared(&m_lock);
-
-    AcquireSRWLockExclusive(&m_lock);
-    if (m_projDirty) {
-        // Recompute the projection matrix
-        DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspect, m_nearZ, m_farZ);
-        XMStoreFloat4x4(&m_projMatrix, projMat);
-        m_projDirty = false;
-    }
-    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
-    ReleaseSRWLockExclusive(&m_lock);
-    return result;
+    if (axis == 0) AddTranslationX(value);
+    else if (axis == 1) AddTranslationY(value);
+    else if (axis == 2) AddTranslationZ(value);
 }
 
-DirectX::XMMATRIX CameraController::GetOrthogonalMatrix()
+void CameraController::Rotate(int axis, float value)
 {
-    AcquireSRWLockShared(&m_lock);
-    if (!m_projDirty) {
-        // Projection matrix is up-to-date
-        DirectX::XMMATRIX ortho = XMLoadFloat4x4(&m_projMatrix);
-        ReleaseSRWLockShared(&m_lock);
-        return ortho;
-    }
-    ReleaseSRWLockShared(&m_lock);
-
-    AcquireSRWLockExclusive(&m_lock);
-    if (m_projDirty) {
-        // Recompute the orthographic projection matrix
-        DirectX::XMMATRIX orthoMat = DirectX::XMMatrixOrthographicOffCenterLH(m_left,
-                                                                              m_right,
-                                                                              m_bottom,
-                                                                              m_top,
-                                                                              m_nearZ, m_farZ);
-        XMStoreFloat4x4(&m_projMatrix, orthoMat);
-        m_projDirty = false;
-    }
-    DirectX::XMMATRIX result = XMLoadFloat4x4(&m_projMatrix);
-    ReleaseSRWLockExclusive(&m_lock);
-    return result;
+    if (axis == 0) RotatePitch(value);
+    else if (axis == 1) RotateYaw(value);
+    else if (axis == 2) RotateRoll(value);
 }
+
+DirectX::XMFLOAT3 CameraController::GetRotationAngles() const
+{
+    XMVECTOR forward = XMVector3Normalize(XMVectorSubtract(mCameraLookingAt, mCameraEyePosition));
+
+    // Extract Yaw (rotation around Y-axis)
+    float yaw = atan2(XMVectorGetX(forward), XMVectorGetZ(forward));
+
+    // Extract Pitch (rotation around X-axis)
+    float pitch = asin(-XMVectorGetY(forward)); // Invert Y to align with pitch movement
+
+    XMVECTOR right = XMVector3Normalize(XMVector3Cross(mCameraUp, forward));
+    float roll = atan2(
+        XMVectorGetY(right),
+        XMVectorGetX(right)
+    );
+
+    return XMFLOAT3(pitch, yaw, roll);
+}
+
+DirectX::XMMATRIX CameraController::GetProjectionMatrix() const
+{
+    if (mAspectRatio <= 0.0f) return XMMatrixIdentity();
+
+    float nearZ = 0.1f;
+    float farZ = (mFarZ > nearZ) ? mFarZ : nearZ + 10.0f;
+
+    return XMMatrixPerspectiveFovLH(mFOV, mAspectRatio, nearZ, farZ);
+}
+
+DirectX::XMMATRIX CameraController::GetOrthogonalMatrix() const
+{
+    if (mAspectRatio <= 0.0f) return XMMatrixIdentity();
+
+    float nearZ = 0.1f;
+    float farZ = (mFarZ > nearZ) ? mFarZ : nearZ + 10.0f;
+    float orthoHeight = 10.0f;
+
+    return XMMatrixOrthographicLH(mAspectRatio * orthoHeight, orthoHeight, nearZ, farZ);
+}
+
+void CameraController::SetMaxVisibleDistance(float farZ)
+{
+    mFarZ = min(1.f, farZ);
+}
+
+float CameraController::GetMaxVisibleDistance() const
+{
+    return mFarZ;
+}
+
+void CameraController::SetAspectRatio(float ratio)
+{
+    mAspectRatio = ratio;
+}
+
+float CameraController::GetAspectRatio() const
+{
+    return mAspectRatio;
+}
+
+void CameraController::MoveForward(float delta)
+{
+    XMVECTOR forward = GetForwardVector();
+    mCameraEyePosition = XMVectorAdd(mCameraEyePosition, XMVectorScale(forward, delta * mSpeed));
+}
+
+void CameraController::MoveRight(float delta)
+{
+    XMVECTOR right = GetRightVector();
+    mCameraEyePosition = XMVectorAdd(mCameraEyePosition, XMVectorScale(right, delta * mSpeed));
+}
+
+void CameraController::MoveUp(float delta)
+{
+    XMVECTOR up = GetUpVector();
+    mCameraEyePosition = XMVectorAdd(mCameraEyePosition, XMVectorScale(up, delta * mSpeed));
+}
+
+void CameraController::RotateYaw(float angle)
+{
+    XMVECTOR rotation = XMQuaternionRotationAxis(mCameraUp, angle);
+    mCameraRotationQuaternion = XMQuaternionMultiply(mCameraRotationQuaternion, rotation);
+}
+
+void CameraController::RotatePitch(float angle)
+{
+    XMVECTOR rotation = XMQuaternionRotationAxis(GetRightVector(), angle);
+    mCameraRotationQuaternion = XMQuaternionMultiply(mCameraRotationQuaternion, rotation);
+}
+
+void CameraController::RotateRoll(float angle)
+{
+    XMVECTOR forward = GetForwardVector();
+    XMVECTOR rotation = XMQuaternionRotationAxis(forward, angle);
+
+    mCameraRotationQuaternion = XMQuaternionMultiply(rotation, mCameraRotationQuaternion);
+}
+
+DirectX::XMMATRIX CameraController::GetViewMatrix() const
+{
+    DirectX::XMVECTOR forward = GetForwardVector();
+    DirectX::XMVECTOR lookAtPosition = DirectX::XMVectorAdd(mCameraEyePosition, forward);
+
+    return DirectX::XMMatrixLookAtLH(mCameraEyePosition, lookAtPosition, mCameraUp);
+}
+
+void CameraController::SetFieldOfView(float fov)
+{
+    mFOV = fov;
+}
+
+float CameraController::GetFieldOfView() const
+{
+    return mFOV;
+}
+
+void CameraController::SetMovementSpeed(float speed)
+{
+    mSpeed = speed;
+}
+
+float CameraController::GetMovementSpeed() const
+{
+    return mSpeed;
+}
+
+DirectX::XMVECTOR CameraController::GetForwardVector() const
+{
+    return XMVector3Rotate(XMVectorSet(0, 0, 1, 0), mCameraRotationQuaternion);
+}
+
+DirectX::XMVECTOR CameraController::GetRightVector() const
+{
+    return XMVector3Rotate(XMVectorSet(1, 0, 0, 0), mCameraRotationQuaternion);
+}
+
+DirectX::XMVECTOR CameraController::GetUpVector() const
+{
+    return XMVector3Rotate(XMVectorSet(0, 1, 0, 0), mCameraRotationQuaternion);
+}
+
 
 CameraManager::CameraManager()
     : m_activeCamera(nullptr), m_nextID(1)
-{
-    InitializeSRWLock(&m_lock);
-    // Create a mutex for unique ID generation
-    m_idMutex = CreateMutex(NULL, FALSE, NULL);
-    // In production code, check for CreateMutex failure here
-}
-
-CameraManager::~CameraManager()
-{
-    if (m_idMutex) {
-        CloseHandle(m_idMutex);
-    }
-}
+{}
 
 int CameraManager::AddCamera(const std::string& name)
 {
     // Generate unique ID with mutex protection
-    WaitForSingleObject(m_idMutex, INFINITE);
     int id = m_nextID++;
-    ReleaseMutex(m_idMutex);
 
     // Create and add the new CameraController
     std::unique_ptr<CameraController> cam = std::make_unique<CameraController>(id, name);
 
-    AcquireSRWLockExclusive(&m_lock);
     m_cameras.push_back(std::move(cam));
     // If no active camera, set this as active
-    if (!m_activeCamera) {
+    if (!m_activeCamera) 
+    {
         m_activeCamera = m_cameras.back().get();
     }
-    ReleaseSRWLockExclusive(&m_lock);
 
     LOG_INFO("Added Camera Component: " + name);
 
@@ -270,75 +253,58 @@ int CameraManager::AddCamera(const std::string& name)
 
 bool CameraManager::RemoveCamera(int id)
 {
-    AcquireSRWLockExclusive(&m_lock);
-    for (auto it = m_cameras.begin(); it != m_cameras.end(); ++it) {
+    for (auto it = m_cameras.begin(); it != m_cameras.end(); ++it) 
+    {
         if ((*it)->GetID() == id)
         {
             if (m_activeCamera == it->get()) m_activeCamera = nullptr;
             m_cameras.erase(it);
-            ReleaseSRWLockExclusive(&m_lock);
             return true;
         }
     }
-    ReleaseSRWLockExclusive(&m_lock);
     return false; // Not found
 }
 
-CameraController* CameraManager::GetCamera(int id)
+CameraController* CameraManager::GetCamera(int id) const
 {
-    AcquireSRWLockShared(&m_lock);
-    for (const auto& camPtr : m_cameras) {
-        if (camPtr->GetID() == id) {
+    for (const auto& camPtr : m_cameras)
+    {
+        if (camPtr->GetID() == id) 
+        {
             CameraController* cam = camPtr.get();
-            ReleaseSRWLockShared(&m_lock);
             return cam;
         }
     }
-    ReleaseSRWLockShared(&m_lock);
     return nullptr;
 }
 
-CameraController* CameraManager::GetCameraByName(const std::string& name)
+CameraController* CameraManager::GetCameraByName(const std::string& name) const
 {
-    AcquireSRWLockShared(&m_lock);
-    for (const auto& camPtr : m_cameras) {
-        if (camPtr->GetName() == name) {
+    for (const auto& camPtr : m_cameras)
+    {
+        if (camPtr->GetName() == name) 
+        {
             CameraController* cam = camPtr.get();
-            ReleaseSRWLockShared(&m_lock);
             return cam;
         }
     }
-    ReleaseSRWLockShared(&m_lock);
+
     return nullptr;
 }
 
 void CameraManager::SetActiveCamera(int id)
 {
-    AcquireSRWLockExclusive(&m_lock);
-    for (const auto& camPtr : m_cameras) {
-        if (camPtr->GetID() == id) {
+    for (const auto& camPtr : m_cameras)
+    {
+        if (camPtr->GetID() == id)
+        {
             m_activeCamera = camPtr.get();
             break;
         }
     }
-    ReleaseSRWLockExclusive(&m_lock);
 }
 
-CameraController* CameraManager::GetActiveCamera()
+CameraController* CameraManager::GetActiveCamera() const
 {
-    AcquireSRWLockShared(&m_lock);
-    CameraController* cam = m_activeCamera;
-    ReleaseSRWLockShared(&m_lock);
-    return cam;
-}
-
-void CameraManager::UpdateAllCameras()
-{
-    AcquireSRWLockShared(&m_lock);
-    for (const auto& camPtr : m_cameras) {
-        // Trigger view/projection updates if needed
-        camPtr->GetViewMatrix();
-        camPtr->GetProjectionMatrix();
-    }
-    ReleaseSRWLockShared(&m_lock);
+    return m_activeCamera;
 }

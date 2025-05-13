@@ -6,44 +6,72 @@
 #include <string>
 #include <memory>
 
-
 class CameraController
 {
 public:
     // Constructor initializes camera with given ID and name
     CameraController(int id, const std::string& name);
 
-	void SetPosition(float x, float y, float z);
-	void SetOrientation(float yaw, float pitch);
-	void SetLens(float fovDegrees, float aspect, float nearZ, float farZ);
-    void SetOrthogonalBounds(float left, float right, float bottom, float top, float nearZ, float farZ);
-    void GetLens(float& fovDegrees, float& aspect, float& nearZ, float& farZ);
-    void GetOrientation(float& yaw, float& pitch);
+	int GetID() const;
+	std::string GetName() const;
 
-    void Log() const;
+	void  SetTranslationX(float x);
+	void  AddTranslationX(float x);
+	float GetTranslationX() const;
 
-	int GetID();
-    std::string GetName();
+	void  SetTranslationY(float y);
+	void  AddTranslationY(float y);
+	float GetTranslationY() const;
 
-    DirectX::XMFLOAT3 GetPosition();
-    DirectX::XMMATRIX GetViewMatrix();
-    DirectX::XMMATRIX GetProjectionMatrix();
-    DirectX::XMMATRIX GetOrthogonalMatrix();
+	void  SetTranslationZ(float z);
+	void  AddTranslationZ(float z);
+	float GetTranslationZ() const;
+
+	void AddTranslation(int axis, float value);
+	void Rotate(int axis, float value);
+	DirectX::XMFLOAT3 GetRotationAngles() const;
+	DirectX::XMMATRIX GetProjectionMatrix() const;
+	DirectX::XMMATRIX GetOrthogonalMatrix() const;
+
+	void  SetMaxVisibleDistance(float farZ);
+	float GetMaxVisibleDistance() const;
+
+	void  SetAspectRatio(float ratio);
+	float GetAspectRatio() const;
+
+	void MoveForward(float delta);
+	void MoveRight(float delta);
+	void MoveUp(float delta);
+
+	void RotateYaw(float angle);
+	void RotatePitch(float angle);
+	void RotateRoll(float angle);
+
+	DirectX::XMMATRIX GetViewMatrix() const;
+
+	void SetFieldOfView(float fov);
+	float GetFieldOfView() const;
+
+	void SetMovementSpeed(float speed);
+	float GetMovementSpeed() const;
+
+	DirectX::XMVECTOR GetForwardVector() const;
+	DirectX::XMVECTOR GetRightVector() const;
+	DirectX::XMVECTOR GetUpVector() const;
 
 private:
-    // CameraController state
     int m_id;
     std::string m_name;
-    DirectX::XMFLOAT3 m_position;
-    float m_yaw, m_pitch;         // Orientation angles in radians
-    DirectX::XMFLOAT4X4 m_viewMatrix;      // Cached view matrix
-    bool m_viewDirty;             // Flag to recompute view matrix
-    float m_fov, m_aspect, m_nearZ, m_farZ;
-    DirectX::XMFLOAT4X4 m_projMatrix;      // Cached projection matrix
-    bool m_projDirty;             // Flag to recompute projection matrix
 
-    SRWLOCK m_lock;              // Protects camera data for thread safety
-    float m_left, m_right, m_bottom, m_top;
+    DirectX::XMVECTOR mCameraEyePosition{};
+    DirectX::XMVECTOR mCameraLookingAt{};
+    DirectX::XMVECTOR mCameraUp{};
+    DirectX::XMVECTOR mCameraRotationQuaternion;
+
+    float mFarZ{ 500.f };
+    float mAspectRatio{ 1270.f / 720.f };
+    float mSpeed{ 5.f };
+    float mFOV= DirectX::XMConvertToRadians(45.f);
 };
 
 //-----------------------------------------------------------------------------
@@ -54,22 +82,18 @@ class CameraManager
 {
 public:
     CameraManager();
-    ~CameraManager();
+    ~CameraManager() = default;
 
     int AddCamera(const std::string& name);
 	bool RemoveCamera(int id);
     void SetActiveCamera(int id);
 
-    CameraController* GetCamera(int id);
-    CameraController* GetCameraByName(const std::string& name);
-    CameraController* GetActiveCamera();
-    // Perform lazy updates on all cameras' matrices (call from main thread)
-    void UpdateAllCameras();
+    CameraController* GetCamera(int id) const;
+    CameraController* GetCameraByName(const std::string& name) const;
+    CameraController* GetActiveCamera() const;
 
 private:
     std::vector<std::unique_ptr<CameraController>> m_cameras;
     CameraController* m_activeCamera;   // Currently active camera
     int m_nextID;             // For generating unique camera IDs
-    HANDLE m_idMutex;         // Win32 mutex for protecting m_nextID
-    SRWLOCK m_lock;           // Protects m_cameras and m_activeCamera
 };

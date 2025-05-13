@@ -6,6 +6,8 @@
 #include "Components/MouseHandler.h"
 
 #include <windowsx.h>
+#include "imgui.h"
+#include "EventSystem/EventQueue.h"
 
 WindowsSystem::WindowsSystem()
 {
@@ -40,7 +42,7 @@ bool WindowsSystem::Shutdown()
     return ISystem::Shutdown();
 }
 
-int WindowsSystem::ProcessMethod()
+int WindowsSystem::ProcessMethod() const
 {
     MSG msg{};
     bool quit = false;
@@ -54,6 +56,7 @@ int WindowsSystem::ProcessMethod()
             quit = true;
         }
     }
+
     return quit;
 }
 
@@ -197,6 +200,15 @@ bool WindowsSystem::InitWindowClass()
     result = m_HandleWindow != nullptr;
     THROW_WINDOWS_EXCEPTION_IF_FAILED(result);
 
+    //~ Configure for raw mouse input
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02; // Mouse
+    rid.dwFlags = RIDEV_INPUTSINK; // or RIDEV_NOLEGACY to disable WM_MOUSEMOVE
+    rid.hwndTarget = m_HandleWindow;
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
+    SetCursor(nullptr);
+
     // Show and activate the window
     ShowWindow(m_HandleWindow, SW_SHOW);
     SetForegroundWindow(m_HandleWindow);
@@ -205,7 +217,6 @@ bool WindowsSystem::InitWindowClass()
 
     return true;
 }
-
 
 void WindowsSystem::ApplyFullScreen()
 {
@@ -265,8 +276,13 @@ LRESULT WindowsSystem::HandleMsgThunk(HWND hWnd, UINT message, WPARAM wParam, LP
     return pWnd->HandleMsg(hWnd, message, wParam, lParam);
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT WindowsSystem::HandleMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     // mKeyboard input
@@ -313,7 +329,35 @@ LRESULT WindowsSystem::HandleMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
         MouseHandler::SetPosition(x, y);
         return 0;
     }
+    case WM_INPUT:
+    {
+        UINT dwSize = 0;
+        if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT,
+            nullptr, &dwSize, sizeof(RAWINPUTHEADER)) != 0)
+            return 0;
 
+        BYTE* lpb = new BYTE[dwSize];
+
+        if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT,
+            lpb, &dwSize, sizeof(RAWINPUTHEADER)) == dwSize)
+        {
+            RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
+            if (raw->header.dwType == RIM_TYPEMOUSE)
+            {
+                int dx = raw->data.mouse.lLastX;
+                int dy = raw->data.mouse.lLastY;
+
+                MouseHandler::AddRawDelta(dx, dy);
+            }
+        }
+        delete[] lpb;
+        return 0;
+    }
+    case WM_SIZE:
+    {
+        EventQueue::Push(EventType::WINDOW_EVENT_RESIZE);
+        return 0;
+    }
     // Window messages
     case WM_CLOSE:
         PostQuitMessage(0);
