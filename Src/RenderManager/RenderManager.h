@@ -32,7 +32,8 @@ public:
     bool BuildModel(IModel* model) const;
 
     void SetOMRenderAndDepth();
-    void ResizeSwapChain();
+    void ResizeSwapChain(bool force=false);
+    void ChangeMSAA(UINT msaa);
 
     ID3D11DeviceContext* GetContext() const;
     ID3D11Device* GetDevice() const;
@@ -43,11 +44,17 @@ public:
     int GetSelectedMSAA();
     std::vector<UINT> GetAllAvailableMSAA() const;
 
-    CameraController* GetActiveCamera();
+    void SelectAdapter(int adapterIndex);
+    const std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter>>& GetAvailableAdapter();
+    int GetSelectedAdapterIndex() const;
+    CameraController* GetActiveCamera() const;
 
 private:
     bool BuildParameter(SweetLoader& sweetLoader);
-    bool QueryAdapter();
+	bool QueryAdapter();
+
+    bool BuildDirectX();
+
     bool QueryMonitorRefreshRate();
 
     bool BuildDeviceAndContext();
@@ -61,7 +68,6 @@ private:
     bool BuildViewport() const;
 
 private:
-
     SRWLOCK m_Lock;
 
     CameraManager m_CameraManager{};

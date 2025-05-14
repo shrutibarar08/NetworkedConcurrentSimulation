@@ -101,54 +101,7 @@ bool RenderManager::Build(SweetLoader& sweetLoader)
         return false;
     }
 
-    if (!QueryMonitorRefreshRate())
-    {
-        LOG_FAIL("Failed to query monitor refresh rate.");
-        return false;
-    }
-
-    if (!BuildDeviceAndContext())
-    {
-        LOG_FAIL("Failed to build device and context.");
-        return false;
-    }
-
-    QueryMSAA();
-
-    if (!BuildSwapChain())
-    {
-        LOG_FAIL("Failed to build swap chain.");
-        return false;
-    }
-
-    if (!BuildRenderTargetView())
-    {
-        LOG_FAIL("Failed to build render target view.");
-        return false;
-    }
-
-    if (!BuildDepthStencilView())
-    {
-        LOG_FAIL("Failed to build depth stencil view.");
-        return false;
-    }
-
-    if (!BuildRasterizationState())
-    {
-        LOG_FAIL("Failed to build rasterizer state.");
-        return false;
-    }
-
-    if (!BuildViewport())
-    {
-        LOG_FAIL("Failed to build viewport.");
-        return false;
-    }
-
-    SetOMRenderAndDepth();
-
-    LOG_SUCCESS("Build completed successfully.");
-    return true;
+    return BuildDirectX();
 }
 
 bool RenderManager::Shutdown()
@@ -181,38 +134,66 @@ void RenderManager::SetOMRenderAndDepth()
     LOG_INFO("Bound render target and depth stencil view.");
 }
 
-void RenderManager::ResizeSwapChain()
+void RenderManager::ResizeSwapChain(bool force)
 {
+
+    if (force)
+    {
+        LOG_WARNING("FORCE REBUILDING SWAP CHAIN!");
+        BuildSwapChain();
+        BuildRenderTargetView();
+        BuildDepthStencilView();
+        BuildViewport();
+        SetOMRenderAndDepth();
+        m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
+        return;
+    }
+
+    UINT width, height;
     RECT rc;
     GetClientRect(m_WindowSystem->GetWindowHandle(), &rc);
-    UINT width = rc.right - rc.left;
-    UINT height = rc.bottom - rc.top;
+    width = rc.right - rc.left;
+    height = rc.bottom - rc.top;
 
-    if (m_PrevHeight != height && m_PrevWidth != width)
-    {
-        m_PrevHeight = height;
-        m_PrevWidth = width;
-    }
-    else return;
+    if (m_PrevHeight == height && m_PrevWidth == width)
+        return;
+
+    LOG_INFO("Changing Viewport from: (" + std::to_string(m_PrevWidth) + ", " + std::to_string(m_PrevHeight) +
+        ") -> (" + std::to_string(width) + ", " + std::to_string(height) + ")");
+
+    m_PrevWidth = width;
+    m_PrevHeight = height;
 
     m_RenderTargetView.Reset();
     m_DepthBuffer.Reset();
     m_RenderBuffer.Reset();
     m_DepthStencilView.Reset();
     m_DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+    m_DeviceContext->ClearState();
 
-    LOG_INFO("Resized Swap Chain Width: " + std::to_string(width));
-    LOG_INFO("Resized Swap Chain Height: " + std::to_string(height));
-
-    LOG_INFO("Resized OG Width: " + std::to_string(m_WindowSystem->GetWindowsWidth()));
-    LOG_INFO("Resized OG Height: " + std::to_string(m_WindowSystem->GetWindowsHeight()));
-
-    m_SwapChain->ResizeBuffers(
+    HRESULT hr = m_SwapChain->ResizeBuffers(
         0, width, height,
         DXGI_FORMAT_UNKNOWN,
         DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
     );
+    THROW_RENDER_EXCEPTION_IF_FAILED(hr);
 
+    BuildRenderTargetView();
+    BuildDepthStencilView();
+    BuildViewport();
+    SetOMRenderAndDepth();
+
+    m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
+}
+
+void RenderManager::ChangeMSAA(UINT msaa)
+{
+    if (msaa == m_CurrentMSAA) return;
+    LOG_INFO("Updated MSAA Quality! from " + std::to_string(m_CurrentMSAA) + " to "
+        + std::to_string(msaa));
+
+    m_CurrentMSAA = msaa;
+    BuildSwapChain();
     BuildRenderTargetView();
     BuildDepthStencilView();
     BuildViewport();
@@ -258,7 +239,36 @@ std::vector<UINT> RenderManager::GetAllAvailableMSAA() const
     return m_SupportedMSAA;
 }
 
-CameraController* RenderManager::GetActiveCamera()
+void RenderManager::SelectAdapter(int adapterIndex)
+{
+    if (m_SelectedAdapterIndex < 0 || m_SelectedAdapterIndex >= m_Adapters.size())
+    {
+        LOG_FAIL("Invalid adapter index for device creation.");
+        return;
+    }
+    if (m_SelectedAdapterIndex == adapterIndex)
+    {
+        LOG_INFO("Ignore Rebuilding found same adapter index selected!");
+        return;
+    }
+    m_SelectedAdapterIndex = adapterIndex;
+    if (BuildDirectX())
+    {
+        LOG_ERROR("FAILED TO REBUILD DIRECTX 11");
+    }
+}
+
+const std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter>>& RenderManager::GetAvailableAdapter()
+{
+    return m_Adapters;
+}
+
+int RenderManager::GetSelectedAdapterIndex() const
+{
+    return m_SelectedAdapterIndex;
+}
+
+CameraController* RenderManager::GetActiveCamera() const
 {
     return m_CameraManager.GetActiveCamera();
 }
@@ -328,6 +338,59 @@ bool RenderManager::QueryAdapter()
     selectedInfo << " | VRAM: " << (m_CurrentAdapterDesc.DedicatedVideoMemory / (1024 * 1024)) << " MB";
 
     LOG_SUCCESS(selectedInfo.str());
+
+    return true;
+}
+
+bool RenderManager::BuildDirectX()
+{
+    if (!QueryMonitorRefreshRate())
+    {
+        LOG_FAIL("Failed to query monitor refresh rate.");
+        return false;
+    }
+
+    if (!BuildDeviceAndContext())
+    {
+        LOG_FAIL("Failed to build device and context.");
+        return false;
+    }
+
+    QueryMSAA();
+
+    if (!BuildSwapChain())
+    {
+        LOG_FAIL("Failed to build swap chain.");
+        return false;
+    }
+
+    if (!BuildRenderTargetView())
+    {
+        LOG_FAIL("Failed to build render target view.");
+        return false;
+    }
+
+    if (!BuildDepthStencilView())
+    {
+        LOG_FAIL("Failed to build depth stencil view.");
+        return false;
+    }
+
+    if (!BuildRasterizationState())
+    {
+        LOG_FAIL("Failed to build rasterizer state.");
+        return false;
+    }
+
+    if (!BuildViewport())
+    {
+        LOG_FAIL("Failed to build viewport.");
+        return false;
+    }
+
+    SetOMRenderAndDepth();
+
+    LOG_SUCCESS("Build completed successfully.");
 
     return true;
 }
@@ -492,7 +555,6 @@ bool RenderManager::SetMSAA(UINT msaaValue)
         return false;
     }
 
-    m_CurrentMSAA = msaaValue;
     m_MSAACount = msaaValue;
     m_MSAAQuality = quality - 1; // DX expects [0..quality-1]
 
@@ -505,7 +567,7 @@ bool RenderManager::SetMSAA(UINT msaaValue)
 
 bool RenderManager::BuildSwapChain()
 {
-    if (!SetMSAA(8))
+    if (!SetMSAA(m_CurrentMSAA))
     {
         LOG_WARNING("Requested MSAA 8x not supported. Falling back to previous/default setting.");
     }

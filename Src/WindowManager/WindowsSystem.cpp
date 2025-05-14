@@ -88,6 +88,41 @@ void WindowsSystem::SetFullScreen(bool val)
     ReleaseSRWLockExclusive(&m_Lock);
 }
 
+std::vector<RESOLUTION>& WindowsSystem::GetAvailableResolution()
+{
+    return m_PossibleResolution;
+}
+
+void WindowsSystem::UpdateResolution(const RESOLUTION* resolution)
+{
+    if (!resolution || !m_HandleWindow)
+        return;
+    if (resolution->Height == m_WindowHeight && resolution->Width == m_WindowWidth) return;
+
+    RECT desiredRect = { 0, 0, static_cast<LONG>(resolution->Width), static_cast<LONG>(resolution->Height) };
+    AdjustWindowRect(&desiredRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+    int windowWidth = desiredRect.right - desiredRect.left;
+    int windowHeight = desiredRect.bottom - desiredRect.top;
+
+    // Step 2: Resize the window while keeping its current position
+    SetWindowPos(
+        m_HandleWindow,
+        nullptr,
+        0, 0,
+        windowWidth,
+        windowHeight,
+        SWP_NOZORDER | SWP_NOMOVE
+    );
+
+    m_WindowWidth = resolution->Width;
+    m_WindowHeight = resolution->Height;
+
+    ApplyFullScreen();
+
+    EventQueue::Push(EventType::RENDER_EVENT_RESIZE);
+}
+
 HWND WindowsSystem::GetWindowHandle() const
 {
     return m_HandleWindow;
@@ -355,7 +390,7 @@ LRESULT WindowsSystem::HandleMsg(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
     }
     case WM_SIZE:
     {
-        EventQueue::Push(EventType::WINDOW_EVENT_RESIZE);
+        EventQueue::Push(EventType::RENDER_EVENT_RESIZE);
         return 0;
     }
     // Window messages

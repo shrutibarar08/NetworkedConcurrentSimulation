@@ -211,10 +211,10 @@ void Application::BuildEventHandler()
 			m_WindowSystem->GetWindowsHeight());
 	};
 
-	m_EventHandlers[EventType::WINDOW_EVENT_RESIZE] = [this]()
+	m_EventHandlers[EventType::RENDER_EVENT_RESIZE] = [this]()
 	{
 		LOG_INFO("Popped Window Resize Event");
-		m_Renderer->ResizeSwapChain();
+		m_Renderer->ResizeSwapChain(true);
 		m_GuiManager->ResizeViewport(
 			m_WindowSystem->GetWindowsWidth(),
 			m_WindowSystem->GetWindowsHeight());

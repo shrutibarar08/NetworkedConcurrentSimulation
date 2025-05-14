@@ -66,6 +66,10 @@ void GuiManager::ResizeViewport(float width, float height)
 	AcquireSRWLockShared(&m_Lock);
 	if (width != m_PrevWidth && m_PrevHeight != height)
 	{
+		LOG_INFO("Changing IMGUI Viewport from: ("
+			+ std::to_string(m_PrevWidth) + ", " + std::to_string(m_PrevHeight)
+			+ ") -> (" + std::to_string(width) + ", " + std::to_string(height) + ")");
+
 		m_PrevHeight = height;
 		m_PrevWidth = width;
 		ReleaseSRWLockShared(&m_Lock);

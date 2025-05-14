@@ -16,15 +16,15 @@ bool WindowsManagerUI::Init()
 
 void WindowsManagerUI::RenderAsSystemItem()
 {
-	DisplayWindowInfo();
+	DisplayWindowSettings();
 }
 
 void WindowsManagerUI::RenderPopups()
 {
-	PopupWindowInfo();
+	PopupWindowSettings();
 }
 
-void WindowsManagerUI::DisplayWindowInfo()
+void WindowsManagerUI::DisplayWindowSettings()
 {
 	if (ImGui::MenuItem("Show Window Info"))
 	{
@@ -32,43 +32,87 @@ void WindowsManagerUI::DisplayWindowInfo()
 	}
 }
 
-void WindowsManagerUI::PopupWindowInfo()
+void WindowsManagerUI::PopupWindowSettings()
 {
-	if (m_RequestDisplayPopup)
-	{
-		ImGui::OpenPopup("WindowInfoPopup");
-		m_RequestDisplayPopup = false;
-	}
+    if (m_RequestDisplayPopup)
+    {
+        ImGui::OpenPopup("WindowInfoPopup");
+        m_RequestDisplayPopup = false;
+    }
 
-	if (ImGui::BeginPopupModal("WindowInfoPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		float aspectRatio = m_WindowsSystem->GetAspectRatio();
-		bool isFullscreen = m_WindowsSystem->IsFullScreen();
-		int width = m_WindowsSystem->GetWindowsWidth();
-		int height = m_WindowsSystem->GetWindowsHeight();
-		HWND hwnd = m_WindowsSystem->GetWindowHandle();
-		HINSTANCE hinst = m_WindowsSystem->GetWindowManagerInstance();
+    if (ImGui::BeginPopupModal("WindowInfoPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        DisplayWindowInfo();
+        DisplayFullscreenToggle();
+        DisplayResolutionSelector();
 
-		ImGui::Text("Window Resolution: %d x %d", width, height);
-		ImGui::Text("Aspect Ratio: %.2f", aspectRatio);
-		ImGui::Text("Fullscreen Mode: %s", isFullscreen ? "Enabled" : "Disabled");
-		ImGui::Separator();
+        ImGui::Spacing();
+        if (ImGui::Button("Close"))
+            ImGui::CloseCurrentPopup();
 
-		// Fullscreen toggle button
-		if (ImGui::Button(isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"))
-		{
-			if (!isFullscreen) EventQueue::Push(EventType::WINDOW_EVENT_FULLSCREEN);
-			else EventQueue::Push(EventType::WINDOW_EVENT_WINDOWED);
-		}
+        ImGui::EndPopup();
+    }
+}
 
-		ImGui::Separator();
-		ImGui::Text("HWND: 0x%p", hwnd);
-		ImGui::Text("HINSTANCE: 0x%p", hinst);
+void WindowsManagerUI::DisplayWindowInfo()
+{
+    float aspectRatio = m_WindowsSystem->GetAspectRatio();
+    int width =         m_WindowsSystem->GetWindowsWidth();
+    int height =        m_WindowsSystem->GetWindowsHeight();
+    bool isFullscreen = m_WindowsSystem->IsFullScreen();
 
-		ImGui::Spacing();
-		if (ImGui::Button("Close"))
-			ImGui::CloseCurrentPopup();
+    ImGui::Text("Window Resolution: %d x %d", width, height);
+    ImGui::Text("Aspect Ratio: %.2f", aspectRatio);
+    ImGui::Text("Fullscreen Mode: %s", isFullscreen ? "Enabled" : "Disabled");
+    ImGui::Separator();
+}
 
-		ImGui::EndPopup();
-	}
+void WindowsManagerUI::DisplayFullscreenToggle()
+{
+    bool isFullscreen = m_WindowsSystem->IsFullScreen();
+
+    if (ImGui::Button(isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"))
+    {
+        if (!isFullscreen)
+            EventQueue::Push(EventType::WINDOW_EVENT_FULLSCREEN);
+        else
+            EventQueue::Push(EventType::WINDOW_EVENT_WINDOWED);
+    }
+}
+
+void WindowsManagerUI::DisplayResolutionSelector()
+{
+    static std::string preview;
+    auto& resolutions = m_WindowsSystem->GetAvailableResolution();
+
+    // Create preview string
+    if (m_SelectedResolutionIndex >= 0 && m_SelectedResolutionIndex < resolutions.size())
+    {
+        const RESOLUTION& res = resolutions[m_SelectedResolutionIndex];
+        preview = std::to_string(res.Width) + " x " + std::to_string(res.Height);
+    }
+
+    if (ImGui::BeginCombo("Resolution", preview.c_str()))
+    {
+        for (int i = 0; i < resolutions.size(); ++i)
+        {
+            const RESOLUTION& res = resolutions[i];
+            std::string label = std::to_string(res.Width) + " x " + std::to_string(res.Height);
+            bool isSelected = (i == m_SelectedResolutionIndex);
+
+            if (ImGui::Selectable(label.c_str(), isSelected))
+            {
+                m_SelectedResolutionIndex = i;
+            }
+
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    if (ImGui::Button("Apply Resolution"))
+    {
+        m_WindowsSystem->UpdateResolution(&resolutions[m_SelectedResolutionIndex]);
+    }
 }

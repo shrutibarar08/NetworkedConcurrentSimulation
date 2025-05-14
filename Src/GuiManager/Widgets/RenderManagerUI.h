@@ -19,6 +19,8 @@ private:
 
 	//~ Popups
 	void PopupDescription();
+	void DrawRenderDetails() const;
+	void DrawMSAAOptions() const;
 
 private:
 	RenderManager* m_RenderManager;

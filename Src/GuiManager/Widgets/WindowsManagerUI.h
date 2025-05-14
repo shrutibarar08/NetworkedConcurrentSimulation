@@ -16,10 +16,14 @@ public:
 	void RenderPopups() override;
 
 private:
+	void DisplayWindowSettings();
+	void PopupWindowSettings();
 	void DisplayWindowInfo();
-	void PopupWindowInfo();
+	void DisplayFullscreenToggle();
+	void DisplayResolutionSelector();
 
 private:
 	WindowsSystem* m_WindowsSystem;
 	bool m_RequestDisplayPopup{ false };
+	int m_SelectedResolutionIndex = 0;
 };
