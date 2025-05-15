@@ -17,9 +17,10 @@ enum class State : uint8_t
 	UNLOADED
 };
 
-class Scene
+class Scene: public IEntity
 {
 public:
+	Scene(const std::string& name);
 	Scene();
 	~Scene() = default;
 
@@ -39,6 +40,10 @@ public:
 	const std::unordered_map<unsigned int, IModel*>& GetModels();
 
 	IWidget* GetWidget() const;
+	std::string GetName() const;
+	void SetName(const std::string& name);
+
+	bool IsLoaded() const;
 
 private:
 	SRWLOCK m_Lock;
@@ -46,4 +51,5 @@ private:
 	std::unordered_map<unsigned int, IModel*> m_SafePointer;
 	std::unique_ptr<IWidget> m_Widget;
 	State m_State = State::UNLOADED;
+	std::string m_Name{ "Default Scene" };
 };

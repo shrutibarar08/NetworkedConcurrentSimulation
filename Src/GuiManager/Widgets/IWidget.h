@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
 
+#include "Core/IEntity.h"
 
-class IWidget
+
+class IWidget: public IEntity
 {
 public:
 	IWidget() = default;

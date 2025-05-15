@@ -13,8 +13,10 @@ public:
 	bool Run() override;
 	bool Build(SweetLoader& sweetLoader) override;
 
-	void AddUI(std::unique_ptr<IWidget> widget);
 	void AddUI(IWidget* widget);
+	void RemoveUI(IWidget* widget);
+	void RemoveUI(ID id);
+
 	void ResizeViewport(float width, float height);
 
 private:
@@ -24,8 +26,7 @@ private:
 
 private:
 	SRWLOCK m_Lock;
-	std::vector<std::unique_ptr<IWidget>> m_Widgets;
-	std::vector<IWidget*> m_WidgetsSafe;
+	std::unordered_map<ID, IWidget*> m_Widgets;
 	bool m_RequestNewPopup = false;
 
 	//~ Cache windows value

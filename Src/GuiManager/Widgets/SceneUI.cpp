@@ -8,12 +8,12 @@ SceneUI::SceneUI(Scene* scene)
 
 void SceneUI::RenderMenu()
 {
-	if (ImGui::BeginMenu(MenuName().c_str()))
+	if (ImGui::BeginMenu("Add Object"))
 	{
-		if (ImGui::MenuItem("Reload Scene"))
-			m_Scene->OnLoad();
-		if (ImGui::MenuItem("Unload Scene"))
-			m_Scene->OnOffLoad();
+		if (ImGui::MenuItem("Add Cube"))
+		{
+			m_Scene->AddObject(SPAWN_OBJECT::CUBE);
+		}
 		ImGui::EndMenu();
 	}
 }

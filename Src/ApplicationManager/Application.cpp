@@ -73,18 +73,33 @@ bool Application::Init()
 	m_InputHandler->AttachCamera(m_Renderer->GetActiveCamera());
 	m_InputHandler->AttachWindows(m_WindowSystem.get());
 
+	m_SystemHandler.Register("InputHandler", m_InputHandler.get());
+	m_SystemHandler.AddDependency("InputHandler",
+		"WindowsSystem",
+		"RenderManager");
+
 	//~ Gui Manager
 	m_GuiManager = std::make_unique<GuiManager>();
-	m_GuiManager->AddUI(std::make_unique<RenderManagerUI>(m_Renderer.get()));
-	m_GuiManager->AddUI(std::make_unique<WindowsManagerUI>(m_WindowSystem.get()));
-	m_GuiManager->AddUI(std::make_unique<InputHandlerUI>(m_InputHandler.get()));
-	m_GuiManager->AddUI(m_Scene.GetWidget());
+	m_GuiManager->AddUI(m_Renderer->GetWidget());
+	m_GuiManager->AddUI(m_WindowSystem->GetWidget());
+	m_GuiManager->AddUI(m_InputHandler->GetWidget());
 
 	m_SystemHandler.Register("GuiManager", m_GuiManager.get());
 	m_SystemHandler.AddDependency(
 		"GuiManager",
 		"WindowsSystem",
 		"RenderManager");
+
+	//~ Scene Manager
+	m_ScenarioManager = std::make_unique<ScenarioManager>();
+	m_ScenarioManager->AttachUiRep(m_GuiManager.get());
+
+	m_SystemHandler.Register("ScenarioManager", m_ScenarioManager.get());
+	m_SystemHandler.AddDependency(
+		"ScenarioManager",
+		"WindowsSystem",
+		"RenderManager",
+		"GuiManager");
 
 	//~ Initializing Systems in correct order
 	if (m_SystemHandler.BuildAll(mSweetLoader))
@@ -98,9 +113,9 @@ bool Application::Init()
 
 bool Application::Run()
 {
-	//~ Test only
-	m_Scene.AddObject(SPAWN_OBJECT::CUBE);
-	//~ Test End
+	m_ScenarioManager->CreateScene("Test Scene_1");
+	m_ScenarioManager->CreateScene("Test Scene_2");
+	m_ScenarioManager->CreateScene("Test Scene_3");
 
 	LOG_INFO("Application main loop starting.");
 	m_SystemHandler.WaitStart(); 

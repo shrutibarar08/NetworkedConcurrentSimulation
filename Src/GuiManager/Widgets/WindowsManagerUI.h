@@ -18,8 +18,8 @@ public:
 private:
 	void DisplayWindowSettings();
 	void PopupWindowSettings();
-	void DisplayWindowInfo();
-	void DisplayFullscreenToggle();
+	void DisplayWindowInfo() const;
+	void DisplayFullscreenToggle() const;
 	void DisplayResolutionSelector();
 
 private:

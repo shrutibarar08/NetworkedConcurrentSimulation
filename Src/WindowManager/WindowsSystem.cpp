@@ -8,11 +8,14 @@
 #include <windowsx.h>
 #include "imgui.h"
 #include "EventSystem/EventQueue.h"
+#include "GuiManager/Widgets/WindowsManagerUI.h"
 
 WindowsSystem::WindowsSystem()
 {
     InitializeSRWLock(&m_Lock);
     m_Fullscreen = Draco::Windows::FULL_SCREEN;
+
+    SetWidget(std::make_unique<WindowsManagerUI>(this));
 }
 
 bool WindowsSystem::Build(SweetLoader& sweetLoader)

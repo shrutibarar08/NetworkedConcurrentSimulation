@@ -5,6 +5,8 @@
 #include "imgui_impl_win32.h"
 #include "Utils/Logger.h"
 
+#include <ranges>
+
 GuiManager::GuiManager()
 {
 	InitializeSRWLock(&m_Lock);
@@ -39,14 +41,14 @@ bool GuiManager::Run()
 bool GuiManager::Build(SweetLoader& sweetLoader)
 {
 	bool status = true;
-	AcquireSRWLockExclusive(&m_Lock);
+	AcquireSRWLockShared(&m_Lock);
 
-	for (auto& widget: m_Widgets)
+	for (auto& widget: m_Widgets | std::views::values)
 	{
-		if (widget) status &= widget->Init();
-		else status = false;
+		if (widget) widget->Init();
 	}
-	ReleaseSRWLockExclusive(&m_Lock);
+
+	ReleaseSRWLockShared(&m_Lock);
 
 	if (status) LOG_SUCCESS("Imgui Initialized!.");
 	else LOG_FAIL("Imgui Failed to Initialize!.");
@@ -54,18 +56,25 @@ bool GuiManager::Build(SweetLoader& sweetLoader)
 	return status;
 }
 
-void GuiManager::AddUI(std::unique_ptr<IWidget> widget)
-{
-	AcquireSRWLockExclusive(&m_Lock);
-	m_Widgets.emplace_back(std::move(widget));
-	ReleaseSRWLockExclusive(&m_Lock);
-}
-
 void GuiManager::AddUI(IWidget* widget)
 {
-	AcquireSRWLockExclusive(&m_Lock);
-	m_WidgetsSafe.emplace_back(widget);
-	ReleaseSRWLockExclusive(&m_Lock);
+	if (widget) m_Widgets[widget->GetId()] = widget;
+}
+
+void GuiManager::RemoveUI(IWidget* widget)
+{
+	if (m_Widgets.contains(widget->GetId()))
+	{
+		m_Widgets.erase(widget->GetId());
+	}
+}
+
+void GuiManager::RemoveUI(ID id)
+{
+	if (m_Widgets.contains(id))
+	{
+		m_Widgets.erase(id);
+	}
 }
 
 void GuiManager::ResizeViewport(float width, float height)
@@ -106,7 +115,7 @@ void GuiManager::RenderScene()
 	//~ Render Main Menu Bar
 	if (ImGui::BeginMainMenuBar())
 	{
-		for (auto& widget: m_Widgets)
+		for (auto& widget: m_Widgets | std::views::values)
 		{
 			if (ImGui::BeginMenu("Settings"))
 			{
@@ -115,25 +124,10 @@ void GuiManager::RenderScene()
 			}
 			widget->RenderMenu();
 		}
-
-		for (auto& widget: m_WidgetsSafe)
-		{
-			if (ImGui::BeginMenu("Settings"))
-			{
-				widget->RenderAsSystemItem();
-				ImGui::EndMenu();
-			}
-			widget->RenderMenu();
-		}
-
 		ImGui::EndMainMenuBar();
 	}
 	//~ Render Popups
-	for (auto& widget : m_Widgets)
-	{
-		widget->RenderPopups();
-	}
-	for (auto& widget : m_WidgetsSafe)
+	for (auto& widget : m_Widgets | std::views::values)
 	{
 		widget->RenderPopups();
 	}

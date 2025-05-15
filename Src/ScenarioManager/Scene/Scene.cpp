@@ -6,6 +6,14 @@
 #include "GuiManager/Widgets/SceneUI.h"
 #include "Utils/Logger.h"
 
+Scene::Scene(const std::string& name)
+	: m_Name(name)
+{
+	InitializeSRWLock(&m_Lock);
+
+	m_Widget = std::make_unique<SceneUI>(this);
+}
+
 Scene::Scene()
 {
 	InitializeSRWLock(&m_Lock);
@@ -108,4 +116,19 @@ const std::unordered_map<unsigned int, IModel*>& Scene::GetModels()
 IWidget* Scene::GetWidget() const
 {
 	return m_Widget.get();
+}
+
+std::string Scene::GetName() const
+{
+	return m_Name;
+}
+
+void Scene::SetName(const std::string& name)
+{
+	m_Name = name;
+}
+
+bool Scene::IsLoaded() const
+{
+	return m_State == State::LOADED;
 }

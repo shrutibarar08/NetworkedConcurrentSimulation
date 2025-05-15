@@ -26,7 +26,7 @@ void WindowsManagerUI::RenderPopups()
 
 void WindowsManagerUI::DisplayWindowSettings()
 {
-	if (ImGui::MenuItem("Show Window Info"))
+	if (ImGui::MenuItem("Display Settings"))
 	{
 		m_RequestDisplayPopup = true;
 	}
@@ -54,7 +54,7 @@ void WindowsManagerUI::PopupWindowSettings()
     }
 }
 
-void WindowsManagerUI::DisplayWindowInfo()
+void WindowsManagerUI::DisplayWindowInfo() const
 {
     float aspectRatio = m_WindowsSystem->GetAspectRatio();
     int width =         m_WindowsSystem->GetWindowsWidth();
@@ -67,7 +67,7 @@ void WindowsManagerUI::DisplayWindowInfo()
     ImGui::Separator();
 }
 
-void WindowsManagerUI::DisplayFullscreenToggle()
+void WindowsManagerUI::DisplayFullscreenToggle() const
 {
     bool isFullscreen = m_WindowsSystem->IsFullScreen();
 

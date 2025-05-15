@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 
+#include "GuiManager/Widgets/IWidget.h"
 #include "SystemManager/Interface/ISystem.h"
 
 typedef struct RESOLUTION

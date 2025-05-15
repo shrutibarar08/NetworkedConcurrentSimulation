@@ -9,6 +9,7 @@
 #include "GuiManager/GuiManager.h"
 #include "InputHandler/InputHandler.h"
 #include "RenderManager/Model/Shapes/ModelCube.h"
+#include "ScenarioManager/ScenarioManager.h"
 #include "ScenarioManager/Scene/Scene.h"
 #include "SystemManager/SystemHandler.h"
 #include "WindowManager/WindowsSystem.h"
@@ -41,6 +42,7 @@ private:
 	std::unique_ptr<RenderManager> m_Renderer{ nullptr };
 	std::unique_ptr<GuiManager> m_GuiManager{ nullptr };
 	std::unique_ptr<InputHandler> m_InputHandler{ nullptr };
+	std::unique_ptr<ScenarioManager> m_ScenarioManager{ nullptr };
 
 	SweetLoader mSweetLoader{};
 
@@ -48,5 +50,4 @@ private:
 
 	HANDLE m_StartEventHandle;
 	HANDLE m_EndEventHandle;
-	Scene m_Scene{};
 };

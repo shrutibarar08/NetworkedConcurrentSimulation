@@ -7,6 +7,7 @@
 
 #include "imgui_impl_dx11.h"
 #include "ExceptionManager/RenderException.h"
+#include "GuiManager/Widgets/RenderManagerUI.h"
 #include "Utils/Logger.h"
 
 RenderManager::RenderManager(WindowsSystem* windowSystem)
@@ -31,6 +32,8 @@ RenderManager::RenderManager(WindowsSystem* windowSystem)
 
     m_CameraManager.SetActiveCamera(m_3dCamId);
     m_CameraManager.GetActiveCamera()->SetAspectRatio(windowSystem->GetAspectRatio());
+
+    SetWidget(std::make_unique<RenderManagerUI>(this));
 }
 
 bool RenderManager::Run()

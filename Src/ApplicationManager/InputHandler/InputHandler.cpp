@@ -1,9 +1,15 @@
 #include "InputHandler.h"
 
 #include "ApplicationManager/Clock/SystemClock.h"
+#include "GuiManager/Widgets/InputHandlerUI.h"
 #include "Utils/Logger.h"
 #include "WindowManager/Components/KeyboardHandler.h"
 #include "WindowManager/Components/MouseHandler.h"
+
+InputHandler::InputHandler()
+{
+	SetWidget(std::make_unique<InputHandlerUI>(this));
+}
 
 InputHandler::InputHandler(CameraController* cameraController)
 	: m_CameraController(cameraController)

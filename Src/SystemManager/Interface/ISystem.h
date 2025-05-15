@@ -3,6 +3,7 @@
 #include "Core/DefineDefault.h"
 #include <windows.h>
 #include "FileManager/FileLoader/SweetLoader.h"
+#include "GuiManager/Widgets/IWidget.h"
 
 
 class ISystem
@@ -29,6 +30,12 @@ public:
     HANDLE GetThreadHandle() const;
     HANDLE GetInitializedEventHandle() const;
 
+    void SetWidget(std::unique_ptr<IWidget> widget)
+    {
+        m_Widget = std::move(widget);
+    }
+    IWidget* GetWidget() const { return m_Widget.get(); }
+
 private:
     static DWORD __stdcall ThreadCall(LPVOID ptr);
 
@@ -38,4 +45,5 @@ protected:
 
     HANDLE mThreadHandle;
     bool mCreateThread{ false };
+    std::unique_ptr<IWidget> m_Widget{ nullptr };
 };

@@ -126,6 +126,9 @@
     <ClCompile Include="Src\GuiManager\Widgets\SceneUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\GuiManager\Widgets\ScenarioManagerUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h">
@@ -243,6 +246,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\GuiManager\Widgets\SceneUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Core\IEntity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Widgets\ScenarioManagerUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

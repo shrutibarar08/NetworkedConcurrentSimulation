@@ -6,13 +6,14 @@
 
 using KeyCode = int;
 
-class InputHandler
+class InputHandler final: public ISystem
 {
 public:
-	InputHandler() = default;
+	InputHandler();
 	InputHandler(CameraController* cameraController);
-	~InputHandler() = default;
+	~InputHandler() override = default;
 
+	bool Build(SweetLoader& sweetLoader) override { return true; }
 	void AttachWindows(WindowsSystem* windows);
 	void AttachCamera(CameraController* controller);
 	void HandleInput();
