@@ -1,13 +1,9 @@
 #include "pch.h"
 #include "Gravity.h"
 
-Gravity::Gravity(const Vector3& gravity) : gravity(gravity) {}
+Gravity::Gravity(const Vector3& g) : gravity(g) {}
 
-void Gravity::updateForce(Particle* particle, float duration)
-{
-	if (!particle->hasFiniteMass()) return;
-
-	//f = m*g 
-	Vector3 force = gravity * particle->getMass();
-	particle->addForce(force);
+void Gravity::updateForce(Particle* particle, float duration) {
+    if (!particle->hasFiniteMass()) return;
+    particle->addForce(gravity * particle->getMass());
 }

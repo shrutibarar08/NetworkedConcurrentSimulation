@@ -3,14 +3,13 @@
 
 class PlaneCollider : public Collider {
 private:
-    Vector3 normal;  // Normal vector of the plane
-    float offset;    // Distance from origin along normal
+    Vector3 normal;
+    float offset;
 
 public:
     PlaneCollider(const Vector3& normal, float offset);
 
     Type getType() const override;
-    Particle* getParticle() const override;
-    Vector3 getNormal() const;
-    float getOffset() const;
+    Vector3 getNormal() const override;
+    float getOffset() const override;
 };

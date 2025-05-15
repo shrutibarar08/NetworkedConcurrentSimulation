@@ -3,15 +3,19 @@
 #include <cmath>
 
 Quaternion::Quaternion() : r(1), i(0), j(0), k(0) {}
-Quaternion::Quaternion(float r, float i, float j, float k) : r(r), i(i), j(j), k(k) {}
+
+Quaternion::Quaternion(float r, float i, float j, float k)
+    : r(r), i(i), j(j), k(k) {
+}
 
 void Quaternion::normalize() {
     float d = r * r + i * i + j * j + k * k;
-    if (d == 0) {
-        r = 1;
+    if (d == 0.0f) {
+        r = 1.0f; i = j = k = 0.0f;
         return;
     }
-    float scale = 1.0f / sqrt(d);
+
+    float scale = 1.0f / std::sqrt(d);
     r *= scale;
     i *= scale;
     j *= scale;
@@ -30,6 +34,7 @@ Quaternion Quaternion::operator*(const Quaternion& q) const {
 void Quaternion::addScaledVector(const Vector3& vector, float scale) {
     Quaternion q(0, vector.x * scale, vector.y * scale, vector.z * scale);
     q = q * (*this);
+
     r += q.r * 0.5f;
     i += q.i * 0.5f;
     j += q.j * 0.5f;

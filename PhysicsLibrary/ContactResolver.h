@@ -1,16 +1,13 @@
 #pragma once
 #include "Contact.h"
 
-class ContactResolver
-{
-public:
-    ContactResolver(unsigned iterations);
-
-    void setIterations(unsigned iterations);
-    void resolveContacts(Contact* contactArray, unsigned numContacts, float duration);
-
+class ContactResolver {
 private:
     unsigned iterations;
     unsigned iterationsUsed;
-};
 
+public:
+    ContactResolver(unsigned iterations);
+
+    void resolveContacts(Contact* contacts, unsigned numContacts, float duration);
+};

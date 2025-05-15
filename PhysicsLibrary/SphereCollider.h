@@ -1,16 +1,17 @@
 #pragma once
 #include "Collider.h"
+#include "RigidBody.h"
 
 class SphereCollider : public Collider {
-private:
-    Particle* particle;
-    float radius;
-
 public:
-    SphereCollider(Particle* p, float r);
+    SphereCollider(RigidBody* body, float radius);
 
-    Type getType() const override;
-    Particle* getParticle() const override;
     float getRadius() const;
-    Vector3 getCenter() const;
-};
+    Vector3 getCenter() const override;
+    Type getType() const override;
+
+    bool checkCollision(Collider* other, Contact& contact) const override;
+
+private:
+    RigidBody* body;
+    float radius;};
