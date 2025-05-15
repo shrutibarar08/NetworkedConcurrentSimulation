@@ -1,5 +1,7 @@
+#include "pch.h"
 #include "CollisionDetector.h"
 #include <cmath>
+#include <algorithm>
 
 // Sphere-Sphere
 bool CollisionDetector::detectSphereSphere(const SphereCollider& a, const SphereCollider& b, Contact& contactOut) {
@@ -9,9 +11,9 @@ bool CollisionDetector::detectSphereSphere(const SphereCollider& a, const Sphere
 
     if (penetration <= 0) return false;
 
-    contactOut.particle[0] = a.getParticle();
-    contactOut.particle[1] = b.getParticle();
-    contactOut.contactNormal = midline.normalized();
+    //contactOut.particle[0] = a.getParticle();
+    //contactOut.particle[1] = b.getParticle();
+    //contactOut.contactNormal = midline.normalized();
     contactOut.penetration = penetration;
     contactOut.restitution = 0.6f;
 
@@ -24,8 +26,8 @@ bool CollisionDetector::detectSpherePlane(const SphereCollider& sphere, const Pl
 
     if (distance > sphere.getRadius()) return false;
 
-    contactOut.particle[0] = sphere.getParticle();
-    contactOut.particle[1] = nullptr;
+    //contactOut.particle[0] = sphere.getParticle();
+    //contactOut.particle[1] = nullptr;
     contactOut.contactNormal = plane.getNormal();
     contactOut.penetration = sphere.getRadius() - distance;
     contactOut.restitution = 0.4f;
@@ -63,7 +65,7 @@ bool CollisionDetector::dispatch(Collider* a, Collider* b, Contact& contactOut) 
         );
         if (result) {
             contactOut.contactNormal *= -1;
-            std::swap(contactOut.particle[0], contactOut.particle[1]);
+            //std::swap(contactOut.particle[0], contactOut.particle[1]);
         }
         return result;
     }

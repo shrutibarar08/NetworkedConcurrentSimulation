@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector3.h"
+<<<<<<< Updated upstream
 
 class Particle
 {
@@ -11,16 +12,14 @@ private:
 	float inverseMass;
 	float damping;
 
+=======
+class Particle {
+>>>>>>> Stashed changes
 public:
-
-	Particle();
-
+    Particle();
     void integrate(float duration);
-
     void addForce(const Vector3& force);
     void clearAccumulator();
-
-
     // Setters
     void setPosition(const Vector3& pos);
     void setVelocity(const Vector3& vel);
@@ -28,7 +27,10 @@ public:
     void setMass(float mass);
     void setInverseMass(float invMass);
     void setDamping(float d);
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
     // Getters
     Vector3 getPosition() const;
     Vector3 getVelocity() const;
@@ -37,5 +39,16 @@ public:
     float getInverseMass() const;
     float getDamping() const;
     bool hasFiniteMass() const;
+<<<<<<< Updated upstream
 };
+=======
+>>>>>>> Stashed changes
 
+private:
+    Vector3 position;
+    Vector3 velocity;
+    Vector3 acceleration;
+    Vector3 forceAccum;
+    float inverseMass;
+    float damping;
+};

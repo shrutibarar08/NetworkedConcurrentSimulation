@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,32 +21,32 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{d6130361-2240-4751-a838-31055064d246}</ProjectGuid>
-    <RootNamespace>PhysicsLibrary</RootNamespace>
+    <ProjectGuid>{145e18f1-a1b5-498c-8feb-17cdbc392aec}</ProjectGuid>
+    <RootNamespace>PhysicsTestApp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -70,26 +70,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)Lib\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Lib\Intermediate\$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)Lib\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Lib\Intermediate\$(Platform)\$(Configuration)\</IntDir>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -99,16 +88,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding Condition="'$(UseDynamicDebugging)' != 'true'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(UseDynamicDebugging)' != 'true'">true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -116,15 +102,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\PhysicsLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -134,74 +117,41 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding Condition="'$(UseDynamicDebugging)' != 'true'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(UseDynamicDebugging)' != 'true'">true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-<<<<<<< Updated upstream
-=======
-    <ClInclude Include="BoundingSphere.h" />
-    <ClInclude Include="BVHNode.h" />
-    <ClInclude Include="Collider.h" />
-    <ClInclude Include="CollisionDetector.h" />
-    <ClInclude Include="Contact.h" />
-    <ClInclude Include="ContactResolver.h" />
->>>>>>> Stashed changes
-    <ClInclude Include="Drag.h" />
-    <ClInclude Include="ForceGenerator.h" />
-    <ClInclude Include="ForceRegistry.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="Gravity.h" />
-    <ClInclude Include="Matrix3.h" />
-    <ClInclude Include="Particle.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="PhysicsManager.h" />
-    <ClInclude Include="PlaneCollider.h" />
-    <ClInclude Include="Quaternion.h" />
-    <ClInclude Include="RigidBody.h" />
-    <ClInclude Include="SphereCollider.h" />
-    <ClInclude Include="Vector3.h" />
+    <ClCompile Include="..\PhysicsLibrary\Collider.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\CollisionDetector.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Contact.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\ContactResolver.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Drag.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\ForceGenerator.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\ForceRegistry.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Gravity.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Matrix3.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Particle.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\pch.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\PhysicsLibrary.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\PhysicsManager.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\PlaneCollider.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Quaternion.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\RigidBody.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\SphereCollider.cpp" />
+    <ClCompile Include="..\PhysicsLibrary\Vector3.cpp" />
+    <ClCompile Include="PhysicsTestApp.cpp" />
   </ItemGroup>
   <ItemGroup>
-<<<<<<< Updated upstream
-=======
-    <ClCompile Include="BoundingSphere.cpp" />
-    <ClCompile Include="BVHNode.cpp" />
-    <ClCompile Include="Collider.cpp" />
-    <ClCompile Include="CollisionDetector.cpp" />
-    <ClCompile Include="Contact.cpp" />
-    <ClCompile Include="ContactResolver.cpp" />
->>>>>>> Stashed changes
-    <ClCompile Include="Drag.cpp" />
-    <ClCompile Include="ForceGenerator.cpp" />
-    <ClCompile Include="ForceRegistry.cpp" />
-    <ClCompile Include="Gravity.cpp" />
-    <ClCompile Include="Matrix3.cpp" />
-    <ClCompile Include="Particle.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="PhysicsLibrary.cpp" />
-    <ClCompile Include="PhysicsManager.cpp" />
-    <ClCompile Include="PlaneCollider.cpp" />
-    <ClCompile Include="Quaternion.cpp" />
-    <ClCompile Include="RigidBody.cpp" />
-    <ClCompile Include="SphereCollider.cpp" />
-    <ClCompile Include="Vector3.cpp" />
+    <ProjectReference Include="..\PhysicsLibrary\PhysicsLibrary.vcxproj">
+      <Project>{d6130361-2240-4751-a838-31055064d246}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
