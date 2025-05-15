@@ -61,6 +61,13 @@ void GuiManager::AddUI(std::unique_ptr<IWidget> widget)
 	ReleaseSRWLockExclusive(&m_Lock);
 }
 
+void GuiManager::AddUI(IWidget* widget)
+{
+	AcquireSRWLockExclusive(&m_Lock);
+	m_WidgetsSafe.emplace_back(widget);
+	ReleaseSRWLockExclusive(&m_Lock);
+}
+
 void GuiManager::ResizeViewport(float width, float height)
 {
 	AcquireSRWLockShared(&m_Lock);
@@ -108,10 +115,25 @@ void GuiManager::RenderScene()
 			}
 			widget->RenderMenu();
 		}
+
+		for (auto& widget: m_WidgetsSafe)
+		{
+			if (ImGui::BeginMenu("Settings"))
+			{
+				widget->RenderAsSystemItem();
+				ImGui::EndMenu();
+			}
+			widget->RenderMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 	//~ Render Popups
 	for (auto& widget : m_Widgets)
+	{
+		widget->RenderPopups();
+	}
+	for (auto& widget : m_WidgetsSafe)
 	{
 		widget->RenderPopups();
 	}

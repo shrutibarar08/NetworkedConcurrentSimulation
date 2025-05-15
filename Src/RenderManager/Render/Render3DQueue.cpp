@@ -5,8 +5,9 @@
 #include "Utils/Logger.h"
 
 
-Render3DQueue::Render3DQueue(CameraController* controller)
+Render3DQueue::Render3DQueue(CameraController* controller, ID3D11Device* device)
 {
+	m_Device = device;
 	m_CameraController = controller;
 }
 
@@ -16,6 +17,7 @@ bool Render3DQueue::AddModel(IModel* model)
 	AcquireSRWLockExclusive(&m_Lock);
 	if (!m_ModelsToRender.contains(model->GetModelId()))
 	{
+		if (!model->IsBuilt()) model->Build(m_Device);
 		m_ModelsToRender.emplace(model->GetModelId(), model);
 		status = true;
 	}
@@ -25,6 +27,8 @@ bool Render3DQueue::AddModel(IModel* model)
 
 bool Render3DQueue::RemoveModel(IModel* model)
 {
+	if (m_ModelsToRender.empty()) return false;
+
 	bool status = false;
 	AcquireSRWLockExclusive(&m_Lock);
 	if (m_ModelsToRender.contains(model->GetModelId()))
@@ -38,6 +42,8 @@ bool Render3DQueue::RemoveModel(IModel* model)
 
 bool Render3DQueue::RemoveModel(uint64_t modelId)
 {
+	if (m_ModelsToRender.empty()) return false;
+
 	bool status = false;
 
 	AcquireSRWLockExclusive(&m_Lock);
@@ -52,23 +58,9 @@ bool Render3DQueue::RemoveModel(uint64_t modelId)
 
 bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 {
+	if (m_ModelsToRender.empty()) return false;
+
 	MODEL_VERTEX_CB cb{};
-
-	// Build view matrix (camera at z = -10)
-	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
-		DirectX::XMVectorSet(0.0f, 0.0f, -10.0f, 1.0f),  // Eye position
-		DirectX::XMVectorZero(),                         // Target
-		DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)      // Up vector
-	);
-
-	// Build projection matrix (60° FOV, 16:9 aspect)
-	DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovLH(
-		DirectX::XMConvertToRadians(60.0f),
-		1280.0f / 720.0f,
-		0.1f,
-		1000.0f
-	);
-
 	// Invert them
 	cb.ViewMatrix = m_CameraController->GetViewMatrix();
 	cb.ProjectionMatrix = m_CameraController->GetProjectionMatrix();
@@ -93,6 +85,7 @@ bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 
 bool Render3DQueue::UpdatePixelConstantBuffer(ID3D11DeviceContext* context)
 {
+	if (m_ModelsToRender.empty()) return false;
 	MODEL_PIXEL_CB cb{};
 	cb.TotalTime = 0.0f; // TODO: Implement a global timer class
 
@@ -112,6 +105,8 @@ bool Render3DQueue::UpdatePixelConstantBuffer(ID3D11DeviceContext* context)
 
 void Render3DQueue::RenderAll(ID3D11DeviceContext* context)
 {
+	if (m_ModelsToRender.empty()) return;
+
 	for (auto& model : m_ModelsToRender | std::views::values)
 	{
 		AcquireSRWLockShared(&m_Lock);

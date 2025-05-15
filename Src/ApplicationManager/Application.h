@@ -9,6 +9,7 @@
 #include "GuiManager/GuiManager.h"
 #include "InputHandler/InputHandler.h"
 #include "RenderManager/Model/Shapes/ModelCube.h"
+#include "ScenarioManager/Scene/Scene.h"
 #include "SystemManager/SystemHandler.h"
 #include "WindowManager/WindowsSystem.h"
 
@@ -47,6 +48,5 @@ private:
 
 	HANDLE m_StartEventHandle;
 	HANDLE m_EndEventHandle;
-
-	std::unique_ptr<ModelCube> m_Cube;
+	Scene m_Scene{};
 };

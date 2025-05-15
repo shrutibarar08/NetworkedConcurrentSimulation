@@ -29,12 +29,6 @@ Application::Application()
 	if (m_StartEventHandle && m_EndEventHandle) 
 		LOG_SUCCESS("Application events (Start/End) created successfully.");
 	else LOG_FAIL("Failed to create application events.");
-
-	MODEL_INIT_DESC desc{};
-	desc.ModelName = "Cube Model";
-	desc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
-	desc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
-	m_Cube = std::make_unique<ModelCube>(&desc);
 }
 
 Application::~Application()
@@ -84,6 +78,7 @@ bool Application::Init()
 	m_GuiManager->AddUI(std::make_unique<RenderManagerUI>(m_Renderer.get()));
 	m_GuiManager->AddUI(std::make_unique<WindowsManagerUI>(m_WindowSystem.get()));
 	m_GuiManager->AddUI(std::make_unique<InputHandlerUI>(m_InputHandler.get()));
+	m_GuiManager->AddUI(m_Scene.GetWidget());
 
 	m_SystemHandler.Register("GuiManager", m_GuiManager.get());
 	m_SystemHandler.AddDependency(
@@ -104,8 +99,7 @@ bool Application::Init()
 bool Application::Run()
 {
 	//~ Test only
-	m_Renderer->BuildModel(m_Cube.get());
-	Render3DQueue::AddModel(m_Cube.get());
+	m_Scene.AddObject(SPAWN_OBJECT::CUBE);
 	//~ Test End
 
 	LOG_INFO("Application main loop starting.");

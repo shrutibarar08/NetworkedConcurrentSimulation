@@ -29,6 +29,7 @@ void IModel::Build(ID3D11Device* device)
 	BuildVertexShaderBlob(device);
 	BuildVertexConstantBuffer(device);
 	LOG_SUCCESS("Model Built...");
+	m_Built = true;
 	ReleaseSRWLockExclusive(&m_Lock);
 }
 
@@ -75,6 +76,8 @@ void IModel::PresentModel(ID3D11DeviceContext* context)
 
 void IModel::UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB* cb)
 {
+	if (!IsBuilt()) return;
+
 	if (!cb || !context || !m_VertexConstantBuffer)
 		throw std::invalid_argument("Invalid input to UpdateVertexCB.");
 
@@ -99,6 +102,7 @@ void IModel::UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB*
 
 void IModel::UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* cb)
 {
+	if (!IsBuilt()) return;
 	if (!cb || !context || !m_PixelConstantBuffer)
 		throw std::invalid_argument("Invalid input to UpdatePixelCB.");
 

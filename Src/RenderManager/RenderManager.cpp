@@ -81,12 +81,6 @@ bool RenderManager::SceneEnd()
 
 bool RenderManager::Build(SweetLoader& sweetLoader)
 {
-    auto* cam = m_CameraManager.GetActiveCamera();
-    cam->AddTranslationY(1.0f);
-    cam->AddTranslationZ(-10.0f);
-
-	m_Render3DQueue = std::make_unique<Render3DQueue>(cam);
-
     LOG_INFO("RenderManager::Build() started.");
 
     if (!BuildParameter(sweetLoader))
@@ -101,7 +95,19 @@ bool RenderManager::Build(SweetLoader& sweetLoader)
         return false;
     }
 
-    return BuildDirectX();
+    if (!BuildDirectX())
+    {
+        LOG_FAIL("Failed to build DirectX Instance");
+        return false;
+    }
+
+    auto* cam = m_CameraManager.GetActiveCamera();
+    cam->AddTranslationY(1.0f);
+    cam->AddTranslationZ(-10.0f);
+
+    m_Render3DQueue = std::make_unique<Render3DQueue>(cam, m_Device.Get());
+
+    return true;
 }
 
 bool RenderManager::Shutdown()
@@ -237,35 +243,6 @@ int RenderManager::GetSelectedMSAA()
 std::vector<UINT> RenderManager::GetAllAvailableMSAA() const
 {
     return m_SupportedMSAA;
-}
-
-void RenderManager::SelectAdapter(int adapterIndex)
-{
-    if (m_SelectedAdapterIndex < 0 || m_SelectedAdapterIndex >= m_Adapters.size())
-    {
-        LOG_FAIL("Invalid adapter index for device creation.");
-        return;
-    }
-    if (m_SelectedAdapterIndex == adapterIndex)
-    {
-        LOG_INFO("Ignore Rebuilding found same adapter index selected!");
-        return;
-    }
-    m_SelectedAdapterIndex = adapterIndex;
-    if (BuildDirectX())
-    {
-        LOG_ERROR("FAILED TO REBUILD DIRECTX 11");
-    }
-}
-
-const std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter>>& RenderManager::GetAvailableAdapter()
-{
-    return m_Adapters;
-}
-
-int RenderManager::GetSelectedAdapterIndex() const
-{
-    return m_SelectedAdapterIndex;
 }
 
 CameraController* RenderManager::GetActiveCamera() const

@@ -143,6 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GuiManager\Widgets\SceneUI.cpp" />
+    <ClCompile Include="Src\ScenarioManager\Scene\Scene.cpp" />
+    <ClCompile Include="Src\ScenarioManager\ScenarioManager.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\InputHandlerUI.cpp" />
     <ClCompile Include="Src\ApplicationManager\InputHandler\InputHandler.cpp" />
     <ClCompile Include="Src\EventSystem\EventQueue.cpp" />
@@ -179,6 +182,9 @@
     <ClCompile Include="Src\ApplicationManager\Clock\SystemClock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\GuiManager\Widgets\SceneUI.h" />
+    <ClInclude Include="Src\ScenarioManager\Scene\Scene.h" />
+    <ClInclude Include="Src\ScenarioManager\ScenarioManager.h" />
     <ClInclude Include="Src\GuiManager\Widgets\InputHandlerUI.h" />
     <ClInclude Include="Src\ApplicationManager\InputHandler\InputHandler.h" />
     <ClInclude Include="Src\EventSystem\EventQueue.h" />

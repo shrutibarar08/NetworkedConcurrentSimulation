@@ -9,7 +9,7 @@
 class Render3DQueue
 {
 public:
-	Render3DQueue(CameraController* controller);
+	Render3DQueue(CameraController* controller, ID3D11Device* device);
 	static bool AddModel(IModel* model);
 	static bool RemoveModel(IModel* model);
 	static bool RemoveModel(uint64_t modelId);
@@ -18,6 +18,7 @@ public:
 	static void RenderAll(ID3D11DeviceContext* context);
 
 private:
+	inline static ID3D11Device* m_Device = nullptr;
 	inline static CameraController* m_CameraController = nullptr;
 	inline static std::unordered_map<uint64_t, IModel*> m_ModelsToRender = {};
 	inline static SRWLOCK m_Lock = SRWLOCK_INIT;

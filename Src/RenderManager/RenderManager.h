@@ -43,11 +43,7 @@ public:
     int GetRefreshRate() const;
     int GetSelectedMSAA();
     std::vector<UINT> GetAllAvailableMSAA() const;
-
-    void SelectAdapter(int adapterIndex);
-    const std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter>>& GetAvailableAdapter();
-    int GetSelectedAdapterIndex() const;
-    CameraController* GetActiveCamera() const;
+	CameraController* GetActiveCamera() const;
 
 private:
     bool BuildParameter(SweetLoader& sweetLoader);

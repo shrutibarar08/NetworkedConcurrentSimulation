@@ -27,6 +27,7 @@ public:
 	void UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* cb);
 
 	uint64_t GetModelId() const;
+	bool IsBuilt() const { return m_Built; }
 
 protected:
 	void BuildVertexBuffer(ID3D11Device* device);
@@ -65,4 +66,5 @@ protected:
 	SRWLOCK m_Lock;
 	inline static std::atomic_uint64_t s_ModelCounter = 0;
 	uint64_t m_ModelID;
+	bool m_Built{ false };
 };
