@@ -15,5 +15,14 @@ public:
     void addScaledVector(const Vector3& vector, float scale);
 
     void rotateByVector(const Vector3& vector);
+<<<<<<< Updated upstream
+=======
+
+    Quaternion operator*(float scalar) const;
+
+    friend Quaternion operator*(float scalar, const Quaternion& q);
+    Quaternion& operator+=(const Quaternion& q);
+
+>>>>>>> Stashed changes
 };
 

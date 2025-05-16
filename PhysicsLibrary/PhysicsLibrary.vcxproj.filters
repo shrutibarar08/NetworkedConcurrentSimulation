@@ -80,6 +80,15 @@
     <ClInclude Include="PhysicsManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+    <ClInclude Include="CapsuleCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
 >>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +155,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PhysicsManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+    <ClCompile Include="CapsuleCollider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
 >>>>>>> Stashed changes

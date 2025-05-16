@@ -1,32 +1,21 @@
 #pragma once
 #include "Vector3.h"
-#include "Matrix3.h"
 #include "Quaternion.h"
+#include "Matrix3.h"
+#include "IntegrationType.h"
 
 class RigidBody {
-private:
-    // Linear
-    Vector3 position;
-    Vector3 velocity;
-    Vector3 acceleration;
-    Vector3 forceAccum;
-    float inverseMass;
-    float linearDamping;
-
-    // Angular
-    Quaternion orientation;
-    Vector3 angularVelocity;
-    Vector3 torqueAccum;
-    Matrix3 inverseInertiaTensor;
-    float angularDamping;
-
 public:
     RigidBody();
 
     void integrate(float duration);
+    void calculateDerivedData();
+
+    void clearAccumulators();
     void addForce(const Vector3& force);
     void addTorque(const Vector3& torque);
-    void clearAccumulators();
+    void integrate(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
+
 
     // Setters
     void setPosition(const Vector3& pos);
@@ -50,4 +39,23 @@ public:
     float getInverseMass() const;
     Matrix3 getInverseInertiaTensor() const;
     bool hasFiniteMass() const;
+
+private:
+    Vector3 position;
+    Vector3 velocity;
+    Vector3 acceleration;
+    Vector3 forceAccum;
+
+    float inverseMass;
+    float linearDamping;
+
+    Quaternion orientation;
+    Vector3 angularVelocity;
+    Vector3 torqueAccum;
+    float angularDamping;
+
+    Matrix3 inverseInertiaTensor;
+    Matrix3 inverseInertiaTensorWorld;
+    Matrix3 transformMatrix;
+
 };

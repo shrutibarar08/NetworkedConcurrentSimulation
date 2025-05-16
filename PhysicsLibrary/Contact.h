@@ -1,20 +1,20 @@
-#pragma once
-#include "Vector3.h"
-#include "RigidBody.h"
+#pragma once  
+#include "Vector3.h"  
+#include "RigidBody.h"  
 
-class Contact {
-    
-public:
-    RigidBody* body[2];
+class Contact {  
+public:  
+   RigidBody* body[2] = { nullptr, nullptr };  
+   Vector3 contactPoint;  
+   Vector3 contactNormal;  
+   float penetration = 0.0f;  
+   float restitution = 0.0f;  
+   float friction = 0.0f;  
 
-    float restitution;
-    float friction;
-    float penetration;
-    Vector3 contactPoint;
-    Vector3 contactNormal;
+   void resolve(float duration);  
+   float calculateSeparatingVelocity() const; 
 
-    Contact();
-
-    float calculateSeparatingVelocity() const;
-    void resolve(float duration);
+private:  
+   void resolveVelocity(float duration);  
+   void resolveInterpenetration(float duration);  
 };

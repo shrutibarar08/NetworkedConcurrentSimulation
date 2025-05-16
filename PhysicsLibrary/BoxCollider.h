@@ -15,3 +15,4 @@ public:
     Vector3 getHalfExtents() const;
     Vector3 getCenter() const;
 };
+

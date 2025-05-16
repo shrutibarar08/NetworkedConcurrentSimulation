@@ -152,6 +152,10 @@
 <<<<<<< Updated upstream
 =======
     <ClInclude Include="BoundingSphere.h" />
+<<<<<<< Updated upstream
+=======
+    <ClInclude Include="BoxCollider.h" />
+>>>>>>> Stashed changes
     <ClInclude Include="BVHNode.h" />
     <ClInclude Include="Collider.h" />
     <ClInclude Include="CollisionDetector.h" />
@@ -177,6 +181,10 @@
 <<<<<<< Updated upstream
 =======
     <ClCompile Include="BoundingSphere.cpp" />
+<<<<<<< Updated upstream
+=======
+    <ClCompile Include="BoxCollider.cpp" />
+>>>>>>> Stashed changes
     <ClCompile Include="BVHNode.cpp" />
     <ClCompile Include="Collider.cpp" />
     <ClCompile Include="CollisionDetector.cpp" />
