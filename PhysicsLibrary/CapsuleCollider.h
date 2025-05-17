@@ -5,7 +5,7 @@
 class CapsuleCollider : public Collider {
 private:
     float radius;
-    float height; 
+    float height;
 
 public:
     CapsuleCollider(RigidBody* body, float radius, float height);
@@ -15,6 +15,6 @@ public:
 
     float getRadius() const;
     float getHeight() const;
-    Vector3 getStart() const; // One end point of capsule
-    Vector3 getEnd() const;   // Other end point of capsule
+    Vector3 getStart() const;
+    Vector3 getEnd() const;
 };

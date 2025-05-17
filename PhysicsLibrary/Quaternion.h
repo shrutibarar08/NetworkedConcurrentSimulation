@@ -4,16 +4,17 @@
 class Quaternion {
 public:
     float r, i, j, k;
-
+  
     Quaternion();
     Quaternion(float r, float i, float j, float k);
 
-    void normalize();
-
     Quaternion operator*(const Quaternion& q) const;
+    Quaternion operator*(float scalar) const;
+    Quaternion& operator+=(const Quaternion& q);
 
     void addScaledVector(const Vector3& vector, float scale);
-
     void rotateByVector(const Vector3& vector);
+    void normalize();
 
+    friend Quaternion operator*(float scalar, const Quaternion& q);
 };

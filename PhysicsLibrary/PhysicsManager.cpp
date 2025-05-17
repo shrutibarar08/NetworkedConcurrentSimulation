@@ -1,8 +1,32 @@
-#include "pch.h"
+#pragma once
+#include <vector>
+#include "RigidBody.h"
+#include "Collider.h"
+#include "Contact.h"
+#include "ContactResolver.h"
+
+class PhysicsManager {
+public:
+    static PhysicsManager& get();
+
+    void addRigidBody(RigidBody* body, Collider* collider);
+    void update(float dt);
+    void clear();
+
+private:
+    PhysicsManager(unsigned contactIterations);
+
+    std::vector<RigidBody*> rigidBodies;
+    std::vector<Collider*> colliders;
+    std::vector<Contact> contacts;
+    ContactResolver resolver;
+};
+
+// PhysicsManager.cpp
 #include "PhysicsManager.h"
 
 PhysicsManager& PhysicsManager::get() {
-    static PhysicsManager instance(10); // 10 contact iterations
+    static PhysicsManager instance(10);
     return instance;
 }
 
@@ -15,9 +39,9 @@ void PhysicsManager::addRigidBody(RigidBody* body, Collider* collider) {
     colliders.push_back(collider);
 }
 
-void PhysicsManager::update(float dt) {
+void PhysicsManager::update(float dt, IntegrationType type) {
     for (RigidBody* body : rigidBodies) {
-        body->integrate(dt);
+        body->integrate(dt, type);
     }
 
     contacts.clear();
@@ -31,10 +55,10 @@ void PhysicsManager::update(float dt) {
     }
 
     if (!contacts.empty()) {
-        unsigned int count = static_cast<unsigned int>(contacts.size());
-        resolver.resolveContacts(contacts.data(), count, dt);
+        resolver.resolveContacts(contacts.data(), (unsigned int)contacts.size(), dt);
     }
 }
+
 
 void PhysicsManager::clear() {
     rigidBodies.clear();

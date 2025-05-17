@@ -1,24 +1,23 @@
 #pragma once
 #include "BoundingSphere.h"
 #include "Collider.h"
+#include <vector>
 
-class BVHNode
-{
+class BVHNode {
 public:
-    BVHNode(BVHNode* parent, const BoundingSphere& volume, Collider* collider = nullptr);
+    BVHNode* parent;
+    BVHNode* left;
+    BVHNode* right;
+    BoundingSphere volume;
+    Collider* collider;
+
+    BVHNode(BVHNode* parent = nullptr);
+    ~BVHNode();
 
     bool isLeaf() const;
     void insert(Collider* newCollider, const BoundingSphere& newVolume);
 
-    const BoundingSphere& getVolume() const;
-    Collider* getCollider() const;
-    BVHNode* getChild(int index) const;
-
-private:
-    BVHNode* parent;
-    BVHNode* children[2];
-
-    BoundingSphere volume;
-    Collider* collider;
+    void getPotentialContacts(std::vector<std::pair<Collider*, Collider*>>& contacts);
+    void recalculateBoundingVolume();
 };
 

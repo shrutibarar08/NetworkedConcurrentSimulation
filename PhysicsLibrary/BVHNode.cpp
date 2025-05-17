@@ -1,53 +1,58 @@
 #include "pch.h"
 #include "BVHNode.h"
 
-BVHNode::BVHNode(BVHNode* parent, const BoundingSphere& volume, Collider* collider)
-	: parent(parent), volume(volume), collider(collider) {
-	children[0] = nullptr;
-	children[1] = nullptr;
+BVHNode::BVHNode(BVHNode* parent)
+    : parent(parent), left(nullptr), right(nullptr), collider(nullptr) {
 }
 
-bool BVHNode::isLeaf() const
-{
-	return collider != nullptr;
+BVHNode::~BVHNode() {
+    delete left;
+    delete right;
 }
 
-void BVHNode::insert(Collider* newCollider, const BoundingSphere& newVolume)
-{
+bool BVHNode::isLeaf() const {
+    return (collider != nullptr);
+}
+
+void BVHNode::insert(Collider* newCollider, const BoundingSphere& newVolume) {
     if (isLeaf()) {
-        children[0] = new BVHNode(this, volume, collider);
-        children[1] = new BVHNode(this, newVolume, newCollider);
-        collider = nullptr;
-        volume = BoundingSphere::merge(children[0]->volume, children[1]->volume);
+        BVHNode* oldLeaf = new BVHNode(this);
+        oldLeaf->volume = this->volume;
+        oldLeaf->collider = this->collider;
+
+        BVHNode* newLeaf = new BVHNode(this);
+        newLeaf->volume = newVolume;
+        newLeaf->collider = newCollider;
+
+        this->collider = nullptr;
+        this->left = oldLeaf;
+        this->right = newLeaf;
+        this->recalculateBoundingVolume();
     }
     else {
-        // Insert into child that needs least volume increase
-        float growth0 = BoundingSphere::merge(children[0]->volume, newVolume).getSize() - children[0]->volume.getSize();
-        float growth1 = BoundingSphere::merge(children[1]->volume, newVolume).getSize() - children[1]->volume.getSize();
-
-        if (growth0 < growth1) {
-            children[0]->insert(newCollider, newVolume);
-        }
-        else {
-            children[1]->insert(newCollider, newVolume);
-        }
-
-        volume = BoundingSphere::merge(children[0]->volume, children[1]->volume);
+        float growthLeft = left->volume.getGrowth(newVolume);
+        float growthRight = right->volume.getGrowth(newVolume);
+        if (growthLeft < growthRight) left->insert(newCollider, newVolume);
+        else right->insert(newCollider, newVolume);
+        this->recalculateBoundingVolume();
     }
 }
 
-const BoundingSphere& BVHNode::getVolume() const
-{
-	return volume;
+void BVHNode::recalculateBoundingVolume() {
+    if (isLeaf()) return;
+    volume = BoundingSphere::merge(left->volume, right->volume);
 }
 
-Collider* BVHNode::getCollider() const
-{
-	return collider;
-}
+void BVHNode::getPotentialContacts(std::vector<std::pair<Collider*, Collider*>>& contacts) {
+    if (isLeaf()) return;
 
-BVHNode* BVHNode::getChild(int index) const
-{
-	//assert(index == 0 || index == 1);
-	return children[index];
+    if (left->isLeaf() && right->isLeaf()) {
+        if (left->volume.overlaps(right->volume)) {
+            contacts.emplace_back(left->collider, right->collider);
+        }
+    }
+    else {
+        if (left) left->getPotentialContacts(contacts);
+        if (right) right->getPotentialContacts(contacts);
+    }
 }

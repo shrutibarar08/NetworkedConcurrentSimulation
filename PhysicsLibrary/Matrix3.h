@@ -10,20 +10,15 @@ public:
     Matrix3(float d0, float d1, float d2,
         float d3, float d4, float d5,
         float d6, float d7, float d8);
+  
+    static Matrix3 rotationMatrix(const Quaternion& q);
+    static Matrix3 identity();
 
-    // Multiply matrix by vector
-    Vector3 operator*(const Vector3& v) const;
-
-    // Multiply matrix by another matrix
-    Matrix3 operator*(const Matrix3& m) const;
-
-    // Set to identity
     void setIdentity();
-
-    // Transpose
     Matrix3 transpose() const;
-
-    // Inverse (only for symmetric inertia tensors)
+    Matrix3 operator*(const Matrix3& other) const;
     Matrix3 inverse() const;
-};
 
+    Vector3 operator*(const Vector3& vec) const;
+    Vector3 transform(const Vector3& vec) const;
+};
