@@ -153,6 +153,10 @@
 =======
     <ClInclude Include="BoundingSphere.h" />
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    <ClInclude Include="BoxCollider.h" />
+>>>>>>> Stashed changes
 =======
     <ClInclude Include="BoxCollider.h" />
 >>>>>>> Stashed changes
@@ -182,6 +186,10 @@
 =======
     <ClCompile Include="BoundingSphere.cpp" />
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    <ClCompile Include="BoxCollider.cpp" />
+>>>>>>> Stashed changes
 =======
     <ClCompile Include="BoxCollider.cpp" />
 >>>>>>> Stashed changes

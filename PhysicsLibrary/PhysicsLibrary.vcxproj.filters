@@ -36,8 +36,6 @@
     <ClInclude Include="Drag.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-<<<<<<< Updated upstream
-=======
     <ClInclude Include="Contact.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -50,9 +48,6 @@
     <ClInclude Include="Matrix3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
     <ClInclude Include="SphereCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -80,16 +75,12 @@
     <ClInclude Include="PhysicsManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
     <ClInclude Include="CapsuleCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BoxCollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
->>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PhysicsLibrary.cpp">
@@ -113,8 +104,6 @@
     <ClCompile Include="Drag.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-<<<<<<< Updated upstream
-=======
     <ClCompile Include="Contact.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -127,9 +116,6 @@
     <ClCompile Include="Matrix3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
     <ClCompile Include="SphereCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -157,15 +143,11 @@
     <ClCompile Include="PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
     <ClCompile Include="CapsuleCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BoxCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
->>>>>>> Stashed changes
   </ItemGroup>
 </Project>

@@ -23,6 +23,9 @@ public:
     friend Quaternion operator*(float scalar, const Quaternion& q);
     Quaternion& operator+=(const Quaternion& q);
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 };
 

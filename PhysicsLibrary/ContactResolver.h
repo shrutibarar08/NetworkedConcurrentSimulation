@@ -3,6 +3,7 @@
 
 class ContactResolver {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 public:
     explicit ContactResolver(unsigned iterations);
@@ -14,6 +15,10 @@ private:
 =======
     unsigned iterations;
 public:
+=======
+    unsigned iterations;
+public:
+>>>>>>> Stashed changes
     ContactResolver(unsigned iterations);
     void resolveContacts(Contact* contacts, unsigned numContacts, float duration);
 };
@@ -43,5 +48,9 @@ void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, f
 
         contacts[maxIndex].resolve(duration);
     }
+<<<<<<< Updated upstream
+}
+>>>>>>> Stashed changes
+=======
 }
 >>>>>>> Stashed changes

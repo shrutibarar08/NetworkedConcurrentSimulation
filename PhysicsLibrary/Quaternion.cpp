@@ -4,9 +4,13 @@
 
 Quaternion::Quaternion() : r(1), i(0), j(0), k(0) {}
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 Quaternion::Quaternion(float r, float i, float j, float k)
     : r(r), i(i), j(j), k(k) {
 }
+=======
+Quaternion::Quaternion(float r, float i, float j, float k) : r(r), i(i), j(j), k(k) {}
+>>>>>>> Stashed changes
 =======
 Quaternion::Quaternion(float r, float i, float j, float k) : r(r), i(i), j(j), k(k) {}
 >>>>>>> Stashed changes
