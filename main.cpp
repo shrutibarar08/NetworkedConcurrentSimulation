@@ -1,6 +1,9 @@
 #include <windows.h>
 #include "ApplicationManager/Application.h"
+#include "ExceptionManager/IException.h"
 #include "Utils/Logger.h"
+#include "WindowManager/Components/KeyboardHandler.h"
+#include "WindowManager/Components/MouseHandler.h"
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -9,21 +12,71 @@ int WINAPI WinMain(
     int       nCmdShow)
 {
 #ifdef _DEBUG
-    Logger::Init();
+    LOGGER_INITIALIZE_DESC desc{};
+    desc.FilePath = "SweetLog";
+    desc.EnableTerminal = true;
+    desc.FolderPath = "Logs";
+    INIT_GLOBAL_LOGGER(&desc);
+
+    MouseHandler::SetDebug(false);
+    KeyboardHandler::SetDebug(true);
 #endif
 
-	Application app{};
-
-    if (!app.Init())
+    HRESULT result = E_FAIL;
+    try
     {
-        return E_FAIL;
+        Application app{};
+
+        if (!app.Init())
+        {
+            return E_FAIL;
+        }
+    	result = app.Run();
+    }catch (IException& e)
+    {
+        e.SaveCrashReport();
+        MessageBoxA(nullptr, e.what(),
+            "Application Error",
+            MB_ICONERROR | MB_OK);
     }
+    catch (const std::exception& e)
+    {
+        // Catch any standard C++ exceptions
+        LOGGER_INITIALIZE_DESC logDesc{};
+        logDesc.FilePath = "BasicException";
+        logDesc.FolderPath = Draco::Exception::DEFAULT_CRASH_FOLDER;
 
-    bool result = app.Run();
+        Logger logger{&logDesc};
+        logger.Error(e.what(),
+            "UnknownFile",
+            0,
+            "UnknownFunction"
+        );
+        logger.Close();
 
-#ifdef _DEBUG
-    Logger::Close();
-#endif
+        MessageBoxA(nullptr,
+            e.what(),
+            "Standard Exception",
+            MB_ICONERROR | MB_OK);
+    }
+    catch (...)
+    {
+        // Catch absolutely everything else
+        LOGGER_INITIALIZE_DESC logDesc{};
+        logDesc.FilePath = "BasicException";
+        logDesc.FolderPath = Draco::Exception::DEFAULT_CRASH_FOLDER;
 
+        Logger logger{ &logDesc };
+        logger.Error("Unknown fatal error occurred.",
+            "UnknownFile",
+            0,
+            "UnknownFunction");
+        logger.Close();
+
+        MessageBoxA(nullptr,
+            "Unknown fatal error occurred.",
+            "Fatal Error",
+            MB_ICONERROR | MB_OK);
+    }
     return result;
 }

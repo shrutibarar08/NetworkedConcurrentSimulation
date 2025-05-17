@@ -149,23 +149,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-<<<<<<< Updated upstream
-=======
     <ClInclude Include="BoundingSphere.h" />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-    <ClInclude Include="BoxCollider.h" />
->>>>>>> Stashed changes
-=======
-    <ClInclude Include="BoxCollider.h" />
->>>>>>> Stashed changes
+    <ClInclude Include="BoxCollide.h" />
     <ClInclude Include="BVHNode.h" />
+    <ClInclude Include="CapsuleCollider.h" />
     <ClInclude Include="Collider.h" />
     <ClInclude Include="CollisionDetector.h" />
     <ClInclude Include="Contact.h" />
     <ClInclude Include="ContactResolver.h" />
->>>>>>> Stashed changes
     <ClInclude Include="Drag.h" />
     <ClInclude Include="ForceGenerator.h" />
     <ClInclude Include="ForceRegistry.h" />
@@ -182,23 +173,14 @@
     <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
-<<<<<<< Updated upstream
-=======
     <ClCompile Include="BoundingSphere.cpp" />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-    <ClCompile Include="BoxCollider.cpp" />
->>>>>>> Stashed changes
-=======
-    <ClCompile Include="BoxCollider.cpp" />
->>>>>>> Stashed changes
+    <ClCompile Include="BoxCollide.cpp" />
     <ClCompile Include="BVHNode.cpp" />
+    <ClCompile Include="CapsuleCollider.cpp" />
     <ClCompile Include="Collider.cpp" />
     <ClCompile Include="CollisionDetector.cpp" />
     <ClCompile Include="Contact.cpp" />
     <ClCompile Include="ContactResolver.cpp" />
->>>>>>> Stashed changes
     <ClCompile Include="Drag.cpp" />
     <ClCompile Include="ForceGenerator.cpp" />
     <ClCompile Include="ForceRegistry.cpp" />

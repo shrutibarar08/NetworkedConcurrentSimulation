@@ -2,25 +2,12 @@
 #include "Contact.h"
 
 class ContactResolver {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-public:
-    explicit ContactResolver(unsigned iterations);
-    void resolveContacts(Contact* contactArray, unsigned numContacts, float duration);
-
 private:
-    unsigned iterations;
-    unsigned iterationsUsed;};
-=======
-    unsigned iterations;
+    unsigned iterationsUsed;
 public:
-=======
-    unsigned iterations;
-public:
->>>>>>> Stashed changes
     ContactResolver(unsigned iterations);
     void resolveContacts(Contact* contacts, unsigned numContacts, float duration);
+    unsigned iterations;
 };
 
 // ContactResolver.cpp
@@ -31,14 +18,18 @@ ContactResolver::ContactResolver(unsigned iterations)
     : iterations(iterations) {
 }
 
-void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, float duration) {
-    for (unsigned i = 0; i < iterations; ++i) {
+void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, float duration)
+{
+    for (unsigned i = 0; i < iterations; ++i) 
+    {
         float maxSepVel = -FLT_MAX;
         int maxIndex = numContacts;
 
-        for (unsigned j = 0; j < numContacts; ++j) {
+        for (unsigned j = 0; j < numContacts; ++j)
+        {
             float sepVel = contacts[j].calculateSeparatingVelocity();
-            if (sepVel < maxSepVel && (contacts[j].penetration > 0 || sepVel < 0)) {
+            if (sepVel < maxSepVel && (contacts[j].penetration > 0 || sepVel < 0))
+            {
                 maxSepVel = sepVel;
                 maxIndex = j;
             }
@@ -48,9 +39,4 @@ void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, f
 
         contacts[maxIndex].resolve(duration);
     }
-<<<<<<< Updated upstream
 }
->>>>>>> Stashed changes
-=======
-}
->>>>>>> Stashed changes

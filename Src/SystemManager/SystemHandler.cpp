@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "Utils/Logger.h"
+
 void SystemHandler::Register(const std::string& name, ISystem* instance)
 {
     // Register system if not already present
@@ -28,11 +30,14 @@ bool SystemHandler::BuildAll(SweetLoader& sweetLoader)
 
     for (const auto& name : m_initOrder)
     {
+        LOG_WARNING("ATTEMPTING: " + name);
         if (auto* system = m_registry.at(name))
         {
             if (system->Init())
             {
+                LOG_WARNING("Building: " + name);
                 system->Build(sweetLoader[name]);
+                LOG_SUCCESS("Built: " + name);
             }else
             {
                 error = true;
@@ -70,8 +75,8 @@ void SystemHandler::WaitStart()
             }
         }
     }
-
-    WaitForMultipleObjects(handles.size(),
+    DWORD objectCount = static_cast<DWORD>(handles.size());
+    WaitForMultipleObjects(objectCount,
         handles.data(), TRUE,
         INFINITE);
 }
@@ -90,7 +95,8 @@ void SystemHandler::WaitFinish()
         }
     }
 
-    WaitForMultipleObjects(handles.size(),
+    DWORD size = static_cast<DWORD>(handles.size());
+    WaitForMultipleObjects(size,
         handles.data(), TRUE,
         INFINITE);
 }

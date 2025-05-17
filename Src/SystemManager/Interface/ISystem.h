@@ -1,13 +1,10 @@
 #pragma once
 
+#include "Core/DefineDefault.h"
 #include <windows.h>
 #include "FileManager/FileLoader/SweetLoader.h"
+#include "GuiManager/Widgets/IWidget.h"
 
-typedef struct SYSTEM_EVENT_HANDLE
-{
-    HANDLE GlobalStartEvent;
-    HANDLE GlobalEndEvent;
-}SYSTEM_EVENT_HANDLE;
 
 class ISystem
 {
@@ -24,14 +21,20 @@ public:
     auto SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles) -> void;
 
 	bool Init();
-	bool Shutdown();
+	virtual bool Shutdown();
     //~ Will be launched after initializing it. Use Event lock to prevent it.
     virtual bool Run();
-    void SetCreateThread(bool status) { mCreateThread = status; }
+    void CreateOnThread(bool status) { mCreateThread = status; }
     virtual bool Build(SweetLoader& sweetLoader) = 0;
 
     HANDLE GetThreadHandle() const;
     HANDLE GetInitializedEventHandle() const;
+
+    void SetWidget(std::unique_ptr<IWidget> widget)
+    {
+        m_Widget = std::move(widget);
+    }
+    IWidget* GetWidget() const { return m_Widget.get(); }
 
 private:
     static DWORD __stdcall ThreadCall(LPVOID ptr);
@@ -41,5 +44,6 @@ protected:
     HANDLE mInitializedEventHandle;
 
     HANDLE mThreadHandle;
-    bool mCreateThread{ true };
+    bool mCreateThread{ false };
+    std::unique_ptr<IWidget> m_Widget{ nullptr };
 };

@@ -113,13 +113,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)PhysicsLibrary;$(ProjectDir)Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)PhysicsLibrary;$(ProjectDir)Src;%(AdditionalIncludeDirectories);$(ProjectDir)External</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)Lib\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>PhysicsLibrary.lib;d3d11.lib;D3DCompiler.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>PhysicsLibrary.lib;d3d11.lib;D3DCompiler.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,15 +131,43 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Src;$(ProjectDir)PhysicsLibrary;$(ProjectDir)External</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)Lib\x64\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>PhysicsLibrary.lib;d3d11.lib;D3DCompiler.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GuiManager\Widgets\ScenarioManagerUI.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\SceneUI.cpp" />
+    <ClCompile Include="Src\ScenarioManager\Scene\Scene.cpp" />
+    <ClCompile Include="Src\ScenarioManager\ScenarioManager.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\InputHandlerUI.cpp" />
+    <ClCompile Include="Src\ApplicationManager\InputHandler\InputHandler.cpp" />
+    <ClCompile Include="Src\EventSystem\EventQueue.cpp" />
+    <ClCompile Include="External\imgui.cpp" />
+    <ClCompile Include="External\imgui_demo.cpp" />
+    <ClCompile Include="External\imgui_draw.cpp" />
+    <ClCompile Include="External\imgui_impl_dx11.cpp" />
+    <ClCompile Include="External\imgui_impl_win32.cpp" />
+    <ClCompile Include="External\imgui_tables.cpp" />
+    <ClCompile Include="External\imgui_widgets.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\RenderManagerUI.cpp" />
+    <ClCompile Include="Src\GuiManager\GuiManager.cpp" />
+    <ClCompile Include="Src\WindowManager\Components\MouseHandler.cpp" />
+    <ClCompile Include="Src\WindowManager\Components\KeyboardHandler.cpp" />
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCube.cpp" />
+    <ClCompile Include="Src\RenderManager\Render\Render3DQueue.cpp" />
+    <ClCompile Include="Src\Utils\Helper.cpp" />
+    <ClCompile Include="Src\RenderManager\Camera\CameraController.cpp" />
+    <ClCompile Include="Src\ExceptionManager\IException.cpp" />
+    <ClCompile Include="Src\ExceptionManager\RenderException.cpp" />
+    <ClCompile Include="Src\RenderManager\Model\IModel.cpp" />
     <ClCompile Include="Src\RenderManager\RenderManager.cpp" />
     <ClCompile Include="Src\FileManager\FileLoader\FileSystem.cpp" />
     <ClCompile Include="Src\SystemManager\SystemHandler.cpp" />
@@ -149,8 +177,40 @@
     <ClCompile Include="Src\SystemManager\Interface\ISystem.cpp" />
     <ClCompile Include="Src\Utils\Logger.cpp" />
     <ClCompile Include="Src\WindowManager\WindowsSystem.cpp" />
+    <ClCompile Include="Src\ExceptionManager\WindowsException.cpp" />
+    <ClCompile Include="Src\FileManager\ImageLoader\TextureLoader.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\WindowsManagerUI.cpp" />
+    <ClCompile Include="Src\ApplicationManager\Clock\SystemClock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\GuiManager\Widgets\ScenarioManagerUI.h" />
+    <ClInclude Include="Src\Core\IEntity.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\SceneUI.h" />
+    <ClInclude Include="Src\ScenarioManager\Scene\Scene.h" />
+    <ClInclude Include="Src\ScenarioManager\ScenarioManager.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\InputHandlerUI.h" />
+    <ClInclude Include="Src\ApplicationManager\InputHandler\InputHandler.h" />
+    <ClInclude Include="Src\EventSystem\EventQueue.h" />
+    <ClInclude Include="External\imconfig.h" />
+    <ClInclude Include="External\imgui.h" />
+    <ClInclude Include="External\imgui_impl_dx11.h" />
+    <ClInclude Include="External\imgui_impl_win32.h" />
+    <ClInclude Include="External\imgui_internal.h" />
+    <ClInclude Include="External\imstb_rectpack.h" />
+    <ClInclude Include="External\imstb_textedit.h" />
+    <ClInclude Include="External\imstb_truetype.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\IWidget.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\RenderManagerUI.h" />
+    <ClInclude Include="Src\GuiManager\GuiManager.h" />
+    <ClInclude Include="Src\WindowManager\Components\MouseHandler.h" />
+    <ClInclude Include="Src\WindowManager\Components\KeyboardHandler.h" />
+    <ClInclude Include="Src\RenderManager\Render\Render3DQueue.h" />
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCube.h" />
+    <ClInclude Include="Src\Utils\Helper.h" />
+    <ClInclude Include="Src\RenderManager\Camera\CameraController.h" />
+    <ClInclude Include="Src\ExceptionManager\RenderException.h" />
+    <ClInclude Include="Src\ExceptionManager\IException.h" />
+    <ClInclude Include="Src\RenderManager\Model\IModel.h" />
     <ClInclude Include="Src\RenderManager\RenderManager.h" />
     <ClInclude Include="Src\Core\DefineDefault.h" />
     <ClInclude Include="Src\FileManager\FileLoader\FileSystem.h" />
@@ -160,6 +220,31 @@
     <ClInclude Include="Src\SystemManager\Interface\ISystem.h" />
     <ClInclude Include="Src\Utils\Logger.h" />
     <ClInclude Include="Src\WindowManager\WindowsSystem.h" />
+    <ClInclude Include="Src\ExceptionManager\WindowsException.h" />
+    <ClInclude Include="Src\FileManager\ImageLoader\TextureLoader.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\WindowsManagerUI.h" />
+    <ClInclude Include="Src\ApplicationManager\Clock\SystemClock.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="todo.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\CubeShader\CubePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\CubeShader\CubeVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

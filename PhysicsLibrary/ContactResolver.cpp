@@ -8,19 +8,24 @@ ContactResolver::ContactResolver(unsigned iterations)
 void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, float duration) {
     iterationsUsed = 0;
     while (iterationsUsed < iterations) {
+        // Find the contact with the largest closing velocity
         float max = 0;
         unsigned maxIndex = numContacts;
-        for (unsigned i = 0; i < numContacts; i++) {
+
+        for (unsigned i = 0; i < numContacts; ++i) {
             float sepVel = contacts[i].calculateSeparatingVelocity();
-            if (sepVel < max) {
+            if (sepVel < max && (contacts[i].penetration > 0 || sepVel < 0)) {
                 max = sepVel;
                 maxIndex = i;
             }
         }
 
+        // No contacts need resolving
         if (maxIndex == numContacts) break;
 
+        // Resolve this contact
         contacts[maxIndex].resolve(duration);
-        iterationsUsed++;
+
+        ++iterationsUsed;
     }
 }
