@@ -150,7 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BoundingSphere.h" />
-    <ClInclude Include="BoxCollide.h" />
+    <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="BVHNode.h" />
     <ClInclude Include="CapsuleCollider.h" />
     <ClInclude Include="Collider.h" />
@@ -174,7 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoundingSphere.cpp" />
-    <ClCompile Include="BoxCollide.cpp" />
+    <ClCompile Include="BoxCollider.cpp" />
     <ClCompile Include="BVHNode.cpp" />
     <ClCompile Include="CapsuleCollider.cpp" />
     <ClCompile Include="Collider.cpp" />

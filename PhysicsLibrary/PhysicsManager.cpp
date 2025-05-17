@@ -1,28 +1,4 @@
-#pragma once
-#include <vector>
-#include "RigidBody.h"
-#include "Collider.h"
-#include "Contact.h"
-#include "ContactResolver.h"
-
-class PhysicsManager {
-public:
-    static PhysicsManager& get();
-
-    void addRigidBody(RigidBody* body, Collider* collider);
-    void update(float dt);
-    void clear();
-
-private:
-    PhysicsManager(unsigned contactIterations);
-
-    std::vector<RigidBody*> rigidBodies;
-    std::vector<Collider*> colliders;
-    std::vector<Contact> contacts;
-    ContactResolver resolver;
-};
-
-// PhysicsManager.cpp
+#include "pch.h"
 #include "PhysicsManager.h"
 
 PhysicsManager& PhysicsManager::get() {

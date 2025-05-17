@@ -102,5 +102,5 @@ Vector3 Vector3::operator-() const {
 
 bool Vector3::isZero() const
 {
-    return x == 0 && y == 0 && z == 0;
+    return x == 0.0f && y == 0.0f && z == 0.0f;
 }

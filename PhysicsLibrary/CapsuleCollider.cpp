@@ -29,7 +29,7 @@ bool CapsuleCollider::checkCollision(Collider* other, Contact& contact) const {
         Vector3 closestPoint = capsuleStart + ab * t;
 
         Vector3 diff = sphereCenter - closestPoint;
-        float t = ac.dot(ab) / ab.dot(ab);
+        t = ac.dot(ab) / ab.dot(ab);
         float distanceSq = diff.squaredMagnitude();
         float radiusSum = radius + sphere->getRadius();
 

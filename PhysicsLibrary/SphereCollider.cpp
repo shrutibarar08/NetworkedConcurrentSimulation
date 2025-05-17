@@ -2,8 +2,8 @@
 #include "SphereCollider.h"
 
 SphereCollider::SphereCollider(RigidBody* body, float radius)
-    : body(body), radius(radius) {
-}
+    : Collider(body), radius(radius)
+{}
 
 float SphereCollider::getRadius() const {
     return radius;

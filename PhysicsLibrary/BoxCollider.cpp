@@ -4,8 +4,8 @@
 #include "PlaneCollider.h"
 #include <algorithm>
 
-BoxCollider::BoxCollider(RigidBody* body, const Vector3& halfExtents)
-    : Collider(body), halfExtents(halfExtents) {
+BoxCollider::BoxCollider(RigidBody* attachedBody, const Vector3& halfExtents)
+    : Collider(attachedBody), halfExtents(halfExtents) {
 }
 
 Collider::Type BoxCollider::getType() const {

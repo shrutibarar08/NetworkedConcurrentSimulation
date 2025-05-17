@@ -7,9 +7,9 @@ private:
     float offset;
 
 public:
-    PlaneCollider(const Vector3& normal, float offset);
+    PlaneCollider(const Vector3& normal, float offset, RigidBody* attachedBody);
 
     Type getType() const override;
-    Vector3 getNormal() const override;
-    float getOffset() const override;
+    Vector3 getNormal() const;
+    float getOffset() const;
 };

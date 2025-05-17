@@ -1,31 +1,29 @@
 #include "pch.h"
 #include "ContactResolver.h"
+#include <cfloat>
 
 ContactResolver::ContactResolver(unsigned iterations)
-    : iterations(iterations), iterationsUsed(0) {
-}
+    : iterationsUsed(0), iterations(iterations)
+{}
 
-void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, float duration) {
-    iterationsUsed = 0;
-    while (iterationsUsed < iterations) {
-        // Find the contact with the largest closing velocity
-        float max = 0;
-        unsigned maxIndex = numContacts;
+void ContactResolver::resolveContacts(Contact* contacts, unsigned numContacts, float duration) const
+{
+    for (unsigned i = 0; i < iterations; ++i)
+    {
+        float maxSepVel = -FLT_MAX;
+        unsigned int maxIndex = numContacts;
 
-        for (unsigned i = 0; i < numContacts; ++i) {
-            float sepVel = contacts[i].calculateSeparatingVelocity();
-            if (sepVel < max && (contacts[i].penetration > 0 || sepVel < 0)) {
-                max = sepVel;
-                maxIndex = i;
+        for (unsigned j = 0; j < numContacts; ++j)
+        {
+            float sepVel = contacts[j].calculateSeparatingVelocity();
+            if (sepVel < maxSepVel && (contacts[j].penetration > 0 || sepVel < 0))
+            {
+                maxSepVel = sepVel;
+                maxIndex = j;
             }
         }
 
-        // No contacts need resolving
         if (maxIndex == numContacts) break;
-
-        // Resolve this contact
         contacts[maxIndex].resolve(duration);
-
-        ++iterationsUsed;
     }
 }

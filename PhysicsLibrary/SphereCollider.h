@@ -7,11 +7,11 @@ public:
     SphereCollider(RigidBody* body, float radius);
 
     float getRadius() const;
-    Vector3 getCenter() const override;
+    Vector3 getCenter() const;
     Type getType() const override;
 
     bool checkCollision(Collider* other, Contact& contact) const override;
 
 private:
-    RigidBody* body;
-    float radius;};
+    float radius;
+};
