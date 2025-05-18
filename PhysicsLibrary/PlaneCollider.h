@@ -12,4 +12,8 @@ public:
     Type getType() const override;
     Vector3 getNormal() const;
     float getOffset() const;
+
+    bool checkCollision(Collider* other, Contact& contact);
+
+
 };
