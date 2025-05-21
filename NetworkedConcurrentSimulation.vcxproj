@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\PhysicsManager\PhysicsManager.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\ScenarioManagerUI.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\SceneUI.cpp" />
     <ClCompile Include="Src\ScenarioManager\Scene\Scene.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="Src\ApplicationManager\Clock\SystemClock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\PhysicsManager\PhysicsManager.h" />
     <ClInclude Include="Src\GuiManager\Widgets\ScenarioManagerUI.h" />
     <ClInclude Include="Src\Core\IEntity.h" />
     <ClInclude Include="Src\GuiManager\Widgets\SceneUI.h" />

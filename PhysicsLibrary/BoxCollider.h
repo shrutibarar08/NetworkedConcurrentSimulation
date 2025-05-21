@@ -7,7 +7,7 @@ private:
     Vector3 halfExtents;
 
 public:
-    BoxCollider(RigidBody* body, const Vector3& halfExtents);
+    BoxCollider(RigidBody* attachedBody, const Vector3& halfExtents);
 
     Collider::Type getType() const override;
     bool checkCollision(Collider* other, Contact& contact) const override;
