@@ -1,19 +1,22 @@
 #pragma once
 #include "Collider.h"
 
-class PlaneCollider : public Collider {
-private:
-    Vector3 normal;
-    float offset;
-
+class PlaneCollider : public Collider
+{
 public:
-    PlaneCollider(const Vector3& normal, float offset, RigidBody* attachedBody);
+    PlaneCollider(const DirectX::XMFLOAT3& normal, float offset, RigidBody* attachedBody);
 
-    Type getType() const override;
-    Vector3 getNormal() const;
-    float getOffset() const;
+    Type GetType() const override;
+    const DirectX::XMFLOAT3& GetNormal() const;
+    float GetOffset() const;
 
-    bool checkCollision(Collider* other, Contact& contact);
+protected:
+    bool CheckCollisionWithBox(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithSphere(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithPlane(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithCapsule(Collider* other, Contact& contact) const override;
 
-
+private:
+    DirectX::XMFLOAT3 Normal;
+    float Offset;
 };

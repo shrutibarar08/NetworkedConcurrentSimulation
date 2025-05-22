@@ -2,33 +2,50 @@
 #include "BoundingSphere.h"
 #include <cmath>
 
-BoundingSphere::BoundingSphere() : center(Vector3()), radius(1.0f) {}
+BoundingSphere::BoundingSphere() :
+Radius(1.0f)
+{}
 
-BoundingSphere::BoundingSphere(const Vector3& c, float r)
-    : center(c), radius(r) {
+BoundingSphere::BoundingSphere(const DirectX::XMVECTOR& center, float r)
+    : Center(center), Radius(r)
+{}
+
+bool BoundingSphere::Overlaps(const BoundingSphere& other) const
+{
+    DirectX::XMVECTOR diff = DirectX::XMVectorSubtract(Center, other.Center);
+	DirectX::XMVECTOR distSqVec = DirectX::XMVector3LengthSq(diff);
+
+    float radiusSum = Radius + other.Radius;
+    float radiusSumSq = radiusSum * radiusSum;
+
+    float distSq = DirectX::XMVectorGetX(distSqVec);
+	return distSq < radiusSumSq;
 }
 
-bool BoundingSphere::overlaps(const BoundingSphere& other) const {
-    float distSq = (center - other.center).squaredMagnitude();
-    float radiusSum = radius + other.radius;
-    return distSq < radiusSum * radiusSum;
+float BoundingSphere::GetGrowth(const BoundingSphere& other) const
+{
+    BoundingSphere merged = BoundingSphere::Merge(*this, other);
+    return merged.Radius * merged.Radius - Radius * Radius;
 }
 
-float BoundingSphere::getGrowth(const BoundingSphere& other) const {
-    BoundingSphere merged = BoundingSphere::merge(*this, other);
-    return merged.radius * merged.radius - radius * radius;
-}
+BoundingSphere BoundingSphere::Merge(
+    const BoundingSphere& a,
+    const BoundingSphere& b)
+{
+	DirectX::XMVECTOR centerOffset = DirectX::XMVectorSubtract(b.Center, a.Center);
+	DirectX::XMVECTOR distSqVec = DirectX::XMVector3LengthSq(centerOffset);
 
-BoundingSphere BoundingSphere::merge(const BoundingSphere& a, const BoundingSphere& b) {
-    Vector3 centerOffset = b.center - a.center;
-    float dist = centerOffset.magnitude();
+	float distSq = DirectX::XMVectorGetX(distSqVec);
+	float dist = std::sqrt(distSq);
 
-    if (a.radius >= dist + b.radius) return a;
-    if (b.radius >= dist + a.radius) return b;
+    if (a.Radius >= dist + b.Radius) return a;
+    if (b.Radius >= dist + a.Radius) return b;
 
-    float newRadius = (dist + a.radius + b.radius) * 0.5f;
-    Vector3 direction = centerOffset.normalized();
-    Vector3 newCenter = a.center + direction * (newRadius - a.radius);
+    float newRadius = (dist + a.Radius + b.Radius) * 0.5f;
 
-    return BoundingSphere(newCenter, newRadius);
+	DirectX::XMVECTOR direction = DirectX::XMVector3Normalize(centerOffset);
+	DirectX::XMVECTOR offset = DirectX::XMVectorScale(direction, newRadius - a.Radius);
+	DirectX::XMVECTOR newCenter = DirectX::XMVectorAdd(a.Center, offset);
+
+    return { newCenter, newRadius };
 }

@@ -1,20 +1,26 @@
 #include "pch.h"
 #include "Drag.h"
+#include "RigidBody.h"
+
+#include <DirectXMath.h>
 
 Drag::Drag(float k1, float k2)
-    : k1(k1), k2(k2) {}
+    : K1(k1), K2(k2)
+{}
 
-void Drag::updateForce(Particle* particle, float duration) {
-    Vector3 velocity = particle->getVelocity();
+void Drag::UpdateForce(RigidBody* body, float duration)
+{
+    DirectX::XMVECTOR velocity = body->GetVelocity();
 
-    float speed = velocity.magnitude();
-    if (speed == 0.0f) return; //no drag on a stationary object
+    // Calculate the speed (magnitude of the velocity vector)
+    float speed = DirectX::XMVectorGetX(DirectX::XMVector3Length(velocity));
+    if (speed == 0.0f) return;
 
-    //calculate drag coefficient
-    float dragCoeff = k1 * speed + k2 * speed * speed;
+    // Calculate the drag coefficient
+    float dragCoefficient = K1 * speed + K2 * speed * speed;
 
-    //calculate final drag force direction and magnitude
-    Vector3 dragForce = velocity.normalized() * -dragCoeff;
+    DirectX::XMVECTOR dragDirection = DirectX::XMVector3Normalize(velocity);
+    DirectX::XMVECTOR dragForce = DirectX::XMVectorScale(dragDirection, -dragCoefficient);
 
-    particle->addForce(dragForce);
+    body->AddForce(dragForce);
 }

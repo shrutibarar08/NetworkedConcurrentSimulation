@@ -2,52 +2,79 @@
 #include "Quaternion.h"
 #include <cmath>
 
-Quaternion::Quaternion() : r(1), i(0), j(0), k(0) {}
-Quaternion::Quaternion(float r, float i, float j, float k) : r(r), i(i), j(j), k(k) {}
+Quaternion::Quaternion() : R(1), I(0), J(0), K(0) {}
+Quaternion::Quaternion(float r, float i, float j, float k)
+: R(r), I(i), J(j), K(k)
+{}
 
-void Quaternion::normalize() {
-    float d = r * r + i * i + j * j + k * k;
-    if (d == 0) {
-        r = 1; i = j = k = 0;
+void Quaternion::Normalize()
+{
+    float d = R * R + I * I + J * J + K * K;
+    if (d == 0.f)
+    {
+        R = 1; I = J = K = 0;
         return;
     }
     float inv = 1.0f / std::sqrt(d);
-    r *= inv; i *= inv; j *= inv; k *= inv;
+    R *= inv; I *= inv; J *= inv; K *= inv;
 }
 
-Quaternion Quaternion::operator*(const Quaternion& q) const {
+DirectX::XMVECTOR Quaternion::ToXmVector() const
+{
+    return DirectX::XMVectorSet(I, J, K, R);
+}
+
+Quaternion Quaternion::operator*(const Quaternion& q) const
+{
     return Quaternion(
-        r * q.r - i * q.i - j * q.j - k * q.k,
-        r * q.i + i * q.r + j * q.k - k * q.j,
-        r * q.j + j * q.r + k * q.i - i * q.k,
-        r * q.k + k * q.r + i * q.j - j * q.i
+        R * q.R - I * q.I - J * q.J - K * q.K,
+        R * q.I + I * q.R + J * q.K - K * q.J,
+        R * q.J + J * q.R + K * q.I - I * q.K,
+        R * q.K + K * q.R + I * q.J - J * q.I
     );
 }
 
-void Quaternion::addScaledVector(const Vector3& vector, float scale) {
-    Quaternion q(0, vector.x * scale, vector.y * scale, vector.z * scale);
+void Quaternion::AddScaledVector(const DirectX::XMVECTOR& vector, float scale)
+{
+    DirectX::XMVECTOR scaled = DirectX::XMVectorScale(vector, scale);
+
+    float x = DirectX::XMVectorGetX(scaled);
+    float y = DirectX::XMVectorGetY(scaled);
+    float z = DirectX::XMVectorGetZ(scaled);
+
+    Quaternion q(0, x, y, z);
     q = q * (*this);
-    r += q.r * 0.5f;
-    i += q.i * 0.5f;
-    j += q.j * 0.5f;
-    k += q.k * 0.5f;
+
+    R += q.R * 0.5f;
+    I += q.I * 0.5f;
+    J += q.J * 0.5f;
+    K += q.K * 0.5f;
 }
 
-void Quaternion::rotateByVector(const Vector3& vector) {
-    Quaternion q(0, vector.x, vector.y, vector.z);
+void Quaternion::RotateByVector(const DirectX::XMVECTOR& vector)
+{
+    float x = DirectX::XMVectorGetX(vector);
+    float y = DirectX::XMVectorGetY(vector);
+    float z = DirectX::XMVectorGetZ(vector);
+
+    Quaternion q(0, x, y, z);
     *this = (*this) * q;
 }
-Quaternion Quaternion::operator*(float scalar) const {
-    return Quaternion(r * scalar, i * scalar, j * scalar, k * scalar);
+
+Quaternion Quaternion::operator*(float scalar) const
+{
+    return Quaternion(R * scalar, I * scalar, J * scalar, K * scalar);
 }
 
-Quaternion& Quaternion::operator+=(const Quaternion& q) {
-    r += q.r;
-    i += q.i;
-    j += q.j;
-    k += q.k;
+Quaternion& Quaternion::operator+=(const Quaternion& q)
+{
+    R += q.R;
+    I += q.I;
+    J += q.J;
+    K += q.K;
     return *this;
 }
-Quaternion operator*(float scalar, const Quaternion& q) {
+Quaternion operator*(float scalar, const Quaternion& q)
+{
     return q * scalar;
 }

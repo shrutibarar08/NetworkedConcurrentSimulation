@@ -1,13 +1,13 @@
 #pragma once
 #include "ForceGenerator.h"
-#include "Vector3.h"
-#include "Particle.h"
+#include <DirectXMath.h>
 
-class Gravity : public ForceGenerator {
-private:
-    Vector3 gravity;
-
+class Gravity : public ForceGenerator
+{
 public:
-    Gravity(const Vector3& g);
-    void updateForce(Particle* particle, float duration) override;
+    Gravity(const DirectX::XMVECTOR& g);
+    void UpdateForce(RigidBody* body, float duration) override;
+
+private:
+    DirectX::XMVECTOR m_GravityForce;
 };

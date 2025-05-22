@@ -1,43 +1,53 @@
 #include "pch.h"
 #include "PhysicsManager.h"
 
-PhysicsManager& PhysicsManager::get() {
+#include <iostream>
+
+PhysicsManager& PhysicsManager::Get()
+{
     static PhysicsManager instance(10);
     return instance;
 }
 
 PhysicsManager::PhysicsManager(unsigned contactIterations)
-    : resolver(contactIterations) {
+    : Resolver(contactIterations)
+{}
+
+void PhysicsManager::AddRigidBody(RigidBody* body, Collider* collider)
+{
+    RigidBodies.push_back(body);
+    Colliders.push_back(collider);
 }
 
-void PhysicsManager::addRigidBody(RigidBody* body, Collider* collider) {
-    rigidBodies.push_back(body);
-    colliders.push_back(collider);
-}
-
-void PhysicsManager::update(float dt, IntegrationType type) {
-    for (RigidBody* body : rigidBodies) {
-        body->integrate(dt, type);
-    }
-
-    contacts.clear();
-    for (size_t i = 0; i < colliders.size(); ++i) {
-        for (size_t j = i + 1; j < colliders.size(); ++j) {
+void PhysicsManager::Update(float dt, IntegrationType type)
+{
+    Contacts.clear();
+    for (size_t i = 0; i < Colliders.size(); ++i)
+    {
+        for (size_t j = i + 1; j < Colliders.size(); ++j) 
+        {
             Contact contact;
-            if (colliders[i]->checkCollision(colliders[j], contact)) {
-                contacts.push_back(contact);
+            if (Colliders[i]->CheckCollision(Colliders[j], contact))
+            {
+                Contacts.push_back(contact);
             }
         }
     }
 
-    if (!contacts.empty()) {
-        resolver.resolveContacts(contacts.data(), (unsigned int)contacts.size(), dt);
+    if (!Contacts.empty())
+    {
+        Resolver.resolveContacts(Contacts.data(), static_cast<unsigned int>(Contacts.size()), dt);
+    }
+
+    for (RigidBody* body : RigidBodies)
+    {
+        body->Integrate(dt, type);
     }
 }
 
-
-void PhysicsManager::clear() {
-    rigidBodies.clear();
-    colliders.clear();
-    contacts.clear();
+void PhysicsManager::Clear()
+{
+    RigidBodies.clear();
+    Colliders.clear();
+    Contacts.clear();
 }
