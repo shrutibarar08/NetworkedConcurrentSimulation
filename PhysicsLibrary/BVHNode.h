@@ -3,21 +3,22 @@
 #include "Collider.h"
 #include <vector>
 
-class BVHNode {
+class BVHNode
+{
 public:
-    BVHNode* parent;
-    BVHNode* left;
-    BVHNode* right;
-    BoundingSphere volume;
-    Collider* collider;
-
     BVHNode(BVHNode* parent = nullptr);
     ~BVHNode();
 
-    bool isLeaf() const;
-    void insert(Collider* newCollider, const BoundingSphere& newVolume);
+    bool IsLeaf() const;
+    void Insert(Collider* newCollider, const BoundingSphere& newVolume);
 
-    void getPotentialContacts(std::vector<std::pair<Collider*, Collider*>>& contacts);
-    void recalculateBoundingVolume();
+    void GetPotentialContacts(std::vector<std::pair<Collider*, Collider*>>& contacts) const;
+    void RecalculateBoundingVolume();
+
+    //~ Members
+    BVHNode* m_Parent;
+    BVHNode* m_Left;
+    BVHNode* m_Right;
+    BoundingSphere m_Volume;
+    Collider* m_Collider;
 };
-

@@ -1,18 +1,25 @@
 #pragma once
+#include <DirectXMath.h>
+
 #include "Collider.h"
 #include "RigidBody.h"
 
-class BoxCollider : public Collider {
-private:
-    Vector3 halfExtents;
-
+class BoxCollider : public Collider
+{
 public:
-    BoxCollider(RigidBody* attachedBody, const Vector3& halfExtents);
+    BoxCollider(RigidBody* attachedBody, const DirectX::XMVECTOR& halfExtents);
 
-    Collider::Type getType() const override;
-    bool checkCollision(Collider* other, Contact& contact) const override;
+	Type GetType() const override;
 
-    Vector3 getHalfExtents() const;
-    Vector3 getCenter() const;
+    const DirectX::XMVECTOR& GetHalfExtents() const;
+    const DirectX::XMVECTOR& GetCenter() const;
+
+protected:
+    bool CheckCollisionWithBox(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithSphere(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithPlane(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithCapsule(Collider* other, Contact& contact) const override;
+
+private:
+    DirectX::XMVECTOR HalfExtents;
 };
-

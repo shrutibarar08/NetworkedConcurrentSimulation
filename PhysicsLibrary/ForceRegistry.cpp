@@ -2,27 +2,37 @@
 #include "ForceRegistry.h"
 #include <algorithm>
 
-void ForceRegistry::add(Particle* p, ForceGenerator* fg) {
-    registrations.push_back({ p, fg });
+
+
+void ForceRegistry::Add(RigidBody* body, ForceGenerator* fg)
+{
+    RegisteredForces.push_back({body,fg});
 }
 
-void ForceRegistry::remove(Particle* p, ForceGenerator* fg) {
-    registrations.erase(
-        std::remove_if(registrations.begin(), registrations.end(),
-            [&](const ForceRegistration& reg) {
-                return reg.particle == p && reg.fg == fg;
+void ForceRegistry::Remove(RigidBody* body, ForceGenerator* fg)
+{
+    RegisteredForces.erase(
+        std::remove_if(RegisteredForces.begin(), RegisteredForces.end(),
+            [&](const ForceRegistration& reg)
+            {
+                return reg.RigidBody == body && reg.ForceGenerates == fg;
             }),
-        registrations.end()
+        RegisteredForces.end()
     );
 }
 
-void ForceRegistry::clear() {
-    registrations.clear();
+void ForceRegistry::Clear()
+{
+    RegisteredForces.clear();
 }
 
-void ForceRegistry::updateForces(float duration) {
-    for (auto& reg : registrations) {
-        reg.fg->updateForce(reg.particle, duration);
+void ForceRegistry::UpdateForces(float duration) const
+{
+    for (auto& reg : RegisteredForces)
+    {
+        if (reg.RigidBody)
+        {
+            reg.ForceGenerates->UpdateForce(reg.RigidBody, duration);
+        }
     }
 }
-

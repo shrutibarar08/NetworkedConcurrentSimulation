@@ -1,18 +1,19 @@
 #pragma once
-#include "Vector3.h"
+#include <DirectXMath.h>
 
-class BoundingSphere {
+class BoundingSphere
+{
 public:
-    Vector3 center;
-    float radius;
-
     BoundingSphere();
-    BoundingSphere(const Vector3& center, float radius);
+    BoundingSphere(const DirectX::XMVECTOR& center, float radius);
 
-    bool overlaps(const BoundingSphere& other) const;
-    float getGrowth(const BoundingSphere& other) const;
+    bool Overlaps(const BoundingSphere& other) const;
+    float GetGrowth(const BoundingSphere& other) const;
 
     // Combine two bounding spheres into a new one
-    static BoundingSphere merge(const BoundingSphere& a, const BoundingSphere& b);
-};
+    static BoundingSphere Merge(const BoundingSphere& a, const BoundingSphere& b);
 
+    //~ Members
+    DirectX::XMVECTOR Center{};
+    float Radius;
+};

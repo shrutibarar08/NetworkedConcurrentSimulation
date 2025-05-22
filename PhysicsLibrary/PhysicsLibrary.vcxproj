@@ -154,7 +154,6 @@
     <ClInclude Include="BVHNode.h" />
     <ClInclude Include="CapsuleCollider.h" />
     <ClInclude Include="Collider.h" />
-    <ClInclude Include="CollisionDetector.h" />
     <ClInclude Include="Contact.h" />
     <ClInclude Include="ContactResolver.h" />
     <ClInclude Include="Drag.h" />
@@ -162,15 +161,12 @@
     <ClInclude Include="ForceRegistry.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Gravity.h" />
-    <ClInclude Include="Matrix3.h" />
-    <ClInclude Include="Particle.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PhysicsManager.h" />
     <ClInclude Include="PlaneCollider.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SphereCollider.h" />
-    <ClInclude Include="Vector3.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoundingSphere.cpp" />
@@ -178,15 +174,11 @@
     <ClCompile Include="BVHNode.cpp" />
     <ClCompile Include="CapsuleCollider.cpp" />
     <ClCompile Include="Collider.cpp" />
-    <ClCompile Include="CollisionDetector.cpp" />
     <ClCompile Include="Contact.cpp" />
     <ClCompile Include="ContactResolver.cpp" />
     <ClCompile Include="Drag.cpp" />
-    <ClCompile Include="ForceGenerator.cpp" />
     <ClCompile Include="ForceRegistry.cpp" />
     <ClCompile Include="Gravity.cpp" />
-    <ClCompile Include="Matrix3.cpp" />
-    <ClCompile Include="Particle.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -199,7 +191,6 @@
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="SphereCollider.cpp" />
-    <ClCompile Include="Vector3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

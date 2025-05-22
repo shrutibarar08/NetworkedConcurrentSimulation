@@ -1,20 +1,22 @@
 #pragma once
 #include <vector>
 #include "ForceGenerator.h"
-#include "Particle.h"
+#include "RigidBody.h"
 
-class ForceRegistry {
+class  ForceRegistry
+{
+public:
+    void Add(RigidBody* body, ForceGenerator* fg);
+    void Remove(RigidBody* body, ForceGenerator* fg);
+    void Clear();
+    void UpdateForces(float duration) const;
+
 protected:
-    struct ForceRegistration {
-        Particle* particle;
-        ForceGenerator* fg;
+    struct ForceRegistration
+    {
+        RigidBody* RigidBody;
+        ForceGenerator* ForceGenerates;
     };
 
-    std::vector<ForceRegistration> registrations;
-
-public:
-    void add(Particle* p, ForceGenerator* fg);
-    void remove(Particle* p, ForceGenerator* fg);
-    void clear();
-    void updateForces(float duration);
+    std::vector<ForceRegistration> RegisteredForces;
 };

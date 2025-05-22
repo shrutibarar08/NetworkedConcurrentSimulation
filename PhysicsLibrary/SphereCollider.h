@@ -2,16 +2,21 @@
 #include "Collider.h"
 #include "RigidBody.h"
 
-class SphereCollider : public Collider {
+class SphereCollider : public Collider
+{
 public:
     SphereCollider(RigidBody* body, float radius);
 
-    float getRadius() const;
-    Vector3 getCenter() const;
-    Type getType() const override;
+    float GetRadius() const;
+	DirectX::XMVECTOR GetCenter() const;
+    Type GetType() const override;
 
-    bool checkCollision(Collider* other, Contact& contact) const override;
+protected:
+    bool CheckCollisionWithBox(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithSphere(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithPlane(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithCapsule(Collider* other, Contact& contact) const override;
 
 private:
-    float radius;
+    float Radius;
 };

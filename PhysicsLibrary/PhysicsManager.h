@@ -5,20 +5,20 @@
 #include "Contact.h"
 #include "ContactResolver.h"
 
-class PhysicsManager {
+class PhysicsManager
+{
 public:
-    static PhysicsManager& get();
+    static PhysicsManager& Get();
 
-    void addRigidBody(RigidBody* body, Collider* collider);
-    void update(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
-
-    void clear();
+    void AddRigidBody(RigidBody* body, Collider* collider);
+    void Update(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
+    void Clear();
 
 private:
     PhysicsManager(unsigned contactIterations);
 
-    std::vector<RigidBody*> rigidBodies;
-    std::vector<Collider*> colliders;
-    std::vector<Contact> contacts;
-    ContactResolver resolver;
+    std::vector<RigidBody*> RigidBodies;
+    std::vector<Collider*> Colliders;
+    std::vector<Contact> Contacts;
+    ContactResolver Resolver;
 };

@@ -1,28 +1,41 @@
 #pragma once
-#include "Vector3.h"
+#include <cstdint>
 #include "RigidBody.h"
 
-class Contact; // forward declaration
+class Contact;
 
-class Collider {
+class Collider
+{
 public:
-    enum class Type {
-        Sphere,
-        Plane,
-        Capsule,
-        Box
+    enum class Type: uint8_t
+	{
+        SPHERE,
+        PLANE,
+        CAPSULE,
+        BOX
     };
 
-    virtual ~Collider() {}
+    Collider() = default;
+    virtual ~Collider() = default;
+    Collider(Collider&&) = default;
+    Collider(const Collider&) = default;
+    Collider& operator=(Collider&&) = default;
+    Collider& operator=(const Collider&) = default;
 
-    virtual Type getType() const = 0;
-    virtual bool checkCollision(Collider* other, Contact& contact) const = 0;
+    virtual Type GetType() const = 0;
+	bool CheckCollision(Collider* other, Contact& contact) const;
 
-    RigidBody* getBody() const { return body; }
+    RigidBody* GetBody() const { return m_RigidBody; }
 
 protected:
-    RigidBody* body;
+    Collider(RigidBody* attachedBody) : m_RigidBody(attachedBody) {}
 
-    Collider(RigidBody* attachedBody) : body(attachedBody) {}
+    virtual bool CheckCollisionWithBox(Collider* other, Contact& contact) const = 0;
+    virtual bool CheckCollisionWithSphere(Collider* other, Contact& contact) const = 0;
+    virtual bool CheckCollisionWithPlane(Collider* other, Contact& contact) const = 0;
+    virtual bool CheckCollisionWithCapsule(Collider* other, Contact& contact) const = 0;
+
+protected:
+    RigidBody* m_RigidBody;
 };
-#include "Contact.h" // Add this include to resolve the incomplete type error
+#include "Contact.h"

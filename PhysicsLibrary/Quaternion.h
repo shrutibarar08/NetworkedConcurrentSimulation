@@ -1,10 +1,9 @@
 #pragma once
-#include "Vector3.h"
+#include "DirectXMath.h"
 
-class Quaternion {
+class Quaternion
+{
 public:
-    float r, i, j, k;
-  
     Quaternion();
     Quaternion(float r, float i, float j, float k);
 
@@ -12,9 +11,12 @@ public:
     Quaternion operator*(float scalar) const;
     Quaternion& operator+=(const Quaternion& q);
 
-    void addScaledVector(const Vector3& vector, float scale);
-    void rotateByVector(const Vector3& vector);
-    void normalize();
+    void AddScaledVector(const DirectX::XMVECTOR& vector, float scale);
+    void RotateByVector(const DirectX::XMVECTOR& vector);
+    void Normalize();
+    DirectX::XMVECTOR ToXmVector() const;
 
     friend Quaternion operator*(float scalar, const Quaternion& q);
+
+    float R, I, J, K;
 };

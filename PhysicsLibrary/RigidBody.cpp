@@ -4,144 +4,241 @@
 #include <cmath>
 
 RigidBody::RigidBody()
-    : position(), velocity(), acceleration(), forceAccum(),
-    inverseMass(1.0f), linearDamping(0.98f),
-    orientation(1, 0, 0, 0), angularVelocity(), torqueAccum(),
-    angularDamping(0.9f) {
-    inverseInertiaTensor.setIdentity();
-    calculateDerivedData();
+    : Position(), Velocity(), Acceleration(), ForceAccum(),
+    InverseMass(1.0f), m_LinearDamping(0.98f),
+    Orientation(1, 0, 0, 0), AngularVelocity(), TorqueAccum(),
+    AngularDamping(0.9f) {
+    InverseInertiaTensor = DirectX::XMMatrixIdentity();
+    CalculateDerivedData();
 }
 
-void RigidBody::integrate(float duration) {
-    if (inverseMass <= 0.0f) return;
+void RigidBody::Integrate(float duration)
+{
+    if (InverseMass <= 0.0f) return;
 
-    // Linear motion
-    position += velocity * duration;
-    Vector3 linearAcc = acceleration + forceAccum * inverseMass;
-    velocity += linearAcc * duration;
-    velocity *= std::pow(linearDamping, duration);
+    // === Linear motion ===
+    Position = DirectX::XMVectorAdd(Position, DirectX::XMVectorScale(Velocity, duration));
+
+    DirectX::XMVECTOR linearAcc = DirectX::XMVectorAdd(
+        Acceleration,
+        DirectX::XMVectorScale(ForceAccum, InverseMass)
+    );
+
+    Velocity = DirectX::XMVectorAdd(Velocity, DirectX::XMVectorScale(linearAcc, duration));
+    Velocity = DirectX::XMVectorScale(Velocity, std::pow(m_LinearDamping, duration));
+
+    // === Angular motion ===
+    // Use: angularAcc = InverseInertiaTensorWorld * TorqueAccum (in vector math)
+    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(
+        TorqueAccum,
+        InverseInertiaTensorWorld
+    );
+
+    AngularVelocity = DirectX::XMVectorAdd(AngularVelocity, DirectX::XMVectorScale(angularAcc, duration));
+    AngularVelocity = DirectX::XMVectorScale(AngularVelocity, std::pow(AngularDamping, duration));
+
+    // === Orientation (Quaternion integration) ===
+    float x = DirectX::XMVectorGetX(AngularVelocity);
+    float y = DirectX::XMVectorGetY(AngularVelocity);
+    float z = DirectX::XMVectorGetZ(AngularVelocity);
+
+    Quaternion deltaRot(0.0f, x, y, z);
+    deltaRot = deltaRot * Orientation;
+    Orientation += deltaRot * 0.5f * duration;
+    Orientation.Normalize();
+
+    // === Final updates ===
+    CalculateDerivedData();
+    ClearAccumulators();
+}
+
+void RigidBody::AddForce(const DirectX::XMVECTOR& force)
+{
+    ForceAccum = DirectX::XMVectorAdd(ForceAccum, force);
+}
+
+void RigidBody::AddTorque(const DirectX::XMVECTOR& torque)
+{
+    TorqueAccum = DirectX::XMVectorAdd(TorqueAccum, torque);
+}
+
+void RigidBody::Integrate(float dt, IntegrationType type)
+{
+    if (InverseMass <= 0.0f) return;
+
+    DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(
+        Acceleration,
+        DirectX::XMVectorScale(ForceAccum, InverseMass)
+    );
+
+    switch (type)
+    {
+    case IntegrationType::Euler:
+    {
+        Position = DirectX::XMVectorAdd(Position, DirectX::XMVectorScale(Velocity, dt));
+        Velocity = DirectX::XMVectorAdd(Velocity, DirectX::XMVectorScale(acceleration, dt));
+        break;
+    }
+    case IntegrationType::SemiImplicitEuler:
+    {
+        Velocity = DirectX::XMVectorAdd(Velocity, DirectX::XMVectorScale(acceleration, dt));
+        Position = DirectX::XMVectorAdd(Position, DirectX::XMVectorScale(Velocity, dt));
+        break;
+    }
+    case IntegrationType::Verlet:
+    {
+        static DirectX::XMVECTOR lastPosition = Position; // not thread-safe or per-object safe
+        DirectX::XMVECTOR posDelta = DirectX::XMVectorSubtract(Position, lastPosition);
+        DirectX::XMVECTOR accelTerm = DirectX::XMVectorScale(acceleration, dt * dt);
+        DirectX::XMVECTOR newPosition = DirectX::XMVectorAdd(Position, DirectX::XMVectorAdd(posDelta, accelTerm));
+        lastPosition = Position;
+        Position = newPosition;
+        break;
+    }
+    }
+
+    // Apply damping
+    Velocity = DirectX::XMVectorScale(Velocity, std::pow(m_LinearDamping, dt));
 
     // Angular motion
-    Vector3 angularAcc = inverseInertiaTensorWorld.transform(torqueAccum);
-    angularVelocity += angularAcc * duration;
-    angularVelocity *= std::pow(angularDamping, duration);
+    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(TorqueAccum, InverseInertiaTensor);
+    AngularVelocity = DirectX::XMVectorAdd(AngularVelocity, DirectX::XMVectorScale(angularAcc, dt));
+    AngularVelocity = DirectX::XMVectorScale(AngularVelocity, std::pow(AngularDamping, dt));
 
-    Quaternion deltaRot(0, angularVelocity.x, angularVelocity.y, angularVelocity.z);
-    deltaRot = deltaRot * orientation;
-    orientation += deltaRot * 0.5f * duration;
-    orientation.normalize();
+    // Update orientation using angular velocity
+    Orientation.AddScaledVector(AngularVelocity, dt);
+    Orientation.Normalize();
 
-    calculateDerivedData();
-    clearAccumulators();
+    ClearAccumulators();
 }
 
-void RigidBody::addForce(const Vector3& force) {
-    forceAccum += force;
+void RigidBody::CalculateDerivedData()
+{
+    // Normalize orientation to prevent drift
+    Orientation.Normalize();
+
+    // Create a rotation matrix from the quaternion
+    DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixRotationQuaternion(Orientation.ToXmVector());
+
+    // Update the transform matrix (rotation only; add translation if needed)
+    TransformMatrix = rotMatrix;
+
+    // Transform the local inverse inertia tensor into world space
+    DirectX::XMMATRIX rotTranspose = DirectX::XMMatrixTranspose(rotMatrix);
+    InverseInertiaTensorWorld = DirectX::XMMatrixMultiply(
+        DirectX::XMMatrixMultiply(rotMatrix, InverseInertiaTensor),
+        rotTranspose
+    );
 }
 
-void RigidBody::addTorque(const Vector3& torque) {
-    torqueAccum += torque;
-}
-
-void RigidBody::integrate(float dt, IntegrationType type) {
-    if (inverseMass <= 0.0f) return;
-
-    switch (type) {
-    case IntegrationType::Euler: {
-        position += velocity * dt;
-        velocity += (acceleration + forceAccum * inverseMass) * dt;
-        break;
-    }
-    case IntegrationType::SemiImplicitEuler: {
-        velocity += (acceleration + forceAccum * inverseMass) * dt;
-        position += velocity * dt;
-        break;
-    }
-    case IntegrationType::Verlet: {
-        static Vector3 lastPosition = position; // crude; per-body state should be better managed
-        Vector3 newPosition = position + (position - lastPosition) + (acceleration + forceAccum * inverseMass) * dt * dt;
-        lastPosition = position;
-        position = newPosition;
-        break;
-    }
-    }
-
-    velocity *= std::pow(linearDamping, dt);
-    angularVelocity += (inverseInertiaTensor * torqueAccum) * dt;
-    angularVelocity *= std::pow(angularDamping, dt);
-    orientation.addScaledVector(angularVelocity, dt);
-    orientation.normalize();
-
-    clearAccumulators();
-}
-
-void RigidBody::calculateDerivedData() {
-    orientation.normalize();
-    transformMatrix = Matrix3::rotationMatrix(orientation);
-    inverseInertiaTensorWorld = transformMatrix * inverseInertiaTensor * transformMatrix.transpose();
-}
-
-void RigidBody::clearAccumulators() {
-    forceAccum.clear();
-    torqueAccum.clear();
+void RigidBody::ClearAccumulators()
+{
+    ForceAccum = {};
+    TorqueAccum = {};
 }
 
 // Setters
-void RigidBody::setPosition(const Vector3& pos) { 
-    position = pos;
+void RigidBody::SetPosition(const DirectX::XMVECTOR& pos)
+{ 
+    Position = pos;
 }
-void RigidBody::setVelocity(const Vector3& vel) {
-    velocity = vel; 
+
+void RigidBody::SetVelocity(const DirectX::XMVECTOR& vel)
+{
+    Velocity = vel; 
 }
-void RigidBody::setAcceleration(const Vector3& acc) {
-    acceleration = acc; 
+
+void RigidBody::SetDamping(float d)
+{
+    m_LinearDamping = d;
 }
-void RigidBody::setOrientation(const Quaternion& q) { 
-    orientation = q; orientation.normalize(); 
+
+void RigidBody::SetAcceleration(const DirectX::XMVECTOR& acc)
+{
+    Acceleration = acc; 
 }
-void RigidBody::setAngularVelocity(const Vector3& av) { 
-    angularVelocity = av; 
+
+void RigidBody::SetOrientation(const Quaternion& q)
+{ 
+    Orientation = q; Orientation.Normalize(); 
 }
-void RigidBody::setMass(float mass) {
-    inverseMass = (mass > 0.0f) ? 1.0f / mass : 0.0f; 
+void RigidBody::SetAngularVelocity(const DirectX::XMVECTOR& av)
+{ 
+    AngularVelocity = av; 
 }
-void RigidBody::setInverseMass(float invMass) {
-    inverseMass = invMass; 
+
+void RigidBody::SetMass(float mass)
+{
+    InverseMass = (mass > 0.0f) ? 1.0f / mass : 0.0f; 
 }
-void RigidBody::setLinearDamping(float d) {
-    linearDamping = d; 
+
+void RigidBody::SetInverseMass(float invMass)
+{
+    InverseMass = invMass; 
 }
-void RigidBody::setAngularDamping(float d) {
-    angularDamping = d; 
+
+void RigidBody::SetLinearDamping(float d)
+{
+    m_LinearDamping = d; 
 }
-void RigidBody::setInverseInertiaTensor(const Matrix3& tensor) {
-    inverseInertiaTensor = tensor; 
+
+void RigidBody::SetAngularDamping(float d)
+{
+    AngularDamping = d; 
+}
+
+void RigidBody::SetInverseInertiaTensor(const  DirectX::XMMATRIX& tensor)
+{
+    InverseInertiaTensor = tensor; 
 }
 
 // Getters
-Vector3 RigidBody::getPosition() const { 
-    return position; 
+DirectX::XMVECTOR RigidBody::GetPosition() const
+{ 
+    return Position; 
 }
-Vector3 RigidBody::getVelocity() const { 
-    return velocity;
+
+DirectX::XMVECTOR RigidBody::GetVelocity() const
+{ 
+    return Velocity;
 }
-Vector3 RigidBody::getAcceleration() const { 
-    return acceleration; 
+
+DirectX::XMVECTOR RigidBody::GetAcceleration() const
+{ 
+    return Acceleration; 
 }
-Vector3 RigidBody::getAngularVelocity() const {
-    return angularVelocity; 
+
+DirectX::XMVECTOR RigidBody::GetAngularVelocity() const
+{
+    return AngularVelocity; 
 }
-Quaternion RigidBody::getOrientation() const {
-    return orientation; 
+
+Quaternion RigidBody::GetOrientation() const
+{
+    return Orientation; 
 }
-float RigidBody::getMass() const {
-    return (inverseMass > 0.0f) ? 1.0f / inverseMass : INFINITY; 
+
+float RigidBody::GetMass() const
+{
+    return (InverseMass > 0.0f) ? 1.0f / InverseMass : INFINITY; 
 }
-float RigidBody::getInverseMass() const {
-    return inverseMass;
+
+float RigidBody::GetInverseMass() const
+{
+    return InverseMass;
 }
-Matrix3 RigidBody::getInverseInertiaTensor() const {
-    return inverseInertiaTensor; 
+
+DirectX::XMMATRIX RigidBody::GetInverseInertiaTensor() const
+{
+    return InverseInertiaTensor; 
 }
-bool RigidBody::hasFiniteMass() const { 
-    return inverseMass > 0.0f;}
+
+bool RigidBody::HasFiniteMass() const
+{ 
+    return InverseMass > 0.0f;
+}
+
+float RigidBody::GetDamping() const
+{
+    return m_LinearDamping;
+}

@@ -1,6 +1,17 @@
 #pragma once
-class Particle;
-class ForceGenerator {
+
+class RigidBody;
+
+class ForceGenerator
+{
 public:
-    virtual void updateForce(Particle* particle, float duration) = 0;
-    virtual ~ForceGenerator() {}};
+	ForceGenerator() = default;
+	virtual ~ForceGenerator() = default;
+
+	ForceGenerator(const ForceGenerator&) = default;
+	ForceGenerator(ForceGenerator&&) = default;
+	ForceGenerator& operator=(ForceGenerator&&) = default;
+	ForceGenerator& operator=(const ForceGenerator&) = default;
+
+	virtual void UpdateForce(RigidBody* body, float duration) = 0;
+};

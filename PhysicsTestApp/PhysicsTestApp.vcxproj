@@ -128,24 +128,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\PhysicsLibrary\Collider.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\CollisionDetector.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Contact.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\ContactResolver.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Drag.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\ForceGenerator.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\ForceRegistry.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Gravity.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Matrix3.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Particle.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\pch.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\PhysicsLibrary.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\PhysicsManager.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\PlaneCollider.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Quaternion.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\RigidBody.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\SphereCollider.cpp" />
-    <ClCompile Include="..\PhysicsLibrary\Vector3.cpp" />
     <ClCompile Include="PhysicsTestApp.cpp" />
   </ItemGroup>
   <ItemGroup>

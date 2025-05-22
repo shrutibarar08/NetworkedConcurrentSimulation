@@ -1,20 +1,29 @@
 #pragma once
+#include <DirectXMath.h>
+
 #include "Collider.h"
 #include "RigidBody.h"
 
-class CapsuleCollider : public Collider {
-private:
-    float radius;
-    float height;
-
+class CapsuleCollider : public Collider
+{
 public:
     CapsuleCollider(RigidBody* body, float radius, float height);
 
-    Collider::Type getType() const override;
-    bool checkCollision(Collider* other, Contact& contact) const override;
+	Type GetType() const override;
 
-    float getRadius() const;
-    float getHeight() const;
-    Vector3 getStart() const;
-    Vector3 getEnd() const;
+    float GetRadius() const;
+    float GetHeight() const;
+    DirectX::XMVECTOR GetStart() const;
+    DirectX::XMVECTOR GetEnd() const;
+
+protected:
+    bool CheckCollisionWithBox(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithSphere(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithPlane(Collider* other, Contact& contact) const override;
+    bool CheckCollisionWithCapsule(Collider* other, Contact& contact) const override;
+
+private:
+    const float EPSILON = 1e-6f;
+    float Radius;
+    float Height;
 };

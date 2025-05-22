@@ -1,82 +1,158 @@
 #include "pch.h"
 #include "Contact.h"
 
-void Contact::resolve(float duration) {
-    resolveVelocity(duration);
-    resolveInterpenetration(duration);
+#include <algorithm>
+
+void Contact::Resolve(float duration)
+{
+    ResolveVelocity(duration);
+    ResolveInterpenetration(duration);
 }
 
-float Contact::calculateSeparatingVelocity() const {
-    Vector3 relativeVel = body[0]->getVelocity();
-    if (body[1]) relativeVel -= body[1]->getVelocity();
-    return relativeVel.dot(contactNormal);
+float Contact::CalculateSeparatingVelocity() const
+{
+    using namespace DirectX;
+
+    XMVECTOR velocityA = Body[0]->GetVelocity();
+    XMVECTOR velocityB = Body[1] ? Body[1]->GetVelocity() : XMVectorZero();
+
+	XMVECTOR relativeVelocity = XMVectorSubtract(velocityA, velocityB);
+
+	XMVECTOR contactNormal = XMLoadFloat3(&ContactNormal);
+	XMVECTOR separatingVelocityVec = XMVector3Dot(relativeVelocity, contactNormal);
+    return XMVectorGetX(separatingVelocityVec);
 }
 
-void Contact::resolveVelocity(float duration) {
-    float separatingVel = calculateSeparatingVelocity();
-    if (separatingVel > 0) return; // Already separating
+void Contact::ResolveVelocity(float duration)
+{
+    using namespace DirectX;
 
-    float newSepVel = -separatingVel * restitution;
+    XMVECTOR contactNormal = XMLoadFloat3(&ContactNormal);
+
+    // Calculate separating velocity
+    float separatingVel = CalculateSeparatingVelocity();
+    if (separatingVel > 0.0f)
+        return; // No action required if separating
+
+    // Calculate new separating velocity after restitution
+    float newSepVel = -separatingVel * Restitution;
     float deltaVel = newSepVel - separatingVel;
 
-    float totalInverseMass = body[0]->getInverseMass();
-    if (body[1]) totalInverseMass += body[1]->getInverseMass();
-    if (totalInverseMass <= 0) return;
+    // Calculate total inverse mass
+    float totalInverseMass = Body[0]->GetInverseMass();
+    if (Body[1])
+        totalInverseMass += Body[1]->GetInverseMass();
 
+    // If total inverse mass is zero, bodies are immovable
+    if (totalInverseMass <= 0.0f)
+        return;
+
+    // Calculate impulse scalar
     float impulse = deltaVel / totalInverseMass;
-    Vector3 impulsePerIMass = contactNormal * impulse;
 
-    body[0]->setVelocity(body[0]->getVelocity() + impulsePerIMass * body[0]->getInverseMass());
-    if (body[1]) {
-        body[1]->setVelocity(body[1]->getVelocity() - impulsePerIMass * body[1]->getInverseMass());
+    // Calculate impulse per unit inverse mass
+    XMVECTOR impulsePerIMass = XMVectorScale(contactNormal, impulse);
+
+    // Apply impulse to the first body
+    XMVECTOR velocityA = Body[0]->GetVelocity();
+    velocityA = XMVectorAdd(velocityA, XMVectorScale(impulsePerIMass, Body[0]->GetInverseMass()));
+    Body[0]->SetVelocity(velocityA);
+
+    // Apply impulse to the second body, if it exists
+    if (Body[1])
+    {
+        XMVECTOR velocityB = Body[1]->GetVelocity();
+        velocityB = XMVectorSubtract(velocityB, XMVectorScale(impulsePerIMass, Body[1]->GetInverseMass()));
+        Body[1]->SetVelocity(velocityB);
     }
 }
 
-void Contact::resolveInterpenetration(float duration) {
-    float separatingVel = calculateSeparatingVelocity();
-    if (separatingVel > 0) return; 
+void Contact::ResolveInterpenetration(float duration) const
+{
+    using namespace DirectX;
 
-    // Calculate new separating velocity
-    float newSepVel = -separatingVel * restitution;
+    // Load contact normal into XMVECTOR
+    XMVECTOR contactNormal = XMLoadFloat3(&ContactNormal);
+
+    // Calculate separating velocity
+    float separatingVel = CalculateSeparatingVelocity();
+    if (separatingVel > 0.0f)
+        return; // No action required if separating
+
+    // Calculate new separating velocity after restitution
+    float newSepVel = -separatingVel * Restitution;
     float deltaVel = newSepVel - separatingVel;
 
-    float totalInverseMass = body[0]->getInverseMass();
-    if (body[1]) totalInverseMass += body[1]->getInverseMass();
-    if (totalInverseMass <= 0) return;
+    // Calculate total inverse mass
+    float totalInverseMass = Body[0]->GetInverseMass();
+    if (Body[1])
+        totalInverseMass += Body[1]->GetInverseMass();
+
+    // If total inverse mass is zero, bodies are immovable
+    if (totalInverseMass <= 0.0f)
+        return;
 
     // Calculate impulse scalar
     float impulseScalar = deltaVel / totalInverseMass;
-    Vector3 impulse = contactNormal * impulseScalar;
 
-    //normal impulse
-    body[0]->setVelocity(body[0]->getVelocity() + impulse * body[0]->getInverseMass());
-    if (body[1]) {
-        body[1]->setVelocity(body[1]->getVelocity() - impulse * body[1]->getInverseMass());
+    // Calculate impulse per unit inverse mass
+    XMVECTOR impulsePerIMass = XMVectorScale(contactNormal, impulseScalar);
+
+    // Apply impulse to the first body
+    XMVECTOR velocityA = Body[0]->GetVelocity();
+    velocityA = XMVectorAdd(velocityA, XMVectorScale(impulsePerIMass, Body[0]->GetInverseMass()));
+    Body[0]->SetVelocity(velocityA);
+
+    // Apply impulse to the second body, if it exists
+    XMVECTOR velocityB;
+    XMFLOAT3 newVelocityB;
+    if (Body[1])
+    {
+    	velocityB = Body[1]->GetVelocity();
+        velocityB = XMVectorSubtract(velocityB, XMVectorScale(impulsePerIMass, Body[1]->GetInverseMass()));
+        Body[1]->SetVelocity(velocityB);
     }
-    Vector3 relativeVel = body[0]->getVelocity();
-    if (body[1]) relativeVel -= body[1]->getVelocity();
 
-    // Remove normal component
-    Vector3 lateralVel = relativeVel - contactNormal * relativeVel.dot(contactNormal);
+    // Compute relative velocity
+    XMVECTOR relativeVelocity = Body[0]->GetVelocity();
 
-    if (lateralVel.isZero()) return;
+	if (Body[1])
+    {
+        velocityB = Body[1]->GetVelocity();
+        relativeVelocity = XMVectorSubtract(relativeVelocity, velocityB);
+    }
+
+    // Compute lateral velocity component
+    XMVECTOR normalComponent = XMVectorScale(contactNormal, XMVectorGetX(XMVector3Dot(relativeVelocity, contactNormal)));
+    XMVECTOR lateralVelocity = XMVectorSubtract(relativeVelocity, normalComponent);
+
+    // Check if lateral velocity is near zero
+    if (XMVector3LengthSq(lateralVelocity).m128_f32[0] < 1e-6f)
+        return;
 
     // Normalize lateral direction
-    lateralVel.normalize();
+    XMVECTOR lateralDir = XMVector3Normalize(lateralVelocity);
 
     // Calculate friction impulse magnitude
-    float tangentialImpulseMag = -relativeVel.dot(lateralVel) / totalInverseMass;
+    float tangentialImpulseMag = -XMVectorGetX(XMVector3Dot(relativeVelocity, lateralDir)) / totalInverseMass;
 
     // Coulomb's law
-    float maxFrictionImpulse = friction * impulseScalar;
-    if (std::abs(tangentialImpulseMag) > maxFrictionImpulse) {
-        tangentialImpulseMag = maxFrictionImpulse * (tangentialImpulseMag < 0 ? -1.0f : 1.0f);
-    }
+    float maxFrictionImpulse = Friction * impulseScalar;
+    tangentialImpulseMag = std::clamp(tangentialImpulseMag, -maxFrictionImpulse, maxFrictionImpulse);
 
     // Apply friction impulse
-    Vector3 frictionImpulse = lateralVel * tangentialImpulseMag;
-    body[0]->setVelocity(body[0]->getVelocity() + frictionImpulse * body[0]->getInverseMass());
-    if (body[1]) {
-        body[1]->setVelocity(body[1]->getVelocity() - frictionImpulse * body[1]->getInverseMass());
+    XMVECTOR frictionImpulse = XMVectorScale(lateralDir, tangentialImpulseMag);
+
+    // Apply to the first body
+    velocityA = Body[0]->GetVelocity();
+    velocityA = XMVectorAdd(velocityA, XMVectorScale(frictionImpulse, Body[0]->GetInverseMass()));
+    Body[0]->SetVelocity(velocityA);
+
+    // Apply to the second body, if it exists
+    if (Body[1])
+    {
+        velocityB = Body[1]->GetVelocity();
+        velocityB = XMVectorSubtract(velocityB, XMVectorScale(frictionImpulse, Body[1]->GetInverseMass()));
+        Body[1]->SetVelocity(velocityB);
     }
 }
