@@ -132,6 +132,9 @@
     <ClCompile Include="Src\PhysicsManager\PhysicsManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\GuiManager\Widgets\ModelCubeUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h">
@@ -258,6 +261,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\PhysicsManager\PhysicsManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Widgets\ModelCubeUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

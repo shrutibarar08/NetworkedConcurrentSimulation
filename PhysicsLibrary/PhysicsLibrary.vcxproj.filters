@@ -30,28 +30,7 @@
     <ClInclude Include="Drag.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Contact.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ContactResolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Quaternion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SphereCollider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Collider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PlaneCollider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BoundingSphere.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BVHNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RigidBody.h">
@@ -60,13 +39,19 @@
     <ClInclude Include="ForceRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PhysicsManager.h">
+    <ClInclude Include="IntegrationType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CapsuleCollider.h">
+    <ClInclude Include="ICollider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BoxCollider.h">
+    <ClInclude Include="CubeCollider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Contact.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionResolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -83,25 +68,7 @@
     <ClCompile Include="Drag.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Contact.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ContactResolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Quaternion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SphereCollider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PlaneCollider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BoundingSphere.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BVHNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RigidBody.cpp">
@@ -110,16 +77,13 @@
     <ClCompile Include="ForceRegistry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PhysicsManager.cpp">
+    <ClCompile Include="ICollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CapsuleCollider.cpp">
+    <ClCompile Include="CubeCollider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BoxCollider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Collider.cpp">
+    <ClCompile Include="CollisionResolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

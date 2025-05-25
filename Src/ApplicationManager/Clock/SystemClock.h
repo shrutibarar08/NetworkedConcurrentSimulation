@@ -35,4 +35,5 @@ private:
 
     inline static double m_AccumulatedTime = 0.0;
     inline static bool m_Paused = false;
+    inline static float m_DeltaTime{ 0.f };
 };

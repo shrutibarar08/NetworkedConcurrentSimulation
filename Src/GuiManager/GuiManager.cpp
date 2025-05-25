@@ -113,6 +113,7 @@ void GuiManager::RenderScene()
 {
 	AcquireSRWLockShared(&m_Lock);
 	//~ Render Main Menu Bar
+
 	if (ImGui::BeginMainMenuBar())
 	{
 		for (auto& widget: m_Widgets | std::views::values)
@@ -131,6 +132,12 @@ void GuiManager::RenderScene()
 	{
 		widget->RenderPopups();
 	}
+
+	for (auto& widget : m_Widgets | std::views::values)
+	{
+		widget->RenderOnScreen();
+	}
+
 	ReleaseSRWLockShared(&m_Lock);
 }
 

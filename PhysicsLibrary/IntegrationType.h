@@ -1,7 +1,10 @@
 #pragma once
+#include <cstdint>
 
-enum class IntegrationType {
-    Euler,
-    SemiImplicitEuler,
-    Verlet
+
+enum class IntegrationType: uint8_t
+{
+	SemiImplicitEuler,
+	Euler,
+	Verlet
 };

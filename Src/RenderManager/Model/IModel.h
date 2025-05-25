@@ -2,11 +2,15 @@
 #include <atomic>
 
 #include "Core/DefineDefault.h"
+#include "ICollider.h"
 
 #include <d3d11.h>
+#include <memory>
 #include <vector>
 #include <string>
 #include <wrl/client.h>
+
+#include "GuiManager/Widgets/IWidget.h"
 
 
 class IModel
@@ -29,7 +33,23 @@ public:
 	uint64_t GetModelId() const;
 	bool IsBuilt() const { return m_Built; }
 
+	RigidBody* GetRigidBody();
+	ICollider* GetCollider() const;
+
+	void SetWidget(std::unique_ptr<IWidget> widget)
+	{
+		m_Widget = std::move(widget);
+	}
+	IWidget* GetWidget() const { return m_Widget.get(); }
+
+	void SetName(const std::string& name)
+	{
+		m_Name = name;
+	}
+	std::string GetName() const { return m_Name; }
+
 protected:
+
 	void BuildVertexBuffer(ID3D11Device* device);
 	void BuildVertexShaderBlob(ID3D11Device* device);
 	void BuildPixelShaderBlob(ID3D11Device* device);
@@ -43,6 +63,10 @@ protected:
 	virtual std::vector<UINT> BuildIndex() = 0;
 
 protected:
+	std::string m_Name{ "NO NAME" };
+	std::unique_ptr<IWidget> m_Widget{ nullptr };
+	RigidBody m_RigidBody{};
+	std::unique_ptr<ICollider> m_Collider{ nullptr };
 	std::string m_VertexShaderPath;
 	std::string m_PixelShaderPath;
 	std::string m_ModelName;

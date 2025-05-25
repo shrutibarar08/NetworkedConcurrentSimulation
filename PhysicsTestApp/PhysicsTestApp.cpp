@@ -49,7 +49,7 @@ void simulateManualCollisionTest()
         bodyB.Integrate(dt, IntegrationType::Euler);
 
         // Resolve collision
-        resolver.resolveContacts(&contact, 1, dt);
+        resolver.ResolveContacts(&contact, 1, dt);
 
         DirectX::XMVECTOR posA = bodyA.GetPosition();
         DirectX::XMVECTOR velA = bodyA.GetVelocity();

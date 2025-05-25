@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CubeCollider.h"
 #include "RenderManager/Model/IModel.h"
 
 class ModelCube final: public IModel
@@ -12,3 +13,4 @@ protected:
 	std::vector<VERTEX> BuildVertex() override;
 	std::vector<UINT> BuildIndex() override;
 };
+

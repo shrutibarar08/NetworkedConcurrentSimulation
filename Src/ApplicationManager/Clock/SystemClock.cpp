@@ -68,15 +68,11 @@ double SystemClock::GetRunningTime()
 
 double SystemClock::GetDeltaTime()
 {
-    if (m_Paused)
-    {
-        return 0.0;
-    }
-
     auto now = Clock::now();
-    double delta = std::chrono::duration<double>(now - m_LastSimTime).count();
+    m_DeltaTime = std::chrono::duration<double>(now - m_LastSimTime).count();
     m_LastSimTime = now;
-    return delta;
+
+    return m_DeltaTime;
 }
 
 double SystemClock::GetRunningDeltaTime()

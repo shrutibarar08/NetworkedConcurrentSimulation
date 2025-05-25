@@ -149,36 +149,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BoundingSphere.h" />
-    <ClInclude Include="BoxCollider.h" />
-    <ClInclude Include="BVHNode.h" />
-    <ClInclude Include="CapsuleCollider.h" />
-    <ClInclude Include="Collider.h" />
+    <ClInclude Include="CollisionResolver.h" />
     <ClInclude Include="Contact.h" />
-    <ClInclude Include="ContactResolver.h" />
+    <ClInclude Include="CubeCollider.h" />
     <ClInclude Include="Drag.h" />
     <ClInclude Include="ForceGenerator.h" />
     <ClInclude Include="ForceRegistry.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Gravity.h" />
+    <ClInclude Include="ICollider.h" />
+    <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PhysicsManager.h" />
-    <ClInclude Include="PlaneCollider.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="RigidBody.h" />
-    <ClInclude Include="SphereCollider.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BoundingSphere.cpp" />
-    <ClCompile Include="BoxCollider.cpp" />
-    <ClCompile Include="BVHNode.cpp" />
-    <ClCompile Include="CapsuleCollider.cpp" />
-    <ClCompile Include="Collider.cpp" />
-    <ClCompile Include="Contact.cpp" />
-    <ClCompile Include="ContactResolver.cpp" />
+    <ClCompile Include="CollisionResolver.cpp" />
+    <ClCompile Include="CubeCollider.cpp" />
     <ClCompile Include="Drag.cpp" />
     <ClCompile Include="ForceRegistry.cpp" />
     <ClCompile Include="Gravity.cpp" />
+    <ClCompile Include="ICollider.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -186,11 +177,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PhysicsLibrary.cpp" />
-    <ClCompile Include="PhysicsManager.cpp" />
-    <ClCompile Include="PlaneCollider.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RigidBody.cpp" />
-    <ClCompile Include="SphereCollider.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

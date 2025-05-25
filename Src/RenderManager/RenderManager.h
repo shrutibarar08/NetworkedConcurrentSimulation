@@ -12,7 +12,7 @@
 class RenderManager : public ISystem
 {
 public:
-    RenderManager(WindowsSystem* windowSystem);
+    RenderManager(WindowsSystem* windowSystem, PhysicsManager* phxManager);
 	~RenderManager() override = default;
 
     RenderManager(const RenderManager&) = delete;
@@ -65,6 +65,8 @@ private:
 
 private:
     SRWLOCK m_Lock;
+
+    PhysicsManager* m_PhysicsManager{ nullptr };
 
     CameraManager m_CameraManager{};
     int m_2dCamId;

@@ -37,7 +37,7 @@ public:
 	unsigned int AddObject(std::unique_ptr<IModel> model);
 	void RemoveObject(unsigned int objId);
 
-	const std::unordered_map<unsigned int, IModel*>& GetModels();
+	std::unordered_map<unsigned int, IModel*> GetModels();
 
 	IWidget* GetWidget() const;
 	std::string GetName() const;
@@ -46,7 +46,6 @@ public:
 	bool IsLoaded() const;
 
 private:
-	SRWLOCK m_Lock;
 	std::unordered_map<unsigned int, std::unique_ptr<IModel>> m_Models;
 	std::unordered_map<unsigned int, IModel*> m_SafePointer;
 	std::unique_ptr<IWidget> m_Widget;

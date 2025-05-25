@@ -9,8 +9,7 @@ int WINAPI WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
     LPSTR     lpCmdLine,
-    int       nCmdShow)
-{
+    int       nCmdShow){
 #ifdef _DEBUG
     LOGGER_INITIALIZE_DESC desc{};
     desc.FilePath = "SweetLog";

@@ -74,6 +74,14 @@ Quaternion& Quaternion::operator+=(const Quaternion& q)
     K += q.K;
     return *this;
 }
+
+DirectX::XMMATRIX Quaternion::ToRotationMatrix() const
+{
+    using namespace DirectX;
+    XMVECTOR q = XMVectorSet(I, J, K, R); // (x, y, z, w)
+    return XMMatrixRotationQuaternion(q);
+}
+
 Quaternion operator*(float scalar, const Quaternion& q)
 {
     return q * scalar;

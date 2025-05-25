@@ -1,5 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
+
+#include <windows.h>
 #include "Quaternion.h"
 #include "IntegrationType.h"
 
@@ -15,9 +17,11 @@ public:
     void AddForce(const DirectX::XMVECTOR& force);
     void AddTorque(const DirectX::XMVECTOR& torque);
     void Integrate(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
+    DirectX::XMMATRIX GetTransformMatrix() const;
 
     // Setters
     void SetPosition(const DirectX::XMVECTOR& pos);
+    void SetBodyScale(const DirectX::XMVECTOR& scale);
     void SetVelocity(const DirectX::XMVECTOR& vel);
     void SetAcceleration(const DirectX::XMVECTOR& acc);
     void SetOrientation(const Quaternion& q);
@@ -28,28 +32,46 @@ public:
     void SetAngularDamping(float d);
     void SetInverseInertiaTensor(const DirectX::XMMATRIX& tensor);
     void SetDamping(float d);
+    void SetElasticity(float e);
+    void SetRestitution(float v);
+    void SetFriction(float v);
 
     // Getters
     DirectX::XMVECTOR GetPosition() const;
+    DirectX::XMVECTOR GetBodyScale() const;
     DirectX::XMVECTOR GetVelocity() const;
     DirectX::XMVECTOR GetAcceleration() const;
     DirectX::XMVECTOR GetAngularVelocity() const;
     Quaternion GetOrientation() const;
     float GetMass() const;
+    float GetElasticity() const;
     float GetInverseMass() const;
     DirectX::XMMATRIX GetInverseInertiaTensor() const;
     bool HasFiniteMass() const;
     float GetDamping() const;
+    float GetRestitution() const;
+    float GetFriction() const;
 
+    void SetRestingState(bool state);
+    bool GetRestingState() const;
+
+    void ConstrainVelocity(const DirectX::XMVECTOR& contactNormal);
+private:
+    bool m_Resting{ false };
     DirectX::XMVECTOR Position;
+    DirectX::XMVECTOR m_LastPosition{};
     DirectX::XMVECTOR Velocity;
+    DirectX::XMVECTOR Scale{1, 1, 1};
     DirectX::XMVECTOR Acceleration;
 
-private:
+    SRWLOCK m_Lock{ SRWLOCK_INIT };
 
     DirectX::XMVECTOR ForceAccum;
-    float InverseMass;
+    float InverseMass{ 10.f };
     float m_LinearDamping;
+    float m_Elastic{ 1.0f };
+    float m_Restitution{ 1.0f };
+    float m_Friction{ 0.5f };
 
     Quaternion Orientation;
     DirectX::XMVECTOR AngularVelocity;

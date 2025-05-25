@@ -10,8 +10,8 @@
 #include "GuiManager/Widgets/RenderManagerUI.h"
 #include "Utils/Logger.h"
 
-RenderManager::RenderManager(WindowsSystem* windowSystem)
-	: m_WindowSystem(windowSystem)
+RenderManager::RenderManager(WindowsSystem* windowSystem, PhysicsManager* phxManager)
+	: m_WindowSystem(windowSystem), m_PhysicsManager(phxManager)
 {
     m_DeviceMutex = CreateMutex
 	(
@@ -109,6 +109,7 @@ bool RenderManager::Build(SweetLoader& sweetLoader)
     cam->AddTranslationZ(-10.0f);
 
     m_Render3DQueue = std::make_unique<Render3DQueue>(cam, m_Device.Get());
+    m_Render3DQueue->AttachPhx(m_PhysicsManager);
 
     return true;
 }

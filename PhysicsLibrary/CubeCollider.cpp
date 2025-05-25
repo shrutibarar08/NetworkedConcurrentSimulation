@@ -1,0 +1,181 @@
+#include "pch.h"
+
+#include "CubeCollider.h"
+#include "Contact.h"
+
+#include <algorithm>
+
+
+CubeCollider::CubeCollider(RigidBody* body)
+	: ICollider(body)
+{}
+
+bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
+{
+	if (!other) return false;
+
+	if (other->GetColliderType() == ColliderType::Cube)
+	{
+		return CheckCollisionWithCube(other, outContact);
+	}
+	return false;
+}
+
+ColliderType CubeCollider::GetColliderType() const
+{
+	return ColliderType::Cube;
+}
+
+RigidBody* CubeCollider::GetRigidBody() const
+{
+	return ICollider::GetRigidBody();
+}
+
+DirectX::XMVECTOR CubeCollider::GetHalfExtents() const
+{
+	DirectX::XMVECTOR scale = m_RigidBody->GetBodyScale();
+	return DirectX::XMVectorScale(scale, 0.5f);
+}
+
+bool CubeCollider::CheckCollisionWithCube(ICollider* other, Contact& outContact)
+{
+    using namespace DirectX;
+
+    // === STEP 1: Type check & cast ===
+    if (!other || other->GetColliderType() != ColliderType::Cube) return false;
+    const CubeCollider* B = other->As<CubeCollider>();
+    if (!B) return false;
+
+    // === STEP 2: Get transforms and OBB axes ===
+    const XMVECTOR posA = m_RigidBody->GetPosition();
+    const XMVECTOR posB = B->GetRigidBody()->GetPosition();
+
+    const XMVECTOR halfA = GetHalfExtents();
+    const XMVECTOR halfB = B->GetHalfExtents();
+
+    const Quaternion qA = m_RigidBody->GetOrientation();
+    const Quaternion qB = B->GetRigidBody()->GetOrientation();
+
+    XMVECTOR axesA[3];
+    XMVECTOR axesB[3];
+
+    GetOBBAxes(qA, axesA);
+    GetOBBAxes(qB, axesB);
+
+    const XMVECTOR toCenter = posB - posA;
+
+    float minOverlap = FLT_MAX;
+    XMVECTOR bestAxis = XMVectorZero();
+
+    // === STEP 3: Test all 15 axes ===
+    for (int i = 0; i < 3; ++i)
+    {
+        XMVECTOR axis = axesA[i];
+        if (!TryNormalize(axis)) continue;
+
+        float projA = ProjectOBB(axis, axesA, halfA);
+        float projB = ProjectOBB(axis, axesB, halfB);
+        float dist = fabsf(XMVectorGetX(XMVector3Dot(toCenter, axis)));
+        float overlap = projA + projB - dist;
+
+        if (overlap < 0) return false; // Separating axis found
+
+        if (overlap < minOverlap)
+        {
+            minOverlap = overlap;
+            bestAxis = axis;
+            if (XMVectorGetX(XMVector3Dot(toCenter, axis)) < 0)
+                bestAxis = -axis;
+        }
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        XMVECTOR axis = axesB[i];
+        if (!TryNormalize(axis)) continue;
+
+        float projA = ProjectOBB(axis, axesA, halfA);
+        float projB = ProjectOBB(axis, axesB, halfB);
+        float dist = fabsf(XMVectorGetX(XMVector3Dot(toCenter, axis)));
+        float overlap = projA + projB - dist;
+
+        if (overlap < 0) return false;
+
+        if (overlap < minOverlap)
+        {
+            minOverlap = overlap;
+            bestAxis = axis;
+            if (XMVectorGetX(XMVector3Dot(toCenter, axis)) < 0)
+                bestAxis = -axis;
+        }
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            XMVECTOR axis = XMVector3Cross(axesA[i], axesB[j]);
+            if (!TryNormalize(axis)) continue;
+
+            float projA = ProjectOBB(axis, axesA, halfA);
+            float projB = ProjectOBB(axis, axesB, halfB);
+            float dist = fabsf(XMVectorGetX(XMVector3Dot(toCenter, axis)));
+            float overlap = projA + projB - dist;
+
+            if (overlap < 0) return false;
+
+            if (overlap < minOverlap)
+            {
+                minOverlap = overlap;
+                bestAxis = axis;
+                if (XMVectorGetX(XMVector3Dot(toCenter, axis)) < 0)
+                    bestAxis = -axis;
+            }
+        }
+    }
+
+    // === STEP 4: Fill out contact data ===
+    outContact.Colliders[0] = this;
+    outContact.Colliders[1] = other;
+
+    XMStoreFloat3(&outContact.ContactNormal, bestAxis);
+    outContact.PenetrationDepth = minOverlap;
+
+    // Approximate center point between boxes (improve later via clipping or contact manifold)
+    XMVECTOR midpoint = 0.5f * (posA + posB);
+    XMStoreFloat3(&outContact.ContactPoint, midpoint);
+
+    outContact.Restitution = 0.5f * (
+        m_RigidBody->GetRestitution() + B->GetRigidBody()->GetRestitution());
+    outContact.Friction = 0.5f * (
+        m_RigidBody->GetFriction() + B->GetRigidBody()->GetFriction());
+    outContact.Elasticity = 0.5f * (
+        m_RigidBody->GetElasticity() + B->GetRigidBody()->GetElasticity());
+
+    return true;
+}
+
+void CubeCollider::GetOBBAxes(const Quaternion& q, DirectX::XMVECTOR axes[3])
+{
+    using namespace DirectX;
+    XMMATRIX rotMat = q.ToRotationMatrix();
+    axes[0] = rotMat.r[0]; // Right (local X)
+    axes[1] = rotMat.r[1]; // Up    (local Y)
+    axes[2] = rotMat.r[2]; // Forward (local Z)
+}
+
+float CubeCollider::ProjectOBB(const DirectX::XMVECTOR& axis, const DirectX::XMVECTOR axes[3], const DirectX::XMVECTOR& halfExtents)
+{
+    using namespace DirectX;
+    return fabsf(XMVectorGetX(XMVector3Dot(axes[0], axis))) * XMVectorGetX(halfExtents) +
+        fabsf(XMVectorGetX(XMVector3Dot(axes[1], axis))) * XMVectorGetY(halfExtents) +
+        fabsf(XMVectorGetX(XMVector3Dot(axes[2], axis))) * XMVectorGetZ(halfExtents);
+}
+
+bool CubeCollider::TryNormalize(DirectX::XMVECTOR& axis)
+{
+    using namespace DirectX;
+    if (XMVector3LengthSq(axis).m128_f32[0] < 1e-6f) return false;
+    axis = XMVector3Normalize(axis);
+    return true;
+}

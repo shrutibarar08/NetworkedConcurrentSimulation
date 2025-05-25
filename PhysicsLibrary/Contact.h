@@ -1,23 +1,19 @@
-#pragma once  
-#include "DirectXMath.h"  
-#include "RigidBody.h"  
+#pragma once
 
+#include <DirectXMath.h>
+#include "ICollider.h"
 
-class Contact
+struct Contact
 {
-public:
-   void Resolve(float duration);  
-   float CalculateSeparatingVelocity() const; 
-
-private:  
-   void ResolveVelocity(float duration);  
-   void ResolveInterpenetration(float duration) const;
-
-public:
-	RigidBody* Body[2] = { nullptr, nullptr };
-	DirectX::XMFLOAT3 ContactPoint;
-	DirectX::XMFLOAT3 ContactNormal;
-	float Penetration = 0.0f;
-	float Restitution = 0.0f;
-	float Friction = 0.0f;
+    DirectX::XMFLOAT3 ContactPoint;
+    // Normal pointing from Body[0] to Body[1]
+    DirectX::XMFLOAT3 ContactNormal;
+    // How deep the objects are penetrating
+    float PenetrationDepth = 0.0f;
+    // Colliders involved
+    ICollider* Colliders[2]{ nullptr, nullptr };
+    // Physics response (to be used later)
+    float Restitution = 1.0f;
+    float Friction = 0.5f;
+    float Elasticity = 1.0f;
 };

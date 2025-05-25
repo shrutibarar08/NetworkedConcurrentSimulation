@@ -33,6 +33,7 @@ unsigned int ScenarioManager::CreateScene(const std::string& name)
 	ID id = scene->GetId();
 
 	m_Scenes[id] = std::move(scene);
+	m_ScenesPtr.push_back(m_Scenes[id].get());
 	return id;
 }
 

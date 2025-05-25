@@ -16,6 +16,7 @@ public:
 	IWidget& operator=(IWidget&&) = delete;
 
 	virtual bool Init() { return true; }
+	virtual void RenderOnScreen() {};
 	virtual void RenderMenu() {};
 	virtual void RenderAsSystemItem() {}
 	virtual void RenderPopups(){}

@@ -9,15 +9,11 @@
 Scene::Scene(const std::string& name)
 	: m_Name(name)
 {
-	InitializeSRWLock(&m_Lock);
-
 	m_Widget = std::make_unique<SceneUI>(this);
 }
 
 Scene::Scene()
 {
-	InitializeSRWLock(&m_Lock);
-
 	m_Widget = std::make_unique<SceneUI>(this);
 }
 
@@ -27,13 +23,10 @@ void Scene::OnLoad()
 	m_State = State::LOADED;
 
 	LOG_INFO("Loading Scene...");
-
-	AcquireSRWLockShared(&m_Lock);
 	for (auto& model: m_Models | std::views::values)
 	{
 		Render3DQueue::AddModel(model.get());
 	}
-	ReleaseSRWLockShared(&m_Lock);
 }
 
 void Scene::OnOffLoad()
@@ -43,12 +36,10 @@ void Scene::OnOffLoad()
 	m_State = State::UNLOADED;
 	LOG_INFO("Off Loading Scene...");
 
-	AcquireSRWLockShared(&m_Lock);
 	for (auto& model : m_Models | std::views::values)
 	{
 		Render3DQueue::RemoveModel(model.get());
 	}
-	ReleaseSRWLockShared(&m_Lock);
 }
 
 void Scene::OnUpdate(float deltaTime)
@@ -57,7 +48,6 @@ void Scene::OnUpdate(float deltaTime)
 
 unsigned int Scene::AddObject(SPAWN_OBJECT obj)
 {
-	AcquireSRWLockExclusive(&m_Lock);
 	int key = 0;
 	switch (obj)
 	{
@@ -68,48 +58,39 @@ unsigned int Scene::AddObject(SPAWN_OBJECT obj)
 		desc.ModelName = "Default Cube";
 		auto model = std::make_unique<ModelCube>(&desc);
 		key = model->GetModelId();
+		model->GetRigidBody()->SetMass(1);
 		m_SafePointer[key] = model.get();
 		m_Models[key] = std::move(model);
 
 		if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
 	}
-	ReleaseSRWLockExclusive(&m_Lock);
 	return key;
 }
 
 unsigned int Scene::AddObject(std::unique_ptr<IModel> model)
 {
 	unsigned int key = model->GetModelId();
-	AcquireSRWLockExclusive(&m_Lock);
 	m_SafePointer[key] = model.get();
 	m_Models[key] = std::move(model);
 	if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
-	ReleaseSRWLockExclusive(&m_Lock);
 	return key;
 }
 
 void Scene::RemoveObject(unsigned int objId)
 {
-	AcquireSRWLockShared(&m_Lock);
 	if (!m_Models.contains(objId))
 	{
-		ReleaseSRWLockShared(&m_Lock);
 		return;
 	}
-	ReleaseSRWLockShared(&m_Lock);
 
-	AcquireSRWLockExclusive(&m_Lock);
 	if (m_State == State::LOADED) Render3DQueue::RemoveModel(objId);
 	m_Models.erase(objId);
 	m_SafePointer.erase(objId);
-	ReleaseSRWLockExclusive(&m_Lock);
 }
 
-const std::unordered_map<unsigned int, IModel*>& Scene::GetModels()
+std::unordered_map<unsigned int, IModel*> Scene::GetModels()
 {
-	AcquireSRWLockShared(&m_Lock);
 	auto copy = m_SafePointer;
-	ReleaseSRWLockShared(&m_Lock);
 	return copy;
 }
 

@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "RigidBody.h"
 #include <cmath>
+#include <iostream>
+#include <string>
 
 RigidBody::RigidBody()
     : Position(), Velocity(), Acceleration(), ForceAccum(),
@@ -16,28 +18,23 @@ void RigidBody::Integrate(float duration)
 {
     if (InverseMass <= 0.0f) return;
 
+    AcquireSRWLockExclusive(&m_Lock);
+
     // === Linear motion ===
     Position = DirectX::XMVectorAdd(Position, DirectX::XMVectorScale(Velocity, duration));
-
     DirectX::XMVECTOR linearAcc = DirectX::XMVectorAdd(
         Acceleration,
         DirectX::XMVectorScale(ForceAccum, InverseMass)
     );
-
     Velocity = DirectX::XMVectorAdd(Velocity, DirectX::XMVectorScale(linearAcc, duration));
     Velocity = DirectX::XMVectorScale(Velocity, std::pow(m_LinearDamping, duration));
 
     // === Angular motion ===
-    // Use: angularAcc = InverseInertiaTensorWorld * TorqueAccum (in vector math)
-    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(
-        TorqueAccum,
-        InverseInertiaTensorWorld
-    );
-
+    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(TorqueAccum, InverseInertiaTensorWorld);
     AngularVelocity = DirectX::XMVectorAdd(AngularVelocity, DirectX::XMVectorScale(angularAcc, duration));
     AngularVelocity = DirectX::XMVectorScale(AngularVelocity, std::pow(AngularDamping, duration));
 
-    // === Orientation (Quaternion integration) ===
+    // === Orientation ===
     float x = DirectX::XMVectorGetX(AngularVelocity);
     float y = DirectX::XMVectorGetY(AngularVelocity);
     float z = DirectX::XMVectorGetZ(AngularVelocity);
@@ -47,23 +44,30 @@ void RigidBody::Integrate(float duration)
     Orientation += deltaRot * 0.5f * duration;
     Orientation.Normalize();
 
-    // === Final updates ===
+    ReleaseSRWLockExclusive(&m_Lock);
+
     CalculateDerivedData();
     ClearAccumulators();
+
 }
 
 void RigidBody::AddForce(const DirectX::XMVECTOR& force)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     ForceAccum = DirectX::XMVectorAdd(ForceAccum, force);
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::AddTorque(const DirectX::XMVECTOR& torque)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     TorqueAccum = DirectX::XMVectorAdd(TorqueAccum, torque);
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::Integrate(float dt, IntegrationType type)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     if (InverseMass <= 0.0f) return;
 
     DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(
@@ -87,16 +91,16 @@ void RigidBody::Integrate(float dt, IntegrationType type)
     }
     case IntegrationType::Verlet:
     {
-        static DirectX::XMVECTOR lastPosition = Position; // not thread-safe or per-object safe
-        DirectX::XMVECTOR posDelta = DirectX::XMVectorSubtract(Position, lastPosition);
+        DirectX::XMVECTOR posDelta = DirectX::XMVectorSubtract(Position, m_LastPosition);
         DirectX::XMVECTOR accelTerm = DirectX::XMVectorScale(acceleration, dt * dt);
         DirectX::XMVECTOR newPosition = DirectX::XMVectorAdd(Position, DirectX::XMVectorAdd(posDelta, accelTerm));
-        lastPosition = Position;
+
+        m_LastPosition = Position;
         Position = newPosition;
+
         break;
     }
     }
-
     // Apply damping
     Velocity = DirectX::XMVectorScale(Velocity, std::pow(m_LinearDamping, dt));
 
@@ -106,139 +110,321 @@ void RigidBody::Integrate(float dt, IntegrationType type)
     AngularVelocity = DirectX::XMVectorScale(AngularVelocity, std::pow(AngularDamping, dt));
 
     // Update orientation using angular velocity
+
     Orientation.AddScaledVector(AngularVelocity, dt);
     Orientation.Normalize();
+
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(Velocity)) < 1e-5f) Velocity = DirectX::XMVectorZero();
+
+    ReleaseSRWLockExclusive(&m_Lock);
 
     ClearAccumulators();
 }
 
+DirectX::XMMATRIX RigidBody::GetTransformMatrix() const
+{
+    using namespace DirectX;
+
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+
+    XMMATRIX rotation = Orientation.ToRotationMatrix();
+    XMMATRIX translation = XMMatrixTranslationFromVector(Position);
+
+    XMMATRIX result = rotation * translation;
+
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+
+    return result; // Local-to-world matrix
+}
+
 void RigidBody::CalculateDerivedData()
 {
-    // Normalize orientation to prevent drift
-    Orientation.Normalize();
+    using namespace DirectX;
 
-    // Create a rotation matrix from the quaternion
-    DirectX::XMMATRIX rotMatrix = DirectX::XMMatrixRotationQuaternion(Orientation.ToXmVector());
+    AcquireSRWLockExclusive(&m_Lock);
 
-    // Update the transform matrix (rotation only; add translation if needed)
-    TransformMatrix = rotMatrix;
+    Orientation.Normalize(); // Prevent drift
 
-    // Transform the local inverse inertia tensor into world space
-    DirectX::XMMATRIX rotTranspose = DirectX::XMMatrixTranspose(rotMatrix);
-    InverseInertiaTensorWorld = DirectX::XMMatrixMultiply(
-        DirectX::XMMatrixMultiply(rotMatrix, InverseInertiaTensor),
+    XMMATRIX rotMatrix = XMMatrixRotationQuaternion(Orientation.ToXmVector());
+    XMMATRIX translation = XMMatrixTranslationFromVector(Position);
+
+    TransformMatrix = rotMatrix * translation; // Full local-to-world matrix
+
+    XMMATRIX rotTranspose = XMMatrixTranspose(rotMatrix);
+    InverseInertiaTensorWorld = XMMatrixMultiply(
+        XMMatrixMultiply(rotMatrix, InverseInertiaTensor),
         rotTranspose
     );
+
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::ClearAccumulators()
 {
+    AcquireSRWLockExclusive(&m_Lock);
+
     ForceAccum = {};
     TorqueAccum = {};
+
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 // Setters
 void RigidBody::SetPosition(const DirectX::XMVECTOR& pos)
-{ 
+{
+    AcquireSRWLockExclusive(&m_Lock);
     Position = pos;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void RigidBody::SetBodyScale(const DirectX::XMVECTOR& scale)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    Scale = scale;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetVelocity(const DirectX::XMVECTOR& vel)
 {
-    Velocity = vel; 
+    using namespace DirectX;
+
+    // Store old velocity
+    XMFLOAT3 oldVel;
+    XMStoreFloat3(&oldVel, Velocity);
+
+    XMFLOAT3 newVel;
+    XMStoreFloat3(&newVel, vel);
+
+    std::cout << "[SetVelocity] From ("
+        << oldVel.x << ", " << oldVel.y << ", " << oldVel.z << ") "
+        << "To ("
+        << newVel.x << ", " << newVel.y << ", " << newVel.z << ")\n";
+
+    AcquireSRWLockExclusive(&m_Lock);
+    Velocity = vel;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetDamping(float d)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     m_LinearDamping = d;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void RigidBody::SetElasticity(float e)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Elastic = e;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void RigidBody::SetRestitution(float v)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Elastic = v;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void RigidBody::SetFriction(float v)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Elastic = v;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetAcceleration(const DirectX::XMVECTOR& acc)
 {
-    Acceleration = acc; 
+    AcquireSRWLockExclusive(&m_Lock);
+    Acceleration = acc;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetOrientation(const Quaternion& q)
-{ 
-    Orientation = q; Orientation.Normalize(); 
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    Orientation = q;
+    Orientation.Normalize();
+    ReleaseSRWLockExclusive(&m_Lock);
 }
+
 void RigidBody::SetAngularVelocity(const DirectX::XMVECTOR& av)
-{ 
-    AngularVelocity = av; 
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    AngularVelocity = av;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetMass(float mass)
 {
-    InverseMass = (mass > 0.0f) ? 1.0f / mass : 0.0f; 
+    AcquireSRWLockExclusive(&m_Lock);
+    InverseMass = (mass > 0.0f) ? 1.0f / mass : 0.0f;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetInverseMass(float invMass)
 {
-    InverseMass = invMass; 
+    AcquireSRWLockExclusive(&m_Lock);
+    InverseMass = invMass;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetLinearDamping(float d)
 {
-    m_LinearDamping = d; 
+    AcquireSRWLockExclusive(&m_Lock);
+    m_LinearDamping = d;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetAngularDamping(float d)
 {
-    AngularDamping = d; 
+    AcquireSRWLockExclusive(&m_Lock);
+    AngularDamping = d;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
-void RigidBody::SetInverseInertiaTensor(const  DirectX::XMMATRIX& tensor)
+void RigidBody::SetInverseInertiaTensor(const DirectX::XMMATRIX& tensor)
 {
-    InverseInertiaTensor = tensor; 
+    AcquireSRWLockExclusive(&m_Lock);
+    InverseInertiaTensor = tensor;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 // Getters
 DirectX::XMVECTOR RigidBody::GetPosition() const
-{ 
-    return Position; 
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = Position;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+DirectX::XMVECTOR RigidBody::GetBodyScale() const
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = Scale;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetVelocity() const
-{ 
-    return Velocity;
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = Velocity;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetAcceleration() const
-{ 
-    return Acceleration; 
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = Acceleration;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetAngularVelocity() const
 {
-    return AngularVelocity; 
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = AngularVelocity;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 Quaternion RigidBody::GetOrientation() const
 {
-    return Orientation; 
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = Orientation;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 float RigidBody::GetMass() const
 {
-    return (InverseMass > 0.0f) ? 1.0f / InverseMass : INFINITY; 
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = (InverseMass > 0.0f) ? 1.0f / InverseMass : INFINITY;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+float RigidBody::GetElasticity() const
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_Elastic;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 float RigidBody::GetInverseMass() const
 {
-    return InverseMass;
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = InverseMass;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 DirectX::XMMATRIX RigidBody::GetInverseInertiaTensor() const
 {
-    return InverseInertiaTensor; 
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = InverseInertiaTensor;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 bool RigidBody::HasFiniteMass() const
-{ 
-    return InverseMass > 0.0f;
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    bool result = (InverseMass > 0.0f);
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 float RigidBody::GetDamping() const
 {
-    return m_LinearDamping;
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_LinearDamping;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+float RigidBody::GetRestitution() const
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_Restitution;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+float RigidBody::GetFriction() const
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_Friction;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+void RigidBody::SetRestingState(bool state)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Resting = state;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+bool RigidBody::GetRestingState() const
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    bool result = m_Resting;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+void RigidBody::ConstrainVelocity(const DirectX::XMVECTOR& contactNormal)
+{
+	DirectX::XMVECTOR v = GetVelocity();
+    float vIntoSurface = DirectX::XMVectorGetX(DirectX::XMVector3Dot(v, contactNormal));
+    if (vIntoSurface < 0.0f)
+    {
+	    DirectX::XMVECTOR correction = DirectX::XMVectorScale(contactNormal, vIntoSurface);
+        SetVelocity(DirectX::XMVectorSubtract(v, correction));
+    }
 }

@@ -8,9 +8,9 @@
 #include "FileManager/FileLoader/SweetLoader.h"
 #include "GuiManager/GuiManager.h"
 #include "InputHandler/InputHandler.h"
+#include "PhysicsManager/PhysicsManager.h"
 #include "RenderManager/Model/Shapes/ModelCube.h"
 #include "ScenarioManager/ScenarioManager.h"
-#include "ScenarioManager/Scene/Scene.h"
 #include "SystemManager/SystemHandler.h"
 #include "WindowManager/WindowsSystem.h"
 
@@ -43,11 +43,11 @@ private:
 	std::unique_ptr<GuiManager> m_GuiManager{ nullptr };
 	std::unique_ptr<InputHandler> m_InputHandler{ nullptr };
 	std::unique_ptr<ScenarioManager> m_ScenarioManager{ nullptr };
+	std::unique_ptr<PhysicsManager> m_PhysicsManager{ nullptr };
 
 	SweetLoader mSweetLoader{};
 
 	std::unordered_map<EventType, EventHandler> m_EventHandlers;
 
-	HANDLE m_StartEventHandle;
-	HANDLE m_EndEventHandle;
+	SYSTEM_EVENT_HANDLE m_GlobalEvent;
 };

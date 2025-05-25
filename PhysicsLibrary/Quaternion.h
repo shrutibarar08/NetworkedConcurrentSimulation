@@ -11,6 +11,8 @@ public:
     Quaternion operator*(float scalar) const;
     Quaternion& operator+=(const Quaternion& q);
 
+    DirectX::XMMATRIX ToRotationMatrix() const;
+
     void AddScaledVector(const DirectX::XMVECTOR& vector, float scale);
     void RotateByVector(const DirectX::XMVECTOR& vector);
     void Normalize();

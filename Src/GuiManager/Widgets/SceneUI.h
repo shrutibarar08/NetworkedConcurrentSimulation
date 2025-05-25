@@ -8,10 +8,13 @@ public:
 	SceneUI(Scene* scene);
 	~SceneUI() override = default;
 	void RenderMenu() override;
-	void RenderAsSystemItem() override;
-	void RenderPopups() override;
+	void RenderOnScreen() override;
 	std::string MenuName() const override;
 
 private:
+	void DisplayObjects() const;
+
+private:
+	bool m_ShowObjects{ false };
 	Scene* m_Scene;
 };

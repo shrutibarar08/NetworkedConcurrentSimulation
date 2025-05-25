@@ -6,7 +6,6 @@
 #include <d3dcompiler.h>
 
 
-
 IModel::IModel(const MODEL_INIT_DESC* desc)
 	: m_IndexCount(0), m_ModelID(++s_ModelCounter)
 {
@@ -130,6 +129,16 @@ void IModel::UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* c
 uint64_t IModel::GetModelId() const
 {
 	return m_ModelID;
+}
+
+RigidBody* IModel::GetRigidBody()
+{
+	return &m_RigidBody;
+}
+
+ICollider* IModel::GetCollider() const
+{
+	return  m_Collider.get();
 }
 
 void IModel::BuildVertexBuffer(ID3D11Device* device)

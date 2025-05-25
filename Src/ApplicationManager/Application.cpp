@@ -13,32 +13,32 @@
 
 Application::Application()
 {
-	m_StartEventHandle = CreateEvent(
+	m_GlobalEvent.GlobalStartEvent = CreateEvent(
 		nullptr,
 		TRUE,
 		FALSE,
 		nullptr);
 
-	m_EndEventHandle = CreateEvent(
+	m_GlobalEvent.GlobalEndEvent = CreateEvent(
 		nullptr,
 		TRUE,
 		FALSE,
 		nullptr
 	);
 
-	if (m_StartEventHandle && m_EndEventHandle) 
+	if (m_GlobalEvent.GlobalEndEvent && m_GlobalEvent.GlobalStartEvent)
 		LOG_SUCCESS("Application events (Start/End) created successfully.");
 	else LOG_FAIL("Failed to create application events.");
 }
 
 Application::~Application()
 {
-	ResetEvent(m_StartEventHandle);
-	SetEvent(m_EndEventHandle);
+	ResetEvent(m_GlobalEvent.GlobalStartEvent);
+	SetEvent(m_GlobalEvent.GlobalEndEvent);
 	Shutdown();
 	EventQueue::Shutdown();
-	CloseHandle(m_EndEventHandle);
-	CloseHandle(m_StartEventHandle);
+	CloseHandle(m_GlobalEvent.GlobalEndEvent);
+	CloseHandle(m_GlobalEvent.GlobalStartEvent);
 
 	LOG_INFO("Application shutdown sequence completed.");
 }
@@ -49,10 +49,6 @@ bool Application::Init()
 	EventQueue::Init();
 	BuildEventHandler();
 
-	SYSTEM_EVENT_HANDLE globalEvent;
-	globalEvent.GlobalStartEvent = m_StartEventHandle;
-	globalEvent.GlobalEndEvent = m_EndEventHandle;
-
 	//~ Loading Configuration
 	m_WindowSystem = std::make_unique<WindowsSystem>();
 	m_SystemHandler.Register(
@@ -60,12 +56,19 @@ bool Application::Init()
 		m_WindowSystem.get()
 	);
 
+	//~ Create Physics Engine
+	m_PhysicsManager = std::make_unique<PhysicsManager>();
+	m_PhysicsManager->CreateOnThread(true);
+	m_PhysicsManager->SetGlobalEvent(&m_GlobalEvent);
+	m_SystemHandler.Register("PhysicsManager", m_PhysicsManager.get());
+	m_SystemHandler.AddDependency("PhysicsManager", "WindowsSystem");
+
 	// Rendering Engine.
-	m_Renderer = std::make_unique<RenderManager>(m_WindowSystem.get());
+	m_Renderer = std::make_unique<RenderManager>(m_WindowSystem.get(), m_PhysicsManager.get());
 	m_SystemHandler.Register("RenderManager", m_Renderer.get());
 	m_SystemHandler.AddDependency(
 		"RenderManager",
-		"WindowsSystem"	// RenderManager Depends upon it.
+		"WindowsSystem", "PhysicsManager"
 	);
 
 	//~ Creating Input Handler
@@ -113,13 +116,10 @@ bool Application::Init()
 
 bool Application::Run()
 {
-	m_ScenarioManager->CreateScene("Test Scene_1");
-	m_ScenarioManager->CreateScene("Test Scene_2");
-	m_ScenarioManager->CreateScene("Test Scene_3");
 
 	LOG_INFO("Application main loop starting.");
 	m_SystemHandler.WaitStart(); 
-	SetEvent(m_StartEventHandle);
+	SetEvent(m_GlobalEvent.GlobalStartEvent);
 
 	SystemClock::Start();
 
@@ -128,7 +128,7 @@ bool Application::Run()
 		if (KeyboardHandler::IsKeyDown(VK_ESCAPE))
 		{
 			PostQuitMessage(0);
-			SetEvent(m_EndEventHandle);
+			SetEvent(m_GlobalEvent.GlobalEndEvent);
 			break;
 		}
 
@@ -143,7 +143,7 @@ bool Application::Run()
 
 		if (m_WindowSystem->ProcessMethod())
 		{
-			SetEvent(m_EndEventHandle);
+			SetEvent(m_GlobalEvent.GlobalEndEvent);
 			break;
 		}
 		m_GuiManager->Run();

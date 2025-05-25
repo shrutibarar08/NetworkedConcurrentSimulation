@@ -1,8 +1,14 @@
 #include "ModelCube.h"
+#include "GuiManager/Widgets/ModelCubeUI.h"
+
 
 ModelCube::ModelCube(const MODEL_INIT_DESC* desc)
     : IModel(desc)
-{}
+{
+    SetWidget(std::make_unique<ModelCubeUI>(this));
+    m_Collider =  std::make_unique<CubeCollider>(&m_RigidBody);
+    m_RigidBody.SetMass(10);
+}
 
 std::vector<VERTEX> ModelCube::BuildVertex()
 {
