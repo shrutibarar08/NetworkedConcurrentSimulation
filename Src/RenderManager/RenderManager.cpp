@@ -154,6 +154,7 @@ void RenderManager::ResizeSwapChain(bool force)
         BuildRenderTargetView();
         BuildDepthStencilView();
         BuildViewport();
+        BuildRasterizationState();
         SetOMRenderAndDepth();
         m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
         return;
@@ -191,6 +192,7 @@ void RenderManager::ResizeSwapChain(bool force)
     BuildRenderTargetView();
     BuildDepthStencilView();
     BuildViewport();
+    BuildRasterizationState();
     SetOMRenderAndDepth();
 
     m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
@@ -207,6 +209,7 @@ void RenderManager::ChangeMSAA(UINT msaa)
     BuildRenderTargetView();
     BuildDepthStencilView();
     BuildViewport();
+    BuildRasterizationState();
     SetOMRenderAndDepth();
     m_CameraManager.GetActiveCamera()->SetAspectRatio(m_WindowSystem->GetAspectRatio());
 }
@@ -712,7 +715,7 @@ bool RenderManager::BuildRasterizationState()
 {
     D3D11_RASTERIZER_DESC rasterDesc = {};
     rasterDesc.FillMode = D3D11_FILL_SOLID;
-    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.CullMode = D3D11_CULL_NONE;
     rasterDesc.FrontCounterClockwise = FALSE;
     rasterDesc.DepthClipEnable = TRUE;
 
@@ -721,7 +724,7 @@ bool RenderManager::BuildRasterizationState()
 
     m_DeviceContext->RSSetState(m_RasterizerState.Get());
 
-    LOG_SUCCESS("Rasterizer state created and bound to pipeline.");
+    LOG_SUCCESS("Rasterizer state created with CULL_NONE (both sides visible).");
     return true;
 }
 

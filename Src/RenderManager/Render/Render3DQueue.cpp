@@ -81,12 +81,7 @@ bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 	for (auto& model : m_ModelsToRender | std::views::values)
 	{
 		RigidBody* rb = model->GetRigidBody();
-		DirectX::XMVECTOR position = rb->GetPosition();
-		DirectX::XMVECTOR quaternion = rb->GetOrientation().ToXmVector();
-		DirectX::XMMATRIX rotationMatrix = DirectX::XMMatrixRotationQuaternion(quaternion);
-		DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(position);
-
-		cb.Transformation = rotationMatrix * translationMatrix;
+		cb.Transformation = rb->GetTransformMatrix();
 		model->UpdateVertexCB(context, &cb);
 	}
 	return true;

@@ -15,6 +15,14 @@ void SceneUI::RenderMenu()
 		{
 			m_Scene->AddObject(SPAWN_OBJECT::CUBE);
 		}
+        if (ImGui::MenuItem("Add Sphere"))
+        {
+            m_Scene->AddObject(SPAWN_OBJECT::SPHERE);
+        }
+        if (ImGui::MenuItem("Add Capsule"))
+        {
+            m_Scene->AddObject(SPAWN_OBJECT::CAPSULE);
+        }
 		ImGui::EndMenu();
 	}
 

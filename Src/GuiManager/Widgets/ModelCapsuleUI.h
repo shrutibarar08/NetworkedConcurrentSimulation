@@ -1,23 +1,22 @@
 #pragma once
+
+
+#pragma once
 #include "GuiManager/Widgets/IWidget.h"
-#include "RenderManager/Model/Shapes/ModelCube.h"
+#include "RenderManager/Model/Shapes/ModelCapsule.h"
 
 
-class ModelCubeUI final: public IWidget
+class ModelCapsuleUI final : public IWidget
 {
 public:
-	ModelCubeUI(ModelCube* cube);
-	std::string MenuName() const override;
-	void RenderOnScreen() override;
-	bool Init() override;
+    ModelCapsuleUI(ModelCapsule* capsule);
+    std::string MenuName() const override;
+    void RenderOnScreen() override;
 
 private:
-	void InitCollider();
-
-private:
-	ModelCube* m_Cube;
-	RigidBody* m_RigidBody{ nullptr };
-	CubeCollider* m_Collider{ nullptr };
+    ModelCapsule* m_Capsule;
+    RigidBody* m_RigidBody{ nullptr };
+    // CubeCollider* m_Collider{ nullptr };
 
     // Editable fields
     DirectX::XMFLOAT3 m_Pos{};
@@ -32,7 +31,6 @@ private:
     bool m_bStatic{ false };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
-
 
     bool m_InitializedFromRigidBody = false;
 };

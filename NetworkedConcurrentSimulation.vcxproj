@@ -143,6 +143,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\GuiManager\Widgets\ModelCapsuleUI.cpp" />
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCapsule.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\ModelSphereUI.cpp" />
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelSphere.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\ModelCubeUI.cpp" />
     <ClCompile Include="Src\PhysicsManager\PhysicsManager.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\ScenarioManagerUI.cpp" />
@@ -185,6 +189,10 @@
     <ClCompile Include="Src\ApplicationManager\Clock\SystemClock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\GuiManager\Widgets\ModelCapsuleUI.h" />
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCapsule.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\ModelSphereUI.h" />
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelSphere.h" />
     <ClInclude Include="Src\GuiManager\Widgets\ModelCubeUI.h" />
     <ClInclude Include="Src\PhysicsManager\PhysicsManager.h" />
     <ClInclude Include="Src\GuiManager\Widgets\ScenarioManagerUI.h" />

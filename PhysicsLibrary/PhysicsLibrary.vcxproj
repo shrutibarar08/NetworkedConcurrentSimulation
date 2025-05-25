@@ -162,6 +162,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="RigidBody.h" />
+    <ClInclude Include="SphereCollider.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CollisionResolver.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="PhysicsLibrary.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RigidBody.cpp" />
+    <ClCompile Include="SphereCollider.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

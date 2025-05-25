@@ -4,6 +4,9 @@
 #include "Contact.h"
 
 #include <algorithm>
+#include <cmath>
+
+#include "SphereCollider.h"
 
 
 CubeCollider::CubeCollider(RigidBody* body)
@@ -18,6 +21,12 @@ bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
 	{
 		return CheckCollisionWithCube(other, outContact);
 	}
+
+    if (other->GetColliderType() == ColliderType::Sphere)
+    {
+        return CheckCollisionWithSphere(other, outContact);
+    }
+
 	return false;
 }
 
@@ -154,6 +163,70 @@ bool CubeCollider::CheckCollisionWithCube(ICollider* other, Contact& outContact)
 
     return true;
 }
+
+bool CubeCollider::CheckCollisionWithSphere(ICollider* other, Contact& outContact)
+{
+    if (!other || other->GetColliderType() != ColliderType::Sphere) return false;
+
+    SphereCollider* sphere = other->As<SphereCollider>();
+    if (!sphere) return false;
+
+    using namespace DirectX;
+
+    // === STEP 1: Get transforms ===
+    XMVECTOR sphereCenter = sphere->GetRigidBody()->GetPosition();
+    float radius = sphere->GetRadius();
+
+    XMVECTOR cubeCenter = m_RigidBody->GetPosition();
+    XMVECTOR cubeHalfExtents = GetHalfExtents();
+    Quaternion cubeOrientation = m_RigidBody->GetOrientation();
+
+    // === STEP 2: Get cube's local axes ===
+    XMVECTOR axes[3];
+    GetOBBAxes(cubeOrientation, axes);
+
+    // === STEP 3: Find closest point on cube to sphere center ===
+    XMVECTOR relative = sphereCenter - cubeCenter;
+    XMVECTOR closest = cubeCenter;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        float distance = XMVectorGetX(XMVector3Dot(relative, axes[i]));
+        float extent = XMVectorGetByIndex(cubeHalfExtents, i); // .x .y .z depending on axis
+        float clamped = std::clamp(distance, -extent, extent);
+        closest += axes[i] * clamped;
+    }
+
+    // === STEP 4: Check for collision ===
+    XMVECTOR diff = sphereCenter - closest;
+    float distSq = XMVectorGetX(XMVector3LengthSq(diff));
+
+    if (distSq > radius * radius)
+        return false;
+
+    float distance = std::sqrt(distSq);
+    XMVECTOR normal = (distance > 1e-6f) ? XMVector3Normalize(diff) : XMVectorSet(1, 0, 0, 0);
+
+    // === STEP 5: Fill contact ===
+    outContact.Colliders[0] = this;
+    outContact.Colliders[1] = other;
+
+    XMStoreFloat3(&outContact.ContactPoint, closest);
+    XMStoreFloat3(&outContact.ContactNormal, normal);
+    outContact.PenetrationDepth = radius - distance;
+
+    outContact.Restitution = 0.5f * (
+        m_RigidBody->GetRestitution() + sphere->GetRigidBody()->GetRestitution());
+
+    outContact.Friction = 0.5f * (
+        m_RigidBody->GetFriction() + sphere->GetRigidBody()->GetFriction());
+
+    outContact.Elasticity = 0.5f * (
+        m_RigidBody->GetElasticity() + sphere->GetRigidBody()->GetElasticity());
+
+    return true;
+}
+
 
 void CubeCollider::GetOBBAxes(const Quaternion& q, DirectX::XMVECTOR axes[3])
 {

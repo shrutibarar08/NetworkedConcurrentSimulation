@@ -1,30 +1,26 @@
-#include "ModelCubeUI.h"
-
-#include <iostream>
+#include "ModelSphereUI.h"
 
 #include "imgui.h"
-#include "RigidBody.h"
-#include "Utils/Logger.h"
 
-ModelCubeUI::ModelCubeUI(ModelCube* cube)
-	: m_Cube(cube)
+ModelSphereUI::ModelSphereUI(ModelSphere* sphere)
+	: m_Sphere(sphere)
 {
-    Init();
+
 }
 
-std::string ModelCubeUI::MenuName() const
+std::string ModelSphereUI::MenuName() const
 {
-	if (!m_Cube) return "UNKNOWN";
-	return m_Cube->GetName();
+	if (!m_Sphere) return "UNKNOWN";
+	return m_Sphere->GetName();
 }
 
-void ModelCubeUI::RenderOnScreen()
+void ModelSphereUI::RenderOnScreen()
 {
-    m_RigidBody = m_Cube->GetRigidBody();
-    m_Collider = dynamic_cast<CubeCollider*>(m_Cube->GetCollider());
+    m_RigidBody = m_Sphere->GetRigidBody();
+    //m_Collider = dynamic_cast<CubeCollider*>(m_Cube->GetCollider());
     if (!m_RigidBody) return;
 
-    std::string headingEdit = "RigidBody (Edit) " + std::to_string(m_Cube->GetModelId());
+    std::string headingEdit = "RigidBody (Edit) " + std::to_string(m_Sphere->GetModelId());
     if (ImGui::CollapsingHeader(headingEdit.c_str()))
     {
         DirectX::XMStoreFloat3(&m_Pos, m_RigidBody->GetPosition());
@@ -81,32 +77,5 @@ void ModelCubeUI::RenderOnScreen()
 
         if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
             m_RigidBody->SetFriction(m_Friction);
-
-        // === Collider State Combo ===
-        if (m_Collider)
-        {
-            static const char* stateLabels[] = { "Dynamic", "Static", "Resting" };
-            int currentStateIndex = static_cast<int>(m_Collider->GetColliderState());
-
-            if (ImGui::Combo("Collider State", &currentStateIndex, stateLabels, IM_ARRAYSIZE(stateLabels)))
-            {
-                m_Collider->SetColliderState(static_cast<ColliderSate>(currentStateIndex));
-            }
-        }
     }
-}
-
-bool ModelCubeUI::Init()
-{
-    m_RigidBody = m_Cube->GetRigidBody();
-    return true;
-}
-
-void ModelCubeUI::InitCollider()
-{
-    if (CubeCollider* cube = dynamic_cast<CubeCollider*>(m_Cube->GetCollider()))
-    {
-        m_Collider = cube;
-    }
-    else LOG_WARNING("Warning Failed to Cast Cube Collider!");
 }

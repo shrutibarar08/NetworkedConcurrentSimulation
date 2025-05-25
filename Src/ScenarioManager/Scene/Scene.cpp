@@ -4,6 +4,8 @@
 #include <ranges>
 
 #include "GuiManager/Widgets/SceneUI.h"
+#include "RenderManager/Model/Shapes/ModelCapsule.h"
+#include "RenderManager/Model/Shapes/ModelSphere.h"
 #include "Utils/Logger.h"
 
 Scene::Scene(const std::string& name)
@@ -52,17 +54,45 @@ unsigned int Scene::AddObject(SPAWN_OBJECT obj)
 	switch (obj)
 	{
 	case SPAWN_OBJECT::CUBE:
+	{
 		MODEL_INIT_DESC desc{};
 		desc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
 		desc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
 		desc.ModelName = "Default Cube";
 		auto model = std::make_unique<ModelCube>(&desc);
 		key = model->GetModelId();
-		model->GetRigidBody()->SetMass(1);
 		m_SafePointer[key] = model.get();
 		m_Models[key] = std::move(model);
 
 		if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
+		return key;
+	}
+
+	case SPAWN_OBJECT::SPHERE:
+	{
+		MODEL_INIT_DESC sphereDesc{};
+		sphereDesc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
+		sphereDesc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
+		sphereDesc.ModelName = "Default Sphere";
+		auto modelSphere = std::make_unique<ModelSphere>(&sphereDesc);
+		key = modelSphere->GetModelId();
+		m_SafePointer[key] = modelSphere.get();
+		m_Models[key] = std::move(modelSphere);
+		if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
+		return key;
+	}
+	case SPAWN_OBJECT::CAPSULE:
+	{
+		MODEL_INIT_DESC sphereDesc{};
+		sphereDesc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
+		sphereDesc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
+		sphereDesc.ModelName = "Default Capsule";
+		auto modelCapsule = std::make_unique<ModelCapsule>(&sphereDesc);
+		m_SafePointer[key] = modelCapsule.get();
+		m_Models[key] = std::move(modelCapsule);
+		if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
+		return key;
+	}
 	}
 	return key;
 }

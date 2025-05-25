@@ -8,7 +8,9 @@
 
 enum class SPAWN_OBJECT: uint8_t
 {
-	CUBE
+	CUBE,
+	SPHERE,
+	CAPSULE
 };
 
 enum class State : uint8_t

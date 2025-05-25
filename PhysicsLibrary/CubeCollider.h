@@ -12,11 +12,12 @@ public:
 	RigidBody* GetRigidBody() const override;
 	DirectX::XMVECTOR GetHalfExtents() const;
 
-private:
-
-	//~ Cube Collision Check
-	bool CheckCollisionWithCube(ICollider* other, Contact& outContact);
 	void GetOBBAxes(const Quaternion& q, DirectX::XMVECTOR axes[3]);
 	float ProjectOBB(const DirectX::XMVECTOR& axis, const DirectX::XMVECTOR axes[3], const DirectX::XMVECTOR& halfExtents);
 	bool TryNormalize(DirectX::XMVECTOR& axis);
+
+private:
+	//~ Cube Collision Check
+	bool CheckCollisionWithCube(ICollider* other, Contact& outContact);
+	bool CheckCollisionWithSphere(ICollider* other, Contact& outContact);
 };

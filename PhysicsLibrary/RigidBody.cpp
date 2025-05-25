@@ -127,14 +127,15 @@ DirectX::XMMATRIX RigidBody::GetTransformMatrix() const
 
     AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
 
+    XMMATRIX scale = XMMatrixScalingFromVector(Scale);
     XMMATRIX rotation = Orientation.ToRotationMatrix();
     XMMATRIX translation = XMMatrixTranslationFromVector(Position);
 
-    XMMATRIX result = rotation * translation;
+    XMMATRIX result = scale * rotation * translation;
 
     ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
 
-    return result; // Local-to-world matrix
+    return result;
 }
 
 void RigidBody::CalculateDerivedData()

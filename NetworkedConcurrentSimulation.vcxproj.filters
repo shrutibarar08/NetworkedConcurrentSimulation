@@ -135,6 +135,18 @@
     <ClCompile Include="Src\GuiManager\Widgets\ModelCubeUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelSphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GuiManager\Widgets\ModelSphereUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCapsule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\GuiManager\Widgets\ModelCapsuleUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\FileManager\FileLoader\SweetLoader.h">
@@ -264,6 +276,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\GuiManager\Widgets\ModelCubeUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelSphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Widgets\ModelSphereUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCapsule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\GuiManager\Widgets\ModelCapsuleUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
