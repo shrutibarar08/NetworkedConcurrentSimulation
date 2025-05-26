@@ -46,48 +46,60 @@ void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
     XMVECTOR normal = XMLoadFloat3(&contact.ContactNormal);
     float penetration = contact.PenetrationDepth;
 
-    // === Correct normal direction ===
+    // === Correct normal direction to match bodyA->bodyB ===
     XMVECTOR posA = bodyA->GetPosition();
     XMVECTOR posB = bodyB->GetPosition();
     XMVECTOR dirAB = posB - posA;
     if (XMVectorGetX(XMVector3Dot(normal, dirAB)) < 0.0f)
         normal = -normal;
 
-    // === Special handling: capsule-sphere and capsule-capsule stability ===
+    // === Shape-specific handling ===
     ColliderType typeA = a->GetColliderType();
     ColliderType typeB = b->GetColliderType();
 
-    bool isCapsuleInvolved = typeA == ColliderType::Capsule || typeB == ColliderType::Capsule;
-    bool isSphereCapsule = (typeA == ColliderType::Capsule && typeB == ColliderType::Sphere) ||
-        (typeA == ColliderType::Sphere && typeB == ColliderType::Capsule);
+    bool isCapsuleInvolved = (typeA == ColliderType::Capsule || typeB == ColliderType::Capsule);
     bool isCapsuleCapsule = (typeA == ColliderType::Capsule && typeB == ColliderType::Capsule);
 
-    // You can tune these depending on shape pair
-    constexpr float slop = 0.01f;
-    constexpr float percent = 1.0f;  // Resolve 100% to avoid repeated pushback
+    // === Penetration correction params ===
+    constexpr float slop = 0.01f;      // Overlap allowed before correction
+    constexpr float percent = 1.0f;    // Resolve full overlap to prevent sticking
 
-    float correctionDepth = (penetration - slop > 0.0f) ? penetration - slop : 0.0f;
+    float cd = penetration - slop;
+    float correctionDepth = cd > 0.0f ? cd : 0.0f;
     XMVECTOR correction = normal * (correctionDepth * percent / totalInvMass);
 
-    // === Optional: bias heavier objects less ===
+    // Optional: abort if correction is effectively nothing (numerical jitter)
+    if (XMVectorGetX(XMVector3LengthSq(correction)) < 1e-8f)
+        return;
+
+    // Mass-weighted biasing
     float weightA = invMassA / totalInvMass;
     float weightB = invMassB / totalInvMass;
 
-    // === Apply position correction ===
+    // Slightly reduce push if both are capsules (avoids infinite shoving)
+    float capsuleBias = isCapsuleCapsule ? 0.85f : 1.0f;
+
     if (!isStaticA && invMassA > 0.0f)
     {
-        // Slightly reduce correction for capsule vs capsule to stabilize back-and-forth jitter
-        float bias = isCapsuleCapsule ? 0.85f : 1.0f;
         XMVECTOR pos = bodyA->GetPosition();
-        bodyA->SetPosition(pos - correction * weightA * bias);
+        bodyA->SetPosition(pos - correction * weightA * capsuleBias);
     }
 
     if (!isStaticB && invMassB > 0.0f)
     {
-        float bias = isCapsuleCapsule ? 0.85f : 1.0f;
         XMVECTOR pos = bodyB->GetPosition();
-        bodyB->SetPosition(pos + correction * weightB * bias);
+        bodyB->SetPosition(pos + correction * weightB * capsuleBias);
     }
+
+    // === kill small linear velocity after deep overlap correction ===
+    auto DampSmallVelocity = [](RigidBody* body) {
+        XMVECTOR v = body->GetVelocity();
+        if (XMVectorGetX(XMVector3LengthSq(v)) < 1e-4f)
+            body->SetVelocity(XMVectorZero());
+        };
+
+    if (!isStaticA) DampSmallVelocity(bodyA);
+    if (!isStaticB) DampSmallVelocity(bodyB);
 }
 
 void CollisionResolver::ResolveVelocity(Contact& contact, float deltaTime)
@@ -266,7 +278,12 @@ bool CollisionResolver::IsStatic(ICollider* collider)
 
 DirectX::XMVECTOR CollisionResolver::GetVelocityAtPoint(RigidBody* body, const DirectX::XMVECTOR& r)
 {
-    return DirectX::XMVectorAdd(body->GetVelocity(), r);
+    using namespace DirectX;
+
+	XMVECTOR linearVel = body->GetVelocity();
+	XMVECTOR angVel = body->GetAngularVelocity();
+
+	return linearVel + angVel;
 }
 
 float CollisionResolver::ComputeDenominator(float invMassA, float invMassB, const DirectX::XMVECTOR& rA,

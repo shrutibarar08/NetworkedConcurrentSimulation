@@ -7,9 +7,9 @@
 
 RigidBody::RigidBody()
     : Position(), Velocity(), Acceleration(), ForceAccum(),
-    InverseMass(1.0f), m_LinearDamping(0.98f),
-    Orientation(1, 0, 0, 0), AngularVelocity(), TorqueAccum(),
-    AngularDamping(0.9f) {
+    InverseMass(1.0f),
+    Orientation(1, 0, 0, 0), AngularVelocity(), TorqueAccum()
+{
     InverseInertiaTensor = DirectX::XMMatrixIdentity();
     CalculateDerivedData();
 }
@@ -186,11 +186,6 @@ void RigidBody::SetVelocity(const DirectX::XMVECTOR& vel)
 
     XMFLOAT3 newVel;
     XMStoreFloat3(&newVel, vel);
-
-    std::cout << "[SetVelocity] From ("
-        << oldVel.x << ", " << oldVel.y << ", " << oldVel.z << ") "
-        << "To ("
-        << newVel.x << ", " << newVel.y << ", " << newVel.z << ")\n";
 
     AcquireSRWLockExclusive(&m_Lock);
     Velocity = vel;

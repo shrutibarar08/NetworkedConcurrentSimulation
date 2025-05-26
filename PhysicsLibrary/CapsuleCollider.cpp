@@ -88,7 +88,7 @@ void CapsuleCollider::SetScale(const DirectX::XMVECTOR& vector)
     XMFLOAT3 scaleVec;
     XMStoreFloat3(&scaleVec, vector);
 
-    float avgRadius = (scaleVec.x + scaleVec.z) * 0.5f * 0.5f; // diameter to radius
+    float avgRadius = (scaleVec.x + scaleVec.z) * 0.5f * 0.5f;
     float height = scaleVec.y;
 
     AcquireSRWLockExclusive(&m_Lock);
@@ -109,7 +109,9 @@ DirectX::XMVECTOR CapsuleCollider::GetScale() const
 bool CapsuleCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outContact)
 {
     using namespace DirectX;
-    if (!other || other->GetColliderType() != ColliderType::Capsule) return false;
+
+    if (!other || other->GetColliderType() != ColliderType::Capsule)
+        return false;
 
     CapsuleCollider* capsuleB = other->As<CapsuleCollider>();
     if (!capsuleB) return false;
@@ -129,30 +131,37 @@ bool CapsuleCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outCo
     const Quaternion qA = bodyA->GetOrientation();
     const Quaternion qB = bodyB->GetOrientation();
 
-    // Capsule segment endpoints
-    XMVECTOR upA = qA.RotateVector(XMVectorSet(0, 1, 0, 0));
-    XMVECTOR upB = qB.RotateVector(XMVectorSet(0, 1, 0, 0));
+    const XMVECTOR upA = qA.RotateVector(XMVectorSet(0, 1, 0, 0));
+    const XMVECTOR upB = qB.RotateVector(XMVectorSet(0, 1, 0, 0));
 
-    XMVECTOR a1 = posA - upA * (heightA * 0.5f);
-    XMVECTOR a2 = posA + upA * (heightA * 0.5f);
+    // === Define capsule center segments (between sphere cap centers) ===
+    const float halfA = 0.5f * (heightA - 2.0f * radiusA);
+    const float halfB = 0.5f * (heightB - 2.0f * radiusB);
 
-    XMVECTOR b1 = posB - upB * (heightB * 0.5f);
-    XMVECTOR b2 = posB + upB * (heightB * 0.5f);
+    XMVECTOR a1 = posA - upA * halfA;
+    XMVECTOR a2 = posA + upA * halfA;
 
-    // Compute closest points on both segments
+    XMVECTOR b1 = posB - upB * halfB;
+    XMVECTOR b2 = posB + upB * halfB;
+
+    // === Find closest points between segments ===
     XMVECTOR p1, p2;
-    float s, t;
+    float s = 0.0f, t = 0.0f;
     ClosestPtSegmentSegment(a1, a2, b1, b2, p1, p2, s, t);
 
     XMVECTOR delta = p1 - p2;
     float distSq = XMVectorGetX(XMVector3LengthSq(delta));
     float combinedRadius = radiusA + radiusB;
 
-    if (distSq > combinedRadius * combinedRadius)
+    constexpr float epsilon = 1e-6f;
+    constexpr float allowedSlack = 0.001f;
+
+    if (distSq > (combinedRadius + allowedSlack) * (combinedRadius + allowedSlack))
         return false;
 
-    float dist = std::sqrt(distSq);
-    XMVECTOR normal = (dist > 1e-6f) ? XMVector3Normalize(delta) : XMVectorSet(1, 0, 0, 0);
+    float d = distSq > epsilon ? distSq : epsilon;
+    float dist = std::sqrt(d);
+    XMVECTOR normal = (dist > epsilon) ? XMVector3Normalize(delta) : XMVectorSet(1, 0, 0, 0);
     XMVECTOR contactPoint = 0.5f * (p1 + p2);
 
     outContact.Colliders[0] = this;
@@ -261,10 +270,11 @@ bool CapsuleCollider::CheckCollisionWithCube(ICollider* other, Contact& outConta
     const float capsuleRadius = GetRadius();
     const float halfSegment = 0.5f * (capsuleHeight - 2.0f * capsuleRadius);
 
+    // Define capsule segment (between sphere centers)
     XMVECTOR a = capsulePos + up * halfSegment;
     XMVECTOR b = capsulePos - up * halfSegment;
 
-    // Step 1: Find closest point on the OBB to capsule segment
+    // OBB box data
     const XMVECTOR boxPos = cubeBody->GetPosition();
     const Quaternion boxRot = cubeBody->GetOrientation();
     const XMVECTOR halfExtents = cube->GetHalfExtents();
@@ -272,13 +282,18 @@ bool CapsuleCollider::CheckCollisionWithCube(ICollider* other, Contact& outConta
     XMVECTOR axes[3];
     cube->GetOBBAxes(boxRot, axes);
 
-    XMVECTOR closestA, closestB;
-    ClosestPtSegmentOBB(a, b, boxPos, axes, halfExtents, closestA, closestB);
+    XMVECTOR closestCapsulePt, closestBoxPt;
+    ClosestPtSegmentOBB(a, b, boxPos, axes, halfExtents, closestCapsulePt, closestBoxPt);
 
-    XMVECTOR diff = closestA - closestB;
+    XMVECTOR diff = closestCapsulePt - closestBoxPt;
     float distSq = XMVectorGetX(XMVector3LengthSq(diff));
 
-    if (distSq > capsuleRadius * capsuleRadius)
+    // === Collision Slop Threshold ===
+    constexpr float collisionSlop = 0.01f;
+    float er = capsuleRadius - collisionSlop;
+    float effectiveRadius = er > 0.001f? er: 0.001f;
+
+    if (distSq > effectiveRadius * effectiveRadius)
         return false;
 
     float distance = std::sqrt(distSq);
@@ -286,18 +301,13 @@ bool CapsuleCollider::CheckCollisionWithCube(ICollider* other, Contact& outConta
 
     outContact.Colliders[0] = this;
     outContact.Colliders[1] = other;
-    XMStoreFloat3(&outContact.ContactPoint, closestB);
+    XMStoreFloat3(&outContact.ContactPoint, closestBoxPt);
     XMStoreFloat3(&outContact.ContactNormal, normal);
     outContact.PenetrationDepth = capsuleRadius - distance;
 
-    outContact.Restitution = 0.5f * (
-        capsuleBody->GetRestitution() + cubeBody->GetRestitution());
-
-    outContact.Friction = 0.5f * (
-        capsuleBody->GetFriction() + cubeBody->GetFriction());
-
-    outContact.Elasticity = 0.5f * (
-        capsuleBody->GetElasticity() + cubeBody->GetElasticity());
+    outContact.Restitution = 0.5f * (capsuleBody->GetRestitution() + cubeBody->GetRestitution());
+    outContact.Friction = 0.5f * (capsuleBody->GetFriction() + cubeBody->GetFriction());
+    outContact.Elasticity = 0.5f * (capsuleBody->GetElasticity() + cubeBody->GetElasticity());
 
     return true;
 }

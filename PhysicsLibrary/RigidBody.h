@@ -66,10 +66,10 @@ private:
 
     DirectX::XMVECTOR ForceAccum;
     float InverseMass{ 10.f };
-    float m_LinearDamping;
-    float m_Elastic{ 1.0f };
-    float m_Restitution{ 1.0f };
-    float m_Friction{ 0.5f };
+    float m_LinearDamping{0.75};
+    float m_Elastic{ 0.56f };
+    float m_Restitution{ 0.35f };
+    float m_Friction{ 0.38f };
 
     Quaternion Orientation;
     DirectX::XMVECTOR AngularVelocity;

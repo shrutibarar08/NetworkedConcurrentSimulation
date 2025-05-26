@@ -72,7 +72,7 @@ void SphereCollider::SetScale(const DirectX::XMVECTOR& vector)
 DirectX::XMVECTOR SphereCollider::GetScale() const
 {
     AcquireSRWLockShared(&m_Lock);
-    float diameter = m_Radius * 2.0f;
+    float diameter = m_Radius;
     ReleaseSRWLockShared(&m_Lock);
 
     return DirectX::XMVectorSet(diameter, diameter, diameter, 0.0f);
@@ -132,7 +132,7 @@ bool SphereCollider::CheckCollisionWithCube(ICollider* other, Contact& outContac
 
     // === STEP 1: Get transforms ===
     XMVECTOR sphereCenter = m_RigidBody->GetPosition();
-    float radius = GetRadius();
+    float radius = GetRadius() * 0.5f;
 
     XMVECTOR cubeCenter = cube->GetRigidBody()->GetPosition();
     XMVECTOR cubeHalfExtents = cube->GetHalfExtents();

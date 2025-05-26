@@ -100,7 +100,6 @@ bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 			cb.Transformation = scaleMatrix * rotationMatrix * translationMatrix;
 		}
 		else cb.Transformation = rb->GetTransformMatrix();
-		cb.Transformation = rb->GetTransformMatrix();
 		model->UpdateVertexCB(context, &cb);
 	}
 	return true;

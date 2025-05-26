@@ -112,14 +112,57 @@ void PhysicsManager::Update(float dt, IntegrationType type)
             Contact contact;
             if (colliderA->CheckCollision(colliderB, contact))
             {
+
                 if (colliderA->GetColliderType() == ColliderType::Capsule ||
                     colliderB->GetColliderType() == ColliderType::Capsule)
                 {
-                    LOG_INFO("[Debug] Sphere involved in collision: A = " +
-                        std::to_string(static_cast<int>(colliderA->GetColliderType())) +
-                        ", B = " +
-                        std::to_string(static_cast<int>(colliderB->GetColliderType())));
+                    RigidBody* bodyA = colliderA->GetRigidBody();
+                    RigidBody* bodyB = colliderB->GetRigidBody();
+
+                    using namespace DirectX;
+
+                    XMFLOAT3 posA{}, velA{}, angVelA{};
+                    XMFLOAT3 posB{}, velB{}, angVelB{};
+
+                    if (colliderA->GetColliderType() == ColliderType::Capsule ||
+                        colliderB->GetColliderType() == ColliderType::Capsule)
+                    {
+                        RigidBody* bodyA = colliderA->GetRigidBody();
+                        RigidBody* bodyB = colliderB->GetRigidBody();
+
+                        using namespace DirectX;
+
+                        XMFLOAT3 posA{}, velA{}, angVelA{};
+                        XMFLOAT3 posB{}, velB{}, angVelB{};
+
+                        if (bodyA)
+                        {
+                            XMStoreFloat3(&posA, bodyA->GetPosition());
+                            XMStoreFloat3(&velA, bodyA->GetVelocity());
+                            XMStoreFloat3(&angVelA, bodyA->GetAngularVelocity());
+
+                            LOG_INFO(std::string("Capsule A - Pos: (") +
+                                std::to_string(posA.x) + ", " + std::to_string(posA.y) + ", " + std::to_string(posA.z) + "), Vel: (" +
+                                std::to_string(velA.x) + ", " + std::to_string(velA.y) + ", " + std::to_string(velA.z) + "), AngVel: (" +
+                                std::to_string(angVelA.x) + ", " + std::to_string(angVelA.y) + ", " + std::to_string(angVelA.z) + ")"
+                            );
+                        }
+
+                        if (bodyB)
+                        {
+                            XMStoreFloat3(&posB, bodyB->GetPosition());
+                            XMStoreFloat3(&velB, bodyB->GetVelocity());
+                            XMStoreFloat3(&angVelB, bodyB->GetAngularVelocity());
+
+                            LOG_INFO(std::string("Capsule B - Pos: (") +
+                                std::to_string(posB.x) + ", " + std::to_string(posB.y) + ", " + std::to_string(posB.z) + "), Vel: (" +
+                                std::to_string(velB.x) + ", " + std::to_string(velB.y) + ", " + std::to_string(velB.z) + "), AngVel: (" +
+                                std::to_string(angVelB.x) + ", " + std::to_string(angVelB.y) + ", " + std::to_string(angVelB.z) + ")"
+                            );
+                        }
+                    }
                 }
+
                 contacts.push_back(contact);
             }
         }
