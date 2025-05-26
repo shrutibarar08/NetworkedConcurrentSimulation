@@ -116,7 +116,6 @@ void PhysicsManager::Update(float dt, IntegrationType type)
                         ", B = " +
                         std::to_string(static_cast<int>(colliderB->GetColliderType())));
                 }
-
                 contacts.push_back(contact);
             }
         }

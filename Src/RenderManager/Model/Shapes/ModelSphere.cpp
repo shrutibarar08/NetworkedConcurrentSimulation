@@ -8,7 +8,8 @@ ModelSphere::ModelSphere(const MODEL_INIT_DESC* desc)
 	: IModel(desc)
 {
 	SetWidget(std::make_unique<ModelSphereUI>(this));
-	m_Collider = std::make_unique<SphereCollider>(&m_RigidBody);
+    m_Collider = std::make_unique<SphereCollider>(&m_RigidBody);
+    m_Collider->SetRadius(GetRadius());
 	m_RigidBody.SetMass(10);
 }
 
@@ -16,35 +17,32 @@ std::vector<VERTEX> ModelSphere::BuildVertex()
 {
     std::vector<VERTEX> vertices;
 
-    for (UINT y = 0; y <= m_LatitudeSegments; ++y)
+    float radius = GetRadius();
+    UINT latSegments = GetLatitudeSegments();
+    UINT lonSegments = GetLongitudeSegments();
+
+    for (UINT lat = 0; lat <= latSegments; ++lat)
     {
-        float theta = y * DirectX::XM_PI / m_LatitudeSegments;
+        float theta = static_cast<float>(lat) * DirectX::XM_PI / static_cast<float>(latSegments); // [0, PI]
         float sinTheta = sinf(theta);
         float cosTheta = cosf(theta);
 
-        for (UINT x = 0; x <= m_LongitudeSegments; ++x)
+        for (UINT lon = 0; lon <= lonSegments; ++lon)
         {
-            float phi = x * DirectX::XM_2PI / m_LongitudeSegments;
+            float phi = static_cast<float>(lon) * 2.0f * DirectX::XM_PI / static_cast<float>(lonSegments); // [0, 2PI]
             float sinPhi = sinf(phi);
             float cosPhi = cosf(phi);
 
-            float px = cosPhi * sinTheta;
-            float py = cosTheta;
-            float pz = sinPhi * sinTheta;
+            float x = radius * sinTheta * cosPhi;
+            float y = radius * cosTheta;
+            float z = radius * sinTheta * sinPhi;
 
-            // Scale sphere to radius 0.5
-            px *= 0.5f;
-            py *= 0.5f;
-            pz *= 0.5f;
+            // Color based on position for fun
+            float r = (x / radius + 1.0f) * 0.5f;
+            float g = (y / radius + 1.0f) * 0.5f;
+            float b = (z / radius + 1.0f) * 0.5f;
 
-            // Color gradient from polar to equator (Y axis based)
-            float t = (float)y / m_LatitudeSegments;
-
-            float r = 0.2f + 0.6f * sinf(t * DirectX::XM_PI); // Deep purple-pink
-            float g = 0.8f * t;                               // Fades green
-            float b = 1.0f - 0.5f * cosf(t * DirectX::XM_PI); // Subtle blue pulse
-
-            vertices.emplace_back(px, py, pz, r, g, b, 1.0f);
+            vertices.emplace_back(x, y, z, r, g, b, 1.0f);
         }
     }
     return vertices;
@@ -54,20 +52,24 @@ std::vector<UINT> ModelSphere::BuildIndex()
 {
     std::vector<UINT> indices;
 
-    for (UINT y = 0; y < m_LatitudeSegments; ++y)
+    UINT latSegments = GetLatitudeSegments();
+    UINT lonSegments = GetLongitudeSegments();
+
+    for (UINT lat = 0; lat < latSegments; ++lat)
     {
-        for (UINT x = 0; x < m_LongitudeSegments; ++x)
+        for (UINT lon = 0; lon < lonSegments; ++lon)
         {
-            UINT a = y * (m_LongitudeSegments + 1) + x;
-            UINT b = a + m_LongitudeSegments + 1;
+            UINT current = lat * (lonSegments + 1) + lon;
+            UINT next = current + lonSegments + 1;
 
-            indices.push_back(a);
-            indices.push_back(b);
-            indices.push_back(a + 1);
+            // Two triangles per quad on the sphere surface
+            indices.push_back(current);
+            indices.push_back(next);
+            indices.push_back(current + 1);
 
-            indices.push_back(a + 1);
-            indices.push_back(b);
-            indices.push_back(b + 1);
+            indices.push_back(current + 1);
+            indices.push_back(next);
+            indices.push_back(next + 1);
         }
     }
 
@@ -92,4 +94,20 @@ UINT ModelSphere::GetLatitudeSegments() const
 UINT ModelSphere::GetLongitudeSegments() const
 {
 	return m_LongitudeSegments;
+}
+
+float ModelSphere::GetRadius() const
+{
+    return m_Radius;
+}
+
+void ModelSphere::SetRadius(float radius)
+{
+    m_Radius = radius;
+}
+
+ICollider* ModelSphere::GetCollider() const
+{
+    if (m_Collider) return m_Collider.get();
+    return nullptr;
 }

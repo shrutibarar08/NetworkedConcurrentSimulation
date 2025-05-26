@@ -36,12 +36,17 @@ RigidBody* SphereCollider::GetRigidBody() const
 
 void SphereCollider::SetRadius(float radius)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     m_Radius = (radius > 0.01) ? radius : 0.01;
+    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 float SphereCollider::GetRadius() const
 {
-	return m_Radius;
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    auto result = m_Radius;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 bool SphereCollider::CheckCollisionWithSphere(ICollider* other, Contact& outContact)
@@ -55,8 +60,8 @@ bool SphereCollider::CheckCollisionWithSphere(ICollider* other, Contact& outCont
     XMVECTOR centerA = m_RigidBody->GetPosition();
     XMVECTOR centerB = otherSphere->GetRigidBody()->GetPosition();
 
-    float radiusA = GetRadius() * 0.5;
-    float radiusB = otherSphere->GetRadius() * 0.5;
+    float radiusA = GetRadius();
+    float radiusB = otherSphere->GetRadius();
 
     XMVECTOR diff = centerB - centerA;
     float distanceSq = XMVectorGetX(XMVector3LengthSq(diff));
@@ -98,7 +103,7 @@ bool SphereCollider::CheckCollisionWithCube(ICollider* other, Contact& outContac
 
     // === STEP 1: Get transforms ===
     XMVECTOR sphereCenter = m_RigidBody->GetPosition();
-    float radius = GetRadius() * 0.5;
+    float radius = GetRadius();
 
     XMVECTOR cubeCenter = cube->GetRigidBody()->GetPosition();
     XMVECTOR cubeHalfExtents = cube->GetHalfExtents();

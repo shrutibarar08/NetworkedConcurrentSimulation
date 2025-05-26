@@ -10,6 +10,12 @@ ModelCube::ModelCube(const MODEL_INIT_DESC* desc)
     m_RigidBody.SetMass(10);
 }
 
+ICollider* ModelCube::GetCollider() const
+{
+    if (m_Collider) return m_Collider.get();
+    return nullptr;
+}
+
 std::vector<VERTEX> ModelCube::BuildVertex()
 {
     std::vector<VERTEX> vertices =

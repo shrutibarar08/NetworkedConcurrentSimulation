@@ -110,7 +110,6 @@ void RigidBody::Integrate(float dt, IntegrationType type)
     AngularVelocity = DirectX::XMVectorScale(AngularVelocity, std::pow(AngularDamping, dt));
 
     // Update orientation using angular velocity
-
     Orientation.AddScaledVector(AngularVelocity, dt);
     Orientation.Normalize();
 
@@ -223,14 +222,14 @@ void RigidBody::SetElasticity(float e)
 void RigidBody::SetRestitution(float v)
 {
     AcquireSRWLockExclusive(&m_Lock);
-    m_Elastic = v;
+    m_Restitution = v;
     ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void RigidBody::SetFriction(float v)
 {
     AcquireSRWLockExclusive(&m_Lock);
-    m_Elastic = v;
+    m_Friction = v;
     ReleaseSRWLockExclusive(&m_Lock);
 }
 
@@ -384,6 +383,14 @@ float RigidBody::GetDamping() const
 {
     AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_LinearDamping;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
+}
+
+float RigidBody::GetAngularDamping()
+{
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = AngularDamping;
     ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }

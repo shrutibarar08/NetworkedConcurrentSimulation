@@ -136,11 +136,6 @@ RigidBody* IModel::GetRigidBody()
 	return &m_RigidBody;
 }
 
-ICollider* IModel::GetCollider() const
-{
-	return  m_Collider.get();
-}
-
 void IModel::BuildVertexBuffer(ID3D11Device* device)
 {
 	std::vector<VERTEX> vertices = BuildVertex();

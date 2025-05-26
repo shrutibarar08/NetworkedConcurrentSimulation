@@ -19,6 +19,7 @@ public:
 	void SetHeight(float height) { m_Height = height; }
 	void SetRings(UINT rings) { m_Rings = rings; }
 	void SetSegments(UINT segments) { m_Segments = segments; }
+	ICollider* GetCollider() const override { return nullptr; }
 
 
 protected:

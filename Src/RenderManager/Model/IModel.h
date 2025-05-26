@@ -34,7 +34,7 @@ public:
 	bool IsBuilt() const { return m_Built; }
 
 	RigidBody* GetRigidBody();
-	ICollider* GetCollider() const;
+	virtual ICollider* GetCollider() const = 0;
 
 	void SetWidget(std::unique_ptr<IWidget> widget)
 	{
@@ -66,7 +66,6 @@ protected:
 	std::string m_Name{ "NO NAME" };
 	std::unique_ptr<IWidget> m_Widget{ nullptr };
 	RigidBody m_RigidBody{};
-	std::unique_ptr<ICollider> m_Collider{ nullptr };
 	std::string m_VertexShaderPath;
 	std::string m_PixelShaderPath;
 	std::string m_ModelName;

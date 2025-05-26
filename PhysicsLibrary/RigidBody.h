@@ -49,6 +49,7 @@ public:
     DirectX::XMMATRIX GetInverseInertiaTensor() const;
     bool HasFiniteMass() const;
     float GetDamping() const;
+    float GetAngularDamping();
     float GetRestitution() const;
     float GetFriction() const;
 
@@ -76,7 +77,7 @@ private:
     Quaternion Orientation;
     DirectX::XMVECTOR AngularVelocity;
     DirectX::XMVECTOR TorqueAccum;
-    float AngularDamping;
+    float AngularDamping{ 0.39 };
 
     DirectX::XMMATRIX InverseInertiaTensor;
     DirectX::XMMATRIX InverseInertiaTensorWorld;

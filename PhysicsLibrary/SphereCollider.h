@@ -20,8 +20,7 @@ public:
 private:
     bool CheckCollisionWithSphere(ICollider* other, Contact& outContact);
     bool CheckCollisionWithCube(ICollider* other, Contact& outContact);
-
 private:
-
+    SRWLOCK m_Lock{ SRWLOCK_INIT };
     float m_Radius{ 1.f };
 };

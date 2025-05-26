@@ -13,13 +13,14 @@ public:
     static void ResolveContacts(std::vector<Contact>& contacts, float deltaTime);
 
 private:
-    // Resolve Cube Related collision
-    static void ResolveCubeInterPenetration(Contact& contact);
-    static void ResolveCubeVelocity(Contact& contact, float deltaTime);
-    static void ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse);
+    //~ Resolve Inter Penetration
+    static void ResolvePositionInterpenetration(const Contact& contact);
 
+    // Resolve collisions
+    static void ResolveVelocity(Contact& contact, float deltaTime);
 
     //~ Helper Functions
+    static void ApplyFriction(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse);
     static bool IsStatic(ICollider* collider);
     static DirectX::XMVECTOR GetVelocityAtPoint(RigidBody* body, const DirectX::XMVECTOR& r);
     static float ComputeDenominator(

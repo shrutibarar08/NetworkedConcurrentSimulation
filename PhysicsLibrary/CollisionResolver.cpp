@@ -10,19 +10,9 @@ void CollisionResolver::ResolveContact(Contact& contact, float deltaTime)
     ICollider* b = contact.Colliders[1];
     if (!a || !b) return;
 
-    // === Currently supporting only CubeCollider ===
-    if (a->GetColliderType() != ColliderType::Cube ||
-        b->GetColliderType() != ColliderType::Cube)
-        return;
-
-    // === Always resolve interpenetration first ===
-    ResolveCubeInterPenetration(contact);
-
-    // Skip only if both are static (immovable)
-    if (IsStatic(a) && IsStatic(b))
-        return;
-
-    ResolveCubeVelocity(contact, deltaTime);
+    ResolvePositionInterpenetration(contact);
+    if (IsStatic(a) && IsStatic(b)) return;
+    ResolveVelocity(contact, deltaTime);
 }
 
 void CollisionResolver::ResolveContacts(std::vector<Contact>& contacts, float deltaTime)
@@ -33,49 +23,48 @@ void CollisionResolver::ResolveContacts(std::vector<Contact>& contacts, float de
     }
 }
 
-void CollisionResolver::ResolveCubeInterPenetration(Contact& contact)
+void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
 {
     using namespace DirectX;
 
     ICollider* a = contact.Colliders[0];
     ICollider* b = contact.Colliders[1];
+    if (!a || !b || contact.PenetrationDepth <= 0.0f) return;
 
     RigidBody* bodyA = a->GetRigidBody();
     RigidBody* bodyB = b->GetRigidBody();
+    if (!bodyA || !bodyB) return;
 
-    if (!bodyA || !bodyB || contact.PenetrationDepth <= 0.0f)
-        return;
+    bool isStaticA = IsStatic(a);
+    bool isStaticB = IsStatic(b);
+
+    float invMassA = bodyA->GetInverseMass();
+    float invMassB = bodyB->GetInverseMass();
+    float totalInvMass = invMassA + invMassB;
+    if (totalInvMass <= 0.0f) return;
 
     XMVECTOR normal = XMLoadFloat3(&contact.ContactNormal);
     float penetration = contact.PenetrationDepth;
 
-    bool isStaticA = a->GetColliderState() == ColliderSate::Static;
-    bool isStaticB = b->GetColliderState() == ColliderSate::Static;
-
-    float totalInvMass = bodyA->GetInverseMass() + bodyB->GetInverseMass();
-    if (totalInvMass == 0.0f) return;
-
-    // Position correction proportion
-    float percent = 0.99f; // 99% of correction applied (prevents overshoot)
-    float slop = 0.01f;   // Ignore tiny penetrations (prevents jitter)
-
-    float correctionDepth = (penetration - slop) > 0.0f? penetration - slop: 0.0f;
+    constexpr float slop = 0.01f;    // Allow tiny overlap
+    constexpr float percent = 0.99f; // Resolve 99% of penetration
+    float correctionDepth = (penetration - slop) > 0.0f ? penetration - slop : 0.0f;
     XMVECTOR correction = normal * (correctionDepth * percent / totalInvMass);
 
-    if (!isStaticA)
+    if (!isStaticA && invMassA > 0.0f)
     {
         XMVECTOR posA = bodyA->GetPosition();
-        bodyA->SetPosition(posA - correction * bodyA->GetInverseMass());
+        bodyA->SetPosition(posA - correction * invMassA);
     }
 
-    if (!isStaticB)
+    if (!isStaticB && invMassB > 0.0f)
     {
         XMVECTOR posB = bodyB->GetPosition();
-        bodyB->SetPosition(posB + correction * bodyB->GetInverseMass());
+        bodyB->SetPosition(posB + correction * invMassB);
     }
 }
 
-void CollisionResolver::ResolveCubeVelocity(Contact& contact, float deltaTime)
+void CollisionResolver::ResolveVelocity(Contact& contact, float deltaTime)
 {
     using namespace DirectX;
 
@@ -83,15 +72,11 @@ void CollisionResolver::ResolveCubeVelocity(Contact& contact, float deltaTime)
     RigidBody* bodyB = contact.Colliders[1]->GetRigidBody();
     if (!bodyA || !bodyB) return;
 
-    const float bounceThreshold = 0.1f;
-    float restitution = contact.Restitution;
-
     bool aStatic = IsStatic(contact.Colliders[0]);
     bool bStatic = IsStatic(contact.Colliders[1]);
 
     float invMassA = bodyA->GetInverseMass();
     float invMassB = bodyB->GetInverseMass();
-
     if (invMassA + invMassB <= 0.0f) return;
 
     XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&contact.ContactNormal));
@@ -105,30 +90,53 @@ void CollisionResolver::ResolveCubeVelocity(Contact& contact, float deltaTime)
     XMVECTOR relativeVel = vA - vB;
 
     float sepVel = XMVectorGetX(XMVector3Dot(relativeVel, normal));
-    // if (sepVel > -bounceThreshold) return;
+    //if (sepVel > 0.0f) return; // Already separating
+
+    // Use restitution and elasticity together
+    float restitution = contact.Restitution;
+    float elasticity = contact.Elasticity;
+    float combinedRestitution = restitution * (1.0f + elasticity);
 
     XMMATRIX invInertiaA = bodyA->GetInverseInertiaTensor();
     XMMATRIX invInertiaB = bodyB->GetInverseInertiaTensor();
 
-
     if (bStatic)
     {
-        ReflectFromStatic(bodyA, normal, sepVel, restitution, rA, invInertiaA);
-        ApplyCubeFriction(contact, relativeVel, -normal * sepVel);
+        ReflectFromStatic(bodyA, normal, sepVel, combinedRestitution, rA, invInertiaA);
+        ApplyFriction(contact, relativeVel, -normal * sepVel);
     }
     else if (aStatic)
     {
-        ReflectFromStatic(bodyB, -normal, sepVel, restitution, rB, invInertiaB);
-       ApplyCubeFriction(contact, relativeVel, normal * sepVel);
+        ReflectFromStatic(bodyB, -normal, sepVel, combinedRestitution, rB, invInertiaB);
+        ApplyFriction(contact, relativeVel, normal * sepVel);
     }
     else
     {
-        ResolveDynamicVsDynamic(bodyA, bodyB, normal, sepVel, restitution, rA, rB, invInertiaA, invInertiaB);
-        ApplyCubeFriction(contact, relativeVel, normal * sepVel);
+        ResolveDynamicVsDynamic(bodyA, bodyB, normal, sepVel, combinedRestitution, rA, rB, invInertiaA, invInertiaB);
+        ApplyFriction(contact, relativeVel, normal * sepVel);
+    }
+
+    // === Damping ===
+    float linearDampingA = bodyA->GetDamping();
+    float linearDampingB = bodyB->GetDamping();
+    float angularDampingA = bodyA->GetAngularDamping();
+    float angularDampingB = bodyB->GetAngularDamping();
+
+    // Linear damping reduces velocity over time
+    if (!aStatic)
+    {
+        bodyA->SetVelocity(bodyA->GetVelocity() * std::pow(1.0f - linearDampingA, deltaTime));
+        bodyA->SetAngularVelocity(bodyA->GetAngularVelocity() * std::pow(1.0f - angularDampingA, deltaTime));
+    }
+
+    if (!bStatic)
+    {
+        bodyB->SetVelocity(bodyB->GetVelocity() * std::pow(1.0f - linearDampingB, deltaTime));
+        bodyB->SetAngularVelocity(bodyB->GetAngularVelocity() * std::pow(1.0f - angularDampingB, deltaTime));
     }
 }
 
-void CollisionResolver::ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse)
+void CollisionResolver::ApplyFriction(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse)
 {
     using namespace DirectX;
 
@@ -146,7 +154,7 @@ void CollisionResolver::ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR re
     XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&contact.ContactNormal));
     XMVECTOR contactPoint = XMLoadFloat3(&contact.ContactPoint);
 
-    // Tangential (sliding) component
+    // Get the tangential velocity
     XMVECTOR velTangent = relativeVelocity - normal * XMVector3Dot(relativeVelocity, normal);
     if (XMVector3LengthSq(velTangent).m128_f32[0] < 1e-6f) return;
 
@@ -163,30 +171,24 @@ void CollisionResolver::ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR re
 
     XMVECTOR frictionImpulse = tangent * frictionImpulseMag;
 
-    // --- Linear Friction ---
+    // === Linear friction ===
     if (!isStaticA && invMassA > 0.0f)
     {
-        XMVECTOR vel = bodyA->GetVelocity();
-        XMVECTOR tangentComponent = tangent * XMVector3Dot(vel, tangent);
-        XMVECTOR damped = tangentComponent * -friction;
-        if (XMVectorGetX(XMVector3LengthSq(tangentComponent)) > 1e-6f)
-        {
-            bodyA->SetVelocity(vel + damped);
-        }
+        XMVECTOR velA = bodyA->GetVelocity();
+        XMVECTOR tangentVel = tangent * XMVectorGetX(XMVector3Dot(velA, tangent));
+        XMVECTOR damped = tangentVel * -friction;
+        bodyA->SetVelocity(velA + damped);
     }
 
     if (!isStaticB && invMassB > 0.0f)
     {
-        XMVECTOR vel = bodyB->GetVelocity();
-        XMVECTOR tangentComponent = tangent * XMVector3Dot(vel, tangent);
-        XMVECTOR damped = tangentComponent * -friction;
-        if (XMVectorGetX(XMVector3LengthSq(tangentComponent)) > 1e-6f)
-        {
-            bodyB->SetVelocity(vel + damped);
-        }
+        XMVECTOR velB = bodyB->GetVelocity();
+        XMVECTOR tangentVel = tangent * XMVectorGetX(XMVector3Dot(velB, tangent));
+        XMVECTOR damped = tangentVel * -friction;
+        bodyB->SetVelocity(velB + damped);
     }
 
-    // --- Angular Friction + Random Torque ---
+    // === Angular friction ===
     XMVECTOR rA = contactPoint - bodyA->GetPosition();
     XMVECTOR rB = contactPoint - bodyB->GetPosition();
 
@@ -196,10 +198,12 @@ void CollisionResolver::ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR re
     if (!isStaticA && invMassA > 0.0f)
     {
         XMVECTOR angImpulseA = XMVector3Transform(XMVector3Cross(rA, frictionImpulse), invInertiaA);
-        float dampingA = std::clamp(5.0f * invMassA, 0.1f, 1.0f);
-        angImpulseA *= dampingA;
-
         XMVECTOR angVelA = bodyA->GetAngularVelocity();
+
+        // Optional damping factor
+        float damping = std::clamp(5.0f * invMassA, 0.1f, 1.0f);
+        angImpulseA *= damping;
+
         bodyA->SetAngularVelocity(angVelA + angImpulseA);
 
         if (XMVectorGetX(XMVector3LengthSq(angVelA)) < 0.01f)
@@ -213,10 +217,11 @@ void CollisionResolver::ApplyCubeFriction(Contact& contact, DirectX::XMVECTOR re
     if (!isStaticB && invMassB > 0.0f)
     {
         XMVECTOR angImpulseB = XMVector3Transform(XMVector3Cross(rB, -frictionImpulse), invInertiaB);
-        float dampingB = std::clamp(5.0f * invMassB, 0.1f, 1.0f);
-        angImpulseB *= dampingB;
-
         XMVECTOR angVelB = bodyB->GetAngularVelocity();
+
+        float damping = std::clamp(5.0f * invMassB, 0.1f, 1.0f);
+        angImpulseB *= damping;
+
         bodyB->SetAngularVelocity(angVelB + angImpulseB);
 
         if (XMVectorGetX(XMVector3LengthSq(angVelB)) < 0.01f)
@@ -265,17 +270,24 @@ void CollisionResolver::ApplyImpulse(
     float invMass = body->GetInverseMass();
     if (invMass <= 0.0f) return;
 
-    // Apply linear impulse
+    // === LINEAR IMPULSE ===
     body->SetVelocity(body->GetVelocity() + impulse * invMass);
 
-    // Compute and apply angular impulse
+    // === ANGULAR IMPULSE ===
     XMVECTOR angularImpulse = XMVector3Transform(XMVector3Cross(r, impulse), invInertia);
+    XMVECTOR newAngVel = body->GetAngularVelocity() + angularImpulse;
 
-    // Dampen angular impulse based on inverse mass (heavy objects rotate less)
-    float damping = std::clamp(5.0f * invMass, 0.1f, 1.0f); // Heuristic
-    angularImpulse *= damping;
+    // === WEIGHT-BASED DAMPING LOGIC ===
+    float mass = invMass > 0.0f ? (1.0f / invMass) : FLT_MAX;
 
-    body->SetAngularVelocity(body->GetAngularVelocity() + angularImpulse);
+    // More mass => lower damping effect. Less mass => more damping.
+    float baseDamping = body->GetAngularDamping(); // [0..1], set per body
+    float dampingFactor = std::clamp(baseDamping * (1.0f / mass), 0.0f, 1.0f);
+
+    // Apply angular damping by scaling angular velocity (simulate resistance)
+    newAngVel *= (1.0f - dampingFactor);
+
+    body->SetAngularVelocity(newAngVel);
 }
 
 void CollisionResolver::ReflectFromStatic(
@@ -288,6 +300,7 @@ void CollisionResolver::ReflectFromStatic(
 {
     using namespace DirectX;
 
+    // === LINEAR REFLECTION ===
     float bounceVel = -(1.0f + restitution) * sepVel;
     XMVECTOR reflected = normal * bounceVel;
 
@@ -295,34 +308,48 @@ void CollisionResolver::ReflectFromStatic(
     XMVECTOR newVel = oldVel + reflected;
     body->SetVelocity(newVel);
 
+    // === ANGULAR RESPONSE ===
     float invMass = body->GetInverseMass();
-    float massFactor = invMass > 0.0f ? invMass : 0.0f;
+    if (invMass <= 0.0f) return;
 
-    // Apply scaled angular impulse
+    float mass = 1.0f / invMass;
+    float baseDamping = body->GetAngularDamping(); // user-defined [0..1]
+    float dampingFactor = std::clamp(baseDamping * (1.0f / mass), 0.0f, 1.0f);
+
+    // Calculate angular impulse
     XMVECTOR angularImpulse = XMVector3Transform(XMVector3Cross(r, reflected), invInertia);
+    XMVECTOR newAngVel = body->GetAngularVelocity() + angularImpulse;
 
-    // Heuristic scaling based on inverse mass (heavier bodies spin less)
-    float damping = std::clamp(5.0f * massFactor, 0.1f, 1.0f);
-    angularImpulse = angularImpulse * damping;
-
-    body->SetAngularVelocity(body->GetAngularVelocity() + angularImpulse);
+    // Apply angular damping
+    newAngVel *= (1.0f - dampingFactor);
+    body->SetAngularVelocity(newAngVel);
 }
 
-void CollisionResolver::ResolveDynamicVsDynamic(RigidBody* bodyA, RigidBody* bodyB, const DirectX::XMVECTOR& normal,
-	float sepVel, float restitution, const DirectX::XMVECTOR& rA, const DirectX::XMVECTOR& rB,
-	const DirectX::XMMATRIX& invInertiaA, const DirectX::XMMATRIX& invInertiaB)
+void CollisionResolver::ResolveDynamicVsDynamic(
+    RigidBody* bodyA, RigidBody* bodyB,
+    const DirectX::XMVECTOR& normal,
+    float sepVel, float restitution,
+    const DirectX::XMVECTOR& rA, const DirectX::XMVECTOR& rB,
+    const DirectX::XMMATRIX& invInertiaA,
+    const DirectX::XMMATRIX& invInertiaB)
 {
     using namespace DirectX;
 
     float invMassA = bodyA->GetInverseMass();
     float invMassB = bodyB->GetInverseMass();
 
+    // === Include elasticity factor (optional) ===
+    float elasticity = 0.5f * (bodyA->GetElasticity() + bodyB->GetElasticity());
+    float effectiveRestitution = restitution * (1.0f + elasticity); // Boost bounciness slightly
+
+    // === Compute impulse magnitude ===
     float denom = ComputeDenominator(invMassA, invMassB, rA, rB, normal, invInertiaA, invInertiaB);
     if (denom <= 0.0f) return;
 
-    float impulseMag = -(1.0f + restitution) * sepVel / denom;
+    float impulseMag = -effectiveRestitution * sepVel / denom;
     XMVECTOR impulse = normal * impulseMag;
 
+    // === Apply to both bodies (linear + angular) ===
     ApplyImpulse(bodyA, impulse, rA, invInertiaA);
     ApplyImpulse(bodyB, -impulse, rB, invInertiaB);
 }
