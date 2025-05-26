@@ -16,7 +16,7 @@ public:
 private:
     ModelCapsule* m_Capsule;
     RigidBody* m_RigidBody{ nullptr };
-    // CubeCollider* m_Collider{ nullptr };
+    CapsuleCollider* m_Collider{ nullptr };
 
     // Editable fields
     DirectX::XMFLOAT3 m_Pos{};

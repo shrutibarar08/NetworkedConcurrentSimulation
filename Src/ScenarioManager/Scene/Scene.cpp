@@ -83,13 +83,16 @@ unsigned int Scene::AddObject(SPAWN_OBJECT obj)
 	}
 	case SPAWN_OBJECT::CAPSULE:
 	{
-		MODEL_INIT_DESC sphereDesc{};
-		sphereDesc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
-		sphereDesc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
-		sphereDesc.ModelName = "Default Capsule";
-		auto modelCapsule = std::make_unique<ModelCapsule>(&sphereDesc);
+		MODEL_INIT_DESC capsuleDesc{};
+		capsuleDesc.PixelShaderPath = "Shaders/CubeShader/CubePS.hlsl";
+		capsuleDesc.VertexShaderPath = "Shaders/CubeShader/CubeVS.hlsl";
+		capsuleDesc.ModelName = "Default Capsule";
+		auto modelCapsule = std::make_unique<ModelCapsule>(&capsuleDesc);
+		key = modelCapsule->GetModelId();
 		m_SafePointer[key] = modelCapsule.get();
 		m_Models[key] = std::move(modelCapsule);
+		LOG_WARNING("Created Capsule with ID: " + std::to_string(key));
+
 		if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
 		return key;
 	}

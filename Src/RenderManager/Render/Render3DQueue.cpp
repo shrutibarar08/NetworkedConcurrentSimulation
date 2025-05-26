@@ -4,6 +4,7 @@
 #include <ranges>
 
 #include "Utils/Logger.h"
+#include "ICollider.h"
 
 
 Render3DQueue::Render3DQueue(CameraController* controller, ID3D11Device* device)
@@ -80,7 +81,25 @@ bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 	static int times = 0;
 	for (auto& model : m_ModelsToRender | std::views::values)
 	{
+		if (!model->IsBuilt()) continue;
+
 		RigidBody* rb = model->GetRigidBody();
+		if (ICollider* collider = model->GetCollider())
+		{
+			// Get components
+			DirectX::XMVECTOR position = rb->GetPosition();
+			Quaternion orientation = rb->GetOrientation();
+			DirectX::XMVECTOR scale = collider->GetScale();
+
+			// Build matrix
+			DirectX::XMMATRIX scaleMatrix = DirectX::XMMatrixScalingFromVector(scale);
+			DirectX::XMMATRIX rotationMatrix = orientation.ToRotationMatrix();
+			DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(position);
+
+			// Final transformation
+			cb.Transformation = scaleMatrix * rotationMatrix * translationMatrix;
+		}
+		else cb.Transformation = rb->GetTransformMatrix();
 		cb.Transformation = rb->GetTransformMatrix();
 		model->UpdateVertexCB(context, &cb);
 	}
@@ -98,7 +117,11 @@ bool Render3DQueue::UpdatePixelConstantBuffer(ID3D11DeviceContext* context)
 	models.reserve(m_ModelsToRender.size());
 	for (auto& model: m_ModelsToRender | std::views::values) models.push_back(model);
 
-	for (auto* model : models) model->UpdatePixelCB(context, &cb);
+	for (auto* model : models)
+	{
+		if (!model->IsBuilt()) continue;
+		if (context) model->UpdatePixelCB(context, &cb);
+	}
 	return true;
 }
 
@@ -108,6 +131,7 @@ void Render3DQueue::RenderAll(ID3D11DeviceContext* context)
 
 	for (auto& model : m_ModelsToRender | std::views::values)
 	{
+		if (!model->IsBuilt()) continue;
 		model->PresentModel(context);
 	}
 }

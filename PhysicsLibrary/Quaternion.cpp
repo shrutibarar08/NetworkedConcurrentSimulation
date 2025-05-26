@@ -24,6 +24,24 @@ DirectX::XMVECTOR Quaternion::ToXmVector() const
     return DirectX::XMVectorSet(I, J, K, R);
 }
 
+DirectX::XMVECTOR Quaternion::RotateVector(const DirectX::XMVECTOR& v) const
+{
+    using namespace DirectX;
+
+    // Convert quaternion to XMVECTOR
+    XMVECTOR q = XMVectorSet(I, J, K, R);
+    XMVECTOR qInv = XMQuaternionInverse(q);
+    XMVECTOR vec = XMVectorSetW(v, 0.0f); // Ensure it's a vector (not point)
+
+    // Rotate: v' = q * v * q^-1
+    XMVECTOR result = XMQuaternionMultiply(
+        XMQuaternionMultiply(q, vec),
+        qInv
+    );
+
+    return result;
+}
+
 Quaternion Quaternion::operator*(const Quaternion& q) const
 {
     return Quaternion(

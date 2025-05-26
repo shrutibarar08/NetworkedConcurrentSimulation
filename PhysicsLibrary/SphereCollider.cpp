@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
+#include "CapsuleCollider.h"
 #include "CubeCollider.h"
 
 SphereCollider::SphereCollider(RigidBody* body)
@@ -21,6 +22,10 @@ bool SphereCollider::CheckCollision(ICollider* other, Contact& outContact)
 	{
 		return CheckCollisionWithCube(other, outContact);
 	}
+    if (other->GetColliderType() == ColliderType::Capsule)
+    {
+        return CheckCollisionWithCapsule(other, outContact);
+    }
 	return false;
 }
 
@@ -37,16 +42,40 @@ RigidBody* SphereCollider::GetRigidBody() const
 void SphereCollider::SetRadius(float radius)
 {
     AcquireSRWLockExclusive(&m_Lock);
-    m_Radius = (radius > 0.01) ? radius : 0.01;
+    m_Radius = (radius > 0.01f) ? radius : 0.01f;
     ReleaseSRWLockExclusive(&m_Lock);
 }
 
 float SphereCollider::GetRadius() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    AcquireSRWLockShared(&m_Lock);
     auto result = m_Radius;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    ReleaseSRWLockShared(&m_Lock);
     return result;
+}
+
+void SphereCollider::SetScale(const DirectX::XMVECTOR& vector)
+{
+    using namespace DirectX;
+
+    // Extract and average the scale vector
+    XMFLOAT3 scale;
+    XMStoreFloat3(&scale, vector);
+    float avg = (scale.x + scale.y + scale.z) / 3.0f;
+
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Radius = avg * 0.5f;
+    m_Scale = { scale.x, scale.y, scale.z };
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+DirectX::XMVECTOR SphereCollider::GetScale() const
+{
+    AcquireSRWLockShared(&m_Lock);
+    float diameter = m_Radius * 2.0f;
+    ReleaseSRWLockShared(&m_Lock);
+
+    return DirectX::XMVectorSet(diameter, diameter, diameter, 0.0f);
 }
 
 bool SphereCollider::CheckCollisionWithSphere(ICollider* other, Contact& outContact)
@@ -152,4 +181,71 @@ bool SphereCollider::CheckCollisionWithCube(ICollider* other, Contact& outContac
         m_RigidBody->GetElasticity() + cube->GetRigidBody()->GetElasticity());
 
     return true;
+}
+
+bool SphereCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outContact)
+{
+    using namespace DirectX;
+
+    if (!other || other->GetColliderType() != ColliderType::Capsule) return false;
+    CapsuleCollider* capsule = other->As<CapsuleCollider>();
+    if (!capsule) return false;
+
+    RigidBody* sphereBody = m_RigidBody;
+    RigidBody* capsuleBody = capsule->GetRigidBody();
+    if (!sphereBody || !capsuleBody) return false;
+
+    float sphereRadius = GetRadius();
+    float capsuleRadius = capsule->GetRadius();
+    float capsuleHeight = capsule->GetHeight();
+
+    // Get capsule orientation and up vector
+    Quaternion q = capsuleBody->GetOrientation();
+    XMVECTOR up = q.RotateVector(XMVectorSet(0, 1, 0, 0));
+
+    XMVECTOR capCenter = capsuleBody->GetPosition();
+    XMVECTOR sphereCenter = sphereBody->GetPosition();
+
+    XMVECTOR halfHeightVec = up * (capsuleHeight * 0.5f);
+    XMVECTOR capA = capCenter - halfHeightVec;
+    XMVECTOR capB = capCenter + halfHeightVec;
+
+    // Find closest point on capsule line segment to sphere center
+    float t = ClosestPtPointSegment(sphereCenter, capA, capB);
+    XMVECTOR closestPoint = capA + (capB - capA) * t;
+
+    // Vector from closest point to sphere center
+    XMVECTOR delta = sphereCenter - closestPoint;
+    float distSq = XMVectorGetX(XMVector3LengthSq(delta));
+    float totalRadius = sphereRadius + capsuleRadius;
+
+    if (distSq > totalRadius * totalRadius)
+        return false; // No collision
+
+    float distance = std::sqrt(distSq);
+    XMVECTOR normal = (distance > 1e-6f) ? XMVector3Normalize(delta) : XMVectorSet(1, 0, 0, 0);
+    XMVECTOR contactPoint = closestPoint + normal * capsuleRadius;
+
+    // === Fill Contact ===
+    outContact.Colliders[0] = this;
+    outContact.Colliders[1] = capsule;
+
+    XMStoreFloat3(&outContact.ContactPoint, contactPoint);
+    XMStoreFloat3(&outContact.ContactNormal, normal);
+    outContact.PenetrationDepth = totalRadius - distance;
+
+    outContact.Restitution = 0.5f * (sphereBody->GetRestitution() + capsuleBody->GetRestitution());
+    outContact.Friction = 0.5f * (sphereBody->GetFriction() + capsuleBody->GetFriction());
+    outContact.Elasticity = 0.5f * (sphereBody->GetElasticity() + capsuleBody->GetElasticity());
+
+    return true;
+}
+
+float SphereCollider::ClosestPtPointSegment(DirectX::XMVECTOR p, DirectX::XMVECTOR a, DirectX::XMVECTOR b)
+{
+    using namespace DirectX;
+    XMVECTOR ab = b - a;
+    XMVECTOR ap = p - a;
+    float t = XMVectorGetX(XMVector3Dot(ap, ab)) / XMVectorGetX(XMVector3Dot(ab, ab));
+    return std::clamp(t, 0.0f, 1.0f);
 }

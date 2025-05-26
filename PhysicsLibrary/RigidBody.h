@@ -21,7 +21,6 @@ public:
 
     // Setters
     void SetPosition(const DirectX::XMVECTOR& pos);
-    void SetBodyScale(const DirectX::XMVECTOR& scale);
     void SetVelocity(const DirectX::XMVECTOR& vel);
     void SetAcceleration(const DirectX::XMVECTOR& acc);
     void SetOrientation(const Quaternion& q);
@@ -38,7 +37,6 @@ public:
 
     // Getters
     DirectX::XMVECTOR GetPosition() const;
-    DirectX::XMVECTOR GetBodyScale() const;
     DirectX::XMVECTOR GetVelocity() const;
     DirectX::XMVECTOR GetAcceleration() const;
     DirectX::XMVECTOR GetAngularVelocity() const;
@@ -62,7 +60,6 @@ private:
     DirectX::XMVECTOR Position;
     DirectX::XMVECTOR m_LastPosition{};
     DirectX::XMVECTOR Velocity;
-    DirectX::XMVECTOR Scale{1, 1, 1};
     DirectX::XMVECTOR Acceleration;
 
     SRWLOCK m_Lock{ SRWLOCK_INIT };
@@ -77,7 +74,7 @@ private:
     Quaternion Orientation;
     DirectX::XMVECTOR AngularVelocity;
     DirectX::XMVECTOR TorqueAccum;
-    float AngularDamping{ 0.39 };
+    float AngularDamping{ 0.39f };
 
     DirectX::XMMATRIX InverseInertiaTensor;
     DirectX::XMMATRIX InverseInertiaTensorWorld;

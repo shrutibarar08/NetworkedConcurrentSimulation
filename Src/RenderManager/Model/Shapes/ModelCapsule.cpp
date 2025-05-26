@@ -1,13 +1,20 @@
 #include "ModelCapsule.h"
 
+#include "CapsuleCollider.h"
 #include "GuiManager/Widgets/ModelCapsuleUI.h"
 
 ModelCapsule::ModelCapsule(const MODEL_INIT_DESC* desc)
 	: IModel(desc)
 {
 	SetWidget(std::make_unique<ModelCapsuleUI>(this));
-	//m_Collider = std::make_unique<CapsuleCollider>(&m_RigidBody);
+	m_Collider = std::make_unique<CapsuleCollider>(&m_RigidBody);
 	m_RigidBody.SetMass(10);
+}
+
+ICollider* ModelCapsule::GetCollider() const
+{
+	if (m_Collider) return m_Collider.get();
+	return nullptr;
 }
 
 std::vector<VERTEX> ModelCapsule::BuildVertex()
