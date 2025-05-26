@@ -25,7 +25,6 @@ void ModelCapsuleUI::RenderOnScreen()
         DirectX::XMStoreFloat3(&m_Vel, m_RigidBody->GetVelocity());
         DirectX::XMStoreFloat3(&m_Acc, m_RigidBody->GetAcceleration());
         DirectX::XMStoreFloat3(&m_AngVel, m_RigidBody->GetAngularVelocity());
-        DirectX::XMStoreFloat3(&m_Scale, m_RigidBody->GetBodyScale());
 
         Quaternion q = m_RigidBody->GetOrientation();
         m_Orientation[0] = q.I;
@@ -42,9 +41,6 @@ void ModelCapsuleUI::RenderOnScreen()
         // === Live Editable Fields ===
         if (ImGui::DragFloat3("Position", &m_Pos.x, 0.1f))
             m_RigidBody->SetPosition(DirectX::XMLoadFloat3(&m_Pos));
-
-        if (ImGui::DragFloat3("Scale", &m_Scale.x, 0.1f))
-            m_RigidBody->SetBodyScale(DirectX::XMLoadFloat3(&m_Scale));
 
         if (ImGui::DragFloat3("Velocity", &m_Vel.x, 0.1f))
             m_RigidBody->SetVelocity(DirectX::XMLoadFloat3(&m_Vel));

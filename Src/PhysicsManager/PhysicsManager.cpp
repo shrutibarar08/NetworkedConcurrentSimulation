@@ -6,6 +6,7 @@
 
 #include <ranges>
 #include "Contact.h"
+#include "RigidBody.h"
 
 bool PhysicsManager::Shutdown()
 {
@@ -39,6 +40,7 @@ bool PhysicsManager::Build(SweetLoader& sweetLoader)
 
 bool PhysicsManager::AddRigidBody(const IModel* model)
 {
+    AcquireSRWLockExclusive(&m_Lock);
     LOG_INFO("Adding A model in Physics Manager!");
     ID id = model->GetModelId();
     if (m_PhysicsEntity.contains(id))
@@ -47,7 +49,6 @@ bool PhysicsManager::AddRigidBody(const IModel* model)
         return false;
     }
 
-    AcquireSRWLockExclusive(&m_Lock);
     m_PhysicsEntity[id] = model->GetCollider();
     ReleaseSRWLockExclusive(&m_Lock);
 	LOG_SUCCESS("Added model in physics loop!");
@@ -81,7 +82,10 @@ void PhysicsManager::Update(float dt, IntegrationType type)
     for (auto& collider : m_PhysicsEntity | std::views::values)
     {
         if (!collider) continue;
+
         RigidBody* body = collider->GetRigidBody();
+        if (!body) continue;
+
         body->Integrate(dt, type);
     }
 
@@ -108,8 +112,8 @@ void PhysicsManager::Update(float dt, IntegrationType type)
             Contact contact;
             if (colliderA->CheckCollision(colliderB, contact))
             {
-                if (colliderA->GetColliderType() == ColliderType::Sphere ||
-                    colliderB->GetColliderType() == ColliderType::Sphere)
+                if (colliderA->GetColliderType() == ColliderType::Capsule ||
+                    colliderB->GetColliderType() == ColliderType::Capsule)
                 {
                     LOG_INFO("[Debug] Sphere involved in collision: A = " +
                         std::to_string(static_cast<int>(colliderA->GetColliderType())) +

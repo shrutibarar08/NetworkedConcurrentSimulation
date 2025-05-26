@@ -46,21 +46,47 @@ void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
     XMVECTOR normal = XMLoadFloat3(&contact.ContactNormal);
     float penetration = contact.PenetrationDepth;
 
-    constexpr float slop = 0.01f;    // Allow tiny overlap
-    constexpr float percent = 0.99f; // Resolve 99% of penetration
-    float correctionDepth = (penetration - slop) > 0.0f ? penetration - slop : 0.0f;
+    // === Correct normal direction ===
+    XMVECTOR posA = bodyA->GetPosition();
+    XMVECTOR posB = bodyB->GetPosition();
+    XMVECTOR dirAB = posB - posA;
+    if (XMVectorGetX(XMVector3Dot(normal, dirAB)) < 0.0f)
+        normal = -normal;
+
+    // === Special handling: capsule-sphere and capsule-capsule stability ===
+    ColliderType typeA = a->GetColliderType();
+    ColliderType typeB = b->GetColliderType();
+
+    bool isCapsuleInvolved = typeA == ColliderType::Capsule || typeB == ColliderType::Capsule;
+    bool isSphereCapsule = (typeA == ColliderType::Capsule && typeB == ColliderType::Sphere) ||
+        (typeA == ColliderType::Sphere && typeB == ColliderType::Capsule);
+    bool isCapsuleCapsule = (typeA == ColliderType::Capsule && typeB == ColliderType::Capsule);
+
+    // You can tune these depending on shape pair
+    constexpr float slop = 0.01f;
+    constexpr float percent = 1.0f;  // Resolve 100% to avoid repeated pushback
+
+    float correctionDepth = (penetration - slop > 0.0f) ? penetration - slop : 0.0f;
     XMVECTOR correction = normal * (correctionDepth * percent / totalInvMass);
 
+    // === Optional: bias heavier objects less ===
+    float weightA = invMassA / totalInvMass;
+    float weightB = invMassB / totalInvMass;
+
+    // === Apply position correction ===
     if (!isStaticA && invMassA > 0.0f)
     {
-        XMVECTOR posA = bodyA->GetPosition();
-        bodyA->SetPosition(posA - correction * invMassA);
+        // Slightly reduce correction for capsule vs capsule to stabilize back-and-forth jitter
+        float bias = isCapsuleCapsule ? 0.85f : 1.0f;
+        XMVECTOR pos = bodyA->GetPosition();
+        bodyA->SetPosition(pos - correction * weightA * bias);
     }
 
     if (!isStaticB && invMassB > 0.0f)
     {
-        XMVECTOR posB = bodyB->GetPosition();
-        bodyB->SetPosition(posB + correction * invMassB);
+        float bias = isCapsuleCapsule ? 0.85f : 1.0f;
+        XMVECTOR pos = bodyB->GetPosition();
+        bodyB->SetPosition(pos + correction * weightB * bias);
     }
 }
 

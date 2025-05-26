@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "CapsuleCollider.h"
 #include "SphereCollider.h"
 
 
@@ -26,6 +27,10 @@ bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
     {
         return CheckCollisionWithSphere(other, outContact);
     }
+    if (other->GetColliderType() == ColliderType::Capsule)
+    {
+        return CheckCollisionWithCapsule(other, outContact);
+    }
 
 	return false;
 }
@@ -42,7 +47,7 @@ RigidBody* CubeCollider::GetRigidBody() const
 
 DirectX::XMVECTOR CubeCollider::GetHalfExtents() const
 {
-	DirectX::XMVECTOR scale = m_RigidBody->GetBodyScale();
+	DirectX::XMVECTOR scale = GetScale();
 	return DirectX::XMVectorScale(scale, 0.5f);
 }
 
@@ -227,6 +232,81 @@ bool CubeCollider::CheckCollisionWithSphere(ICollider* other, Contact& outContac
     return true;
 }
 
+bool CubeCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outContact)
+{
+    using namespace DirectX;
+
+    if (!other || other->GetColliderType() != ColliderType::Capsule) return false;
+    CapsuleCollider* capsule = other->As<CapsuleCollider>();
+    if (!capsule) return false;
+
+    RigidBody* cubeBody = m_RigidBody;
+    RigidBody* capsuleBody = capsule->GetRigidBody();
+    if (!cubeBody || !capsuleBody) return false;
+
+    float capsuleRadius = capsule->GetRadius();
+    float capsuleHeight = capsule->GetHeight();
+
+    // === STEP 1: Get capsule segment endpoints ===
+    Quaternion q = capsuleBody->GetOrientation();
+    XMVECTOR up = q.RotateVector(XMVectorSet(0, 1, 0, 0));
+
+    XMVECTOR capCenter = capsuleBody->GetPosition();
+    XMVECTOR halfHeightVec = up * (capsuleHeight * 0.5f);
+    XMVECTOR capA = capCenter - halfHeightVec;
+    XMVECTOR capB = capCenter + halfHeightVec;
+
+    // === STEP 2: Get cube data ===
+    XMVECTOR cubeCenter = cubeBody->GetPosition();
+    XMVECTOR cubeHalfExtents = GetHalfExtents();
+
+    Quaternion cubeRot = cubeBody->GetOrientation();
+    XMVECTOR axes[3];
+    GetOBBAxes(cubeRot, axes);
+
+    // === STEP 3: Find closest points ===
+    XMVECTOR capsulePt, cubePt;
+    CapsuleCollider::ClosestPtSegmentOBB(capA, capB, cubeCenter, axes, cubeHalfExtents, capsulePt, cubePt);
+
+    XMVECTOR delta = capsulePt - cubePt;
+    float distSq = XMVectorGetX(XMVector3LengthSq(delta));
+
+    if (distSq > capsuleRadius * capsuleRadius)
+        return false;
+
+    float distance = std::sqrt(distSq);
+    XMVECTOR normal = (distance > 1e-6f) ? XMVector3Normalize(delta) : XMVectorSet(1, 0, 0, 0);
+    XMVECTOR contactPoint = cubePt;
+
+    // === STEP 4: Fill Contact ===
+    outContact.Colliders[0] = this;
+    outContact.Colliders[1] = capsule;
+
+    XMStoreFloat3(&outContact.ContactPoint, contactPoint);
+    XMStoreFloat3(&outContact.ContactNormal, normal);
+    outContact.PenetrationDepth = capsuleRadius - distance;
+
+    outContact.Restitution = 0.5f * (cubeBody->GetRestitution() + capsuleBody->GetRestitution());
+    outContact.Friction = 0.5f * (cubeBody->GetFriction() + capsuleBody->GetFriction());
+    outContact.Elasticity = 0.5f * (cubeBody->GetElasticity() + capsuleBody->GetElasticity());
+
+    return true;
+}
+
+void CubeCollider::SetScale(const DirectX::XMVECTOR& vector)
+{
+    AcquireSRWLockExclusive(&m_Lock);
+    m_Scale = vector;
+    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+DirectX::XMVECTOR CubeCollider::GetScale() const
+{
+    AcquireSRWLockShared(&m_Lock);
+    DirectX::XMVECTOR scale = m_Scale;
+    ReleaseSRWLockShared(&m_Lock);
+    return scale;
+}
 
 void CubeCollider::GetOBBAxes(const Quaternion& q, DirectX::XMVECTOR axes[3])
 {

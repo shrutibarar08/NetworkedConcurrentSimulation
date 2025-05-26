@@ -34,6 +34,8 @@ public:
 
     ColliderSate GetColliderState();
     void SetColliderState(ColliderSate state);
+    virtual void SetScale(const DirectX::XMVECTOR& vector) = 0;
+    virtual DirectX::XMVECTOR GetScale() const = 0;
 
     // For type-safe down casting
     template<typename T>

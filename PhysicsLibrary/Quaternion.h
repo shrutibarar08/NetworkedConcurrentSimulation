@@ -17,6 +17,7 @@ public:
     void RotateByVector(const DirectX::XMVECTOR& vector);
     void Normalize();
     DirectX::XMVECTOR ToXmVector() const;
+    DirectX::XMVECTOR RotateVector(const DirectX::XMVECTOR& v) const;
 
     friend Quaternion operator*(float scalar, const Quaternion& q);
 

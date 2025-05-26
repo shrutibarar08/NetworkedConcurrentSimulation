@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CapsuleCollider.h" />
     <ClInclude Include="CollisionResolver.h" />
     <ClInclude Include="Contact.h" />
     <ClInclude Include="CubeCollider.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="SphereCollider.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CapsuleCollider.cpp" />
     <ClCompile Include="CollisionResolver.cpp" />
     <ClCompile Include="CubeCollider.cpp" />
     <ClCompile Include="Drag.cpp" />

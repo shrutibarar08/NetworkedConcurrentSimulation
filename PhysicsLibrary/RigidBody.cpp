@@ -126,11 +126,10 @@ DirectX::XMMATRIX RigidBody::GetTransformMatrix() const
 
     AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
 
-    XMMATRIX scale = XMMatrixScalingFromVector(Scale);
     XMMATRIX rotation = Orientation.ToRotationMatrix();
     XMMATRIX translation = XMMatrixTranslationFromVector(Position);
 
-    XMMATRIX result = scale * rotation * translation;
+    XMMATRIX result = rotation * translation;
 
     ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
 
@@ -174,13 +173,6 @@ void RigidBody::SetPosition(const DirectX::XMVECTOR& pos)
 {
     AcquireSRWLockExclusive(&m_Lock);
     Position = pos;
-    ReleaseSRWLockExclusive(&m_Lock);
-}
-
-void RigidBody::SetBodyScale(const DirectX::XMVECTOR& scale)
-{
-    AcquireSRWLockExclusive(&m_Lock);
-    Scale = scale;
     ReleaseSRWLockExclusive(&m_Lock);
 }
 
@@ -295,14 +287,6 @@ DirectX::XMVECTOR RigidBody::GetPosition() const
 {
     AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = Position;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-    return result;
-}
-
-DirectX::XMVECTOR RigidBody::GetBodyScale() const
-{
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-    auto result = Scale;
     ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
