@@ -7,6 +7,7 @@
 #include "RenderManager/RenderManager.h"
 #include "FileManager/FileLoader/SweetLoader.h"
 #include "GuiManager/GuiManager.h"
+#include "GuiManager/Widgets/PhysicsManagerUI.h"
 #include "InputHandler/InputHandler.h"
 #include "PhysicsManager/PhysicsManager.h"
 #include "RenderManager/Model/Shapes/ModelCube.h"
@@ -44,7 +45,7 @@ private:
 	std::unique_ptr<InputHandler> m_InputHandler{ nullptr };
 	std::unique_ptr<ScenarioManager> m_ScenarioManager{ nullptr };
 	std::unique_ptr<PhysicsManager> m_PhysicsManager{ nullptr };
-
+	std::unique_ptr<PhysicsManagerUI> m_PhysicsManagerUI{ nullptr };
 	SweetLoader mSweetLoader{};
 
 	std::unordered_map<EventType, EventHandler> m_EventHandlers;

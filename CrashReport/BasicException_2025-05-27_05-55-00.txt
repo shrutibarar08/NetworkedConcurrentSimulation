@@ -1,0 +1,2 @@
+[05:55:00] [ERROR] (UnknownFile:0 | UnknownFunction) - Shader compilation failed: Shaders/CubeShader/CubePS.hlsl
+

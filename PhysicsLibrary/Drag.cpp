@@ -4,12 +4,17 @@
 
 #include <DirectXMath.h>
 
+#include "ICollider.h"
+
 Drag::Drag(float k1, float k2)
     : K1(k1), K2(k2)
 {}
 
-void Drag::UpdateForce(RigidBody* body, float duration)
+void Drag::UpdateForce(ICollider* collider, float duration)
 {
+    if (!collider) return;
+    RigidBody* body = collider->GetRigidBody();
+
     DirectX::XMVECTOR velocity = body->GetVelocity();
 
     // Calculate the speed (magnitude of the velocity vector)

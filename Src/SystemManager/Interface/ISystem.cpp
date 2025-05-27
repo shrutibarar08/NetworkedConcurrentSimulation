@@ -17,6 +17,8 @@ bool ISystem::Init()
 		0,
 		nullptr
 	);
+	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	SetThreadPriority(mThreadHandle, THREAD_PRIORITY_TIME_CRITICAL);
 
 	mInitializedEventHandle = CreateEvent(
 		nullptr,

@@ -14,9 +14,12 @@ std::string ModelCapsuleUI::MenuName() const
 
 void ModelCapsuleUI::RenderOnScreen()
 {
+    if (!m_bStatic) return;
+    if (!m_RigidBody || !m_Collider) return;
     m_RigidBody = m_Capsule->GetRigidBody();
-    //m_Collider = dynamic_cast<CubeCollider*>(m_Cube->GetCollider());
-    if (!m_RigidBody) return;
+    m_Collider = dynamic_cast<CapsuleCollider*>(m_Capsule->GetCollider());
+    m_bStatic = m_Collider->GetColliderState() == ColliderSate::Static;
+    if (!m_bStatic) return;
 
     std::string headingEdit = "RigidBody (Edit) " + std::to_string(m_Capsule->GetModelId());
     if (ImGui::CollapsingHeader(headingEdit.c_str()))
@@ -71,5 +74,25 @@ void ModelCapsuleUI::RenderOnScreen()
 
         if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
             m_RigidBody->SetFriction(m_Friction);
+
+        if (m_Collider && ImGui::CollapsingHeader("Collider Properties"))
+        {
+            float height = m_Collider->GetHeight();
+            float radius = m_Collider->GetRadius();
+
+            if (ImGui::DragFloat("Height", &height, 0.01f, 0.0f, 1.5f))
+                m_Collider->SetHeight(height);
+
+            if (ImGui::DragFloat("Radius", &radius, 0.01f, 0.0f, 1.5f))
+                m_Collider->SetRadius(radius);
+
+            static const char* stateLabels[] = { "Dynamic", "Static", "Resting" };
+            int currentStateIndex = static_cast<int>(m_Collider->GetColliderState());
+
+            if (ImGui::Combo("Collider State", &currentStateIndex, stateLabels, IM_ARRAYSIZE(stateLabels)))
+            {
+                m_Collider->SetColliderState(static_cast<ColliderSate>(currentStateIndex));
+            }
+        }
     }
 }

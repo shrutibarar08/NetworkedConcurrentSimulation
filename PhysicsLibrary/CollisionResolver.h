@@ -7,10 +7,11 @@ class CollisionResolver
 {
 public:
     // Resolve a single contact (positional + velocity)
-    static void ResolveContact(Contact& contact, float deltaTime);
+    static void ResolveContact(Contact& contact, float deltaTime, float totalTime);
 
     // Resolve a batch of contacts (e.g. from PhysicsManager)
-    static void ResolveContacts(std::vector<Contact>& contacts, float deltaTime);
+    static void ResolveContacts(std::vector<Contact>& contacts, float deltaTime, float totalTime);
+    static void SetToleranceCount(int val);
 
 private:
     //~ Resolve Inter Penetration
@@ -46,4 +47,7 @@ private:
         const DirectX::XMMATRIX& invInertiaA, const DirectX::XMMATRIX& invInertiaB);
 
     static DirectX::XMVECTOR GenerateRandomAngularNoise(float strength);
+
+private:
+    inline static int m_ResolveTolerance{ 6 }; // always choose even.
 };

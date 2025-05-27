@@ -1,6 +1,7 @@
 #include "ScenarioManager.h"
 #include <ranges>
 
+#include "ApplicationManager/Clock/SystemClock.h"
 #include "GuiManager/Widgets/ScenarioManagerUI.h"
 #include "Utils/Logger.h"
 
@@ -18,7 +19,16 @@ bool ScenarioManager::Shutdown()
 
 bool ScenarioManager::Run()
 {
-	return ISystem::Run();
+	if (ISystem::Run())
+	{
+		float deltaTime = m_LocalTimer.Tick();
+		if (m_ActiveScene)
+		{
+			m_ActiveScene->OnUpdate(deltaTime);
+		}
+		else m_LocalTimer.Reset();
+	}
+	return true;
 }
 
 bool ScenarioManager::Build(SweetLoader& sweetLoader)

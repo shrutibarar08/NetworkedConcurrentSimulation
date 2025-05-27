@@ -16,9 +16,12 @@ std::string ModelSphereUI::MenuName() const
 
 void ModelSphereUI::RenderOnScreen()
 {
+    if (!m_bStatic) return;
+    if (!m_RigidBody || !m_Collider) return;
     m_RigidBody = m_Sphere->GetRigidBody();
-    //m_Collider = dynamic_cast<CubeCollider*>(m_Cube->GetCollider());
-    if (!m_RigidBody) return;
+    m_Collider = dynamic_cast<SphereCollider*>(m_Sphere->GetCollider());
+    m_bStatic = m_Collider->GetColliderState() == ColliderSate::Static;
+    if (!m_bStatic) return;
 
     std::string headingEdit = "RigidBody (Edit) " + std::to_string(m_Sphere->GetModelId());
     if (ImGui::CollapsingHeader(headingEdit.c_str()))
@@ -73,5 +76,20 @@ void ModelSphereUI::RenderOnScreen()
 
         if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
             m_RigidBody->SetFriction(m_Friction);
+
+        if (m_Collider && ImGui::CollapsingHeader("Collider Properties"))
+        {
+            float radius = m_Sphere->GetRadius();
+            if (ImGui::DragFloat("Sphere Radius", &radius, 0.01f, 0.01f, 100.0f))
+                m_Sphere->SetRadius(radius);
+
+            static const char* stateLabels[] = { "Dynamic", "Static", "Resting" };
+            int currentStateIndex = static_cast<int>(m_Collider->GetColliderState());
+
+            if (ImGui::Combo("Collider State", &currentStateIndex, stateLabels, IM_ARRAYSIZE(stateLabels)))
+            {
+                m_Collider->SetColliderState(static_cast<ColliderSate>(currentStateIndex));
+            }
+        }
     }
 }

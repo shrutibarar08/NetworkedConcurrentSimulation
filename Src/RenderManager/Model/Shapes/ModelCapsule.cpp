@@ -11,6 +11,30 @@ ModelCapsule::ModelCapsule(const MODEL_INIT_DESC* desc)
 	m_RigidBody.SetMass(10);
 }
 
+float ModelCapsule::GetRadius() const
+{
+	if (!m_Collider) return 1.0f; // default
+	return m_Collider->GetRadius();
+}
+
+float ModelCapsule::GetHeight() const
+{
+	if (!m_Collider) return 1.0f; // default
+	return m_Collider->GetHeight();
+}
+
+void ModelCapsule::SetRadius(float radius)
+{
+	if (!m_Collider) return;
+	m_Collider->SetRadius(radius);
+}
+
+void ModelCapsule::SetHeight(float height)
+{
+	if (!m_Collider) return;
+	m_Collider->SetHeight(height);
+}
+
 ICollider* ModelCapsule::GetCollider() const
 {
 	if (m_Collider) return m_Collider.get();

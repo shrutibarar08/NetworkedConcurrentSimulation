@@ -4,18 +4,18 @@
 
 
 
-void ForceRegistry::Add(RigidBody* body, ForceGenerator* fg)
+void ForceRegistry::Add(ICollider* collider, ForceGenerator* fg)
 {
-    RegisteredForces.push_back({body,fg});
+    RegisteredForces.push_back({collider,fg});
 }
 
-void ForceRegistry::Remove(RigidBody* body, ForceGenerator* fg)
+void ForceRegistry::Remove(ICollider* collider, ForceGenerator* fg)
 {
     RegisteredForces.erase(
         std::remove_if(RegisteredForces.begin(), RegisteredForces.end(),
             [&](const ForceRegistration& reg)
             {
-                return reg.RigidBody == body && reg.ForceGenerates == fg;
+                return reg.Collider == collider && reg.ForceGenerates == fg;
             }),
         RegisteredForces.end()
     );
@@ -30,9 +30,9 @@ void ForceRegistry::UpdateForces(float duration) const
 {
     for (auto& reg : RegisteredForces)
     {
-        if (reg.RigidBody)
+        if (reg.Collider)
         {
-            reg.ForceGenerates->UpdateForce(reg.RigidBody, duration);
+            reg.ForceGenerates->UpdateForce(reg.Collider, duration);
         }
     }
 }

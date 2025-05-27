@@ -60,6 +60,9 @@ bool Application::Init()
 	m_PhysicsManager = std::make_unique<PhysicsManager>();
 	m_PhysicsManager->CreateOnThread(true);
 	m_PhysicsManager->SetGlobalEvent(&m_GlobalEvent);
+
+	m_PhysicsManagerUI = std::make_unique<PhysicsManagerUI>(m_PhysicsManager.get());
+
 	m_SystemHandler.Register("PhysicsManager", m_PhysicsManager.get());
 	m_SystemHandler.AddDependency("PhysicsManager", "WindowsSystem");
 
@@ -86,6 +89,7 @@ bool Application::Init()
 	m_GuiManager->AddUI(m_Renderer->GetWidget());
 	m_GuiManager->AddUI(m_WindowSystem->GetWidget());
 	m_GuiManager->AddUI(m_InputHandler->GetWidget());
+	m_GuiManager->AddUI(m_PhysicsManagerUI.get());
 
 	m_SystemHandler.Register("GuiManager", m_GuiManager.get());
 	m_SystemHandler.AddDependency(
@@ -148,6 +152,7 @@ bool Application::Run()
 		}
 		m_GuiManager->Run();
 		m_Renderer->Run();
+		m_ScenarioManager->Run();
 	}
 	std::cout << "Waiting for Finishing\n";
 	m_SystemHandler.WaitFinish();

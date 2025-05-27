@@ -26,15 +26,96 @@ void SceneUI::RenderMenu()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::MenuItem("View Objects"))
-	{
-		m_ShowObjects = !m_ShowObjects;
-	}
+    if (ImGui::BeginMenu("Utility"))
+    {
+        if (ImGui::MenuItem("View Objects"))
+        {
+            m_ShowObjects = !m_ShowObjects;
+        }
+        if (ImGui::MenuItem("Open Spawner"))
+        {
+            m_PopUpSpawner = true;
+        }
+        ImGui::EndMenu();
+    }
 }
 
 void SceneUI::RenderOnScreen()
 {
-	DisplayObjects();
+	// DisplayObjects();
+}
+
+void SceneUI::RenderPopups()
+{
+    if (m_PopUpSpawner)
+    {
+        ImGui::OpenPopup("Auto Object Spawner");
+        m_PopUpSpawner = false;
+    }
+
+    if (ImGui::BeginPopupModal("Auto Object Spawner", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        CREATE_SCENE_PAYLOAD& p = m_ScenePayload;
+
+        ImGui::Text("Spawn Position Range:");
+        ImGui::DragFloat3("Min Position", &p.minPosition.x, 0.1f);
+        ImGui::DragFloat3("Max Position", &p.maxPosition.x, 0.1f);
+
+        ImGui::Text("Velocity Range:");
+        ImGui::DragFloat3("Min Velocity", &p.minVelocity.x, 0.1f);
+        ImGui::DragFloat3("Max Velocity", &p.maxVelocity.x, 0.1f);
+
+        ImGui::Text("Acceleration Range:");
+        ImGui::DragFloat3("Min Acceleration", &p.minAcceleration.x, 0.1f);
+        ImGui::DragFloat3("Max Acceleration", &p.maxAcceleration.x, 0.1f);
+
+        ImGui::Text("Angular Velocity Range:");
+        ImGui::DragFloat3("Min Angular Velocity", &p.minAngularVelocity.x, 0.1f);
+        ImGui::DragFloat3("Max Angular Velocity", &p.maxAngularVelocity.x, 0.1f);
+
+        ImGui::DragFloat("Min Mass", &p.minMass, 0.1f, 0.01f, 100.f);
+        ImGui::DragFloat("Max Mass", &p.maxMass, 0.1f, 0.01f, 100.f);
+
+        ImGui::DragFloat("Min Elasticity", &p.minElasticity, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Max Elasticity", &p.maxElasticity, 0.01f, 0.0f, 1.0f);
+
+        ImGui::DragFloat("Min Restitution", &p.minRestitution, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Max Restitution", &p.maxRestitution, 0.01f, 0.0f, 1.0f);
+
+        ImGui::DragFloat("Min Friction", &p.minFriction, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Max Friction", &p.maxFriction, 0.01f, 0.0f, 1.0f);
+
+        ImGui::DragFloat("Min Angular Damping", &p.minAngularDamping, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Max Angular Damping", &p.maxAngularDamping, 0.01f, 0.0f, 1.0f);
+
+        ImGui::DragFloat("Min Linear Damping", &p.minLinearDamping, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Max Linear Damping", &p.maxLinearDamping, 0.01f, 0.0f, 1.0f);
+
+        ImGui::DragInt("Spawn Quantity", &p.quantity, 1, 1, 1000);
+
+        ImGui::Text("Types to Spawn:");
+        ImGui::Checkbox("Cube", &p.spawnCube);
+        ImGui::Checkbox("Sphere", &p.spawnSphere);
+        ImGui::Checkbox("Capsule", &p.spawnCapsule);
+        ImGui::DragFloat("Delta Spawn Time (s)", &p.deltaSpawnTime, 0.01f, 0.0f, 10.0f);
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Spawn Objects"))
+        {
+        	if (m_Scene) m_Scene->AutoSpawn(m_ScenePayload);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 std::string SceneUI::MenuName() const
@@ -47,6 +128,7 @@ void SceneUI::DisplayObjects() const
     for (auto& object : m_Scene->GetModels() | std::views::values)
     {
         if (!object) continue;
+        if (object->GetCollider()->GetColliderState() != ColliderSate::Static) return;
 
         if (IWidget* widget = object->GetWidget())
         {

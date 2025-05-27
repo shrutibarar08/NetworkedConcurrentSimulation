@@ -132,7 +132,7 @@ bool SphereCollider::CheckCollisionWithCube(ICollider* other, Contact& outContac
 
     // === STEP 1: Get transforms ===
     XMVECTOR sphereCenter = m_RigidBody->GetPosition();
-    float radius = GetRadius() * 0.5f;
+    float radius = GetRadius();
 
     XMVECTOR cubeCenter = cube->GetRigidBody()->GetPosition();
     XMVECTOR cubeHalfExtents = cube->GetHalfExtents();

@@ -42,7 +42,7 @@ void CapsuleCollider::SetRadius(float radius)
     m_Radius = radius;
 
     // Update X and Z components of scale (diameter)
-    float diameter = radius * 2.0f;
+    float diameter = radius * 1.3f; // Computational issue temp solution
 
     DirectX::XMFLOAT3 scale;
     DirectX::XMStoreFloat3(&scale, m_Scale);

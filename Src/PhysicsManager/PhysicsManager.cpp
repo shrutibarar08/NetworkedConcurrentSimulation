@@ -8,6 +8,12 @@
 #include "Contact.h"
 #include "RigidBody.h"
 
+PhysicsManager::PhysicsManager()
+{
+    DirectX::XMVECTOR grav{ 0.f, -9.81f, 0.f };
+    m_Gravity = std::make_unique<Gravity>(grav);
+}
+
 bool PhysicsManager::Shutdown()
 {
 	return ISystem::Shutdown();
@@ -28,7 +34,10 @@ bool PhysicsManager::Run()
                 break;
             }
         }
-        Update(SystemClock::GetDeltaTime(), IntegrationType::Euler);
+        constexpr float dt = 1.0f / 60.0f; // fixed timestep
+        float time = m_Timer.Tick();
+        Update(time, IntegrationType::Euler);
+        Sleep(dt);
     }
     return true;
 }
@@ -50,6 +59,9 @@ bool PhysicsManager::AddRigidBody(const IModel* model)
     }
 
     m_PhysicsEntity[id] = model->GetCollider();
+    m_ForceRegister.Add(model->GetCollider(), m_Gravity.get());
+    int key = GetColliderKey(m_PhysicsEntity[id]);
+    IncreaseCount(key);
     ReleaseSRWLockExclusive(&m_Lock);
 	LOG_SUCCESS("Added model in physics loop!");
     return true;
@@ -60,6 +72,10 @@ bool PhysicsManager::RemoveRigidBody(ID id)
     if (!m_PhysicsEntity.contains(id)) return false;
 
     AcquireSRWLockExclusive(&m_Lock);
+    m_ForceRegister.Remove(m_PhysicsEntity[id], m_Gravity.get());
+    int key = GetColliderKey(m_PhysicsEntity[id]);
+    DecreaseCount(key);
+
     m_PhysicsEntity.erase(id);
     ReleaseSRWLockExclusive(&m_Lock);
 
@@ -68,35 +84,84 @@ bool PhysicsManager::RemoveRigidBody(ID id)
 
 bool PhysicsManager::HasRigidBody(uint64_t id)
 {
-    AcquireSRWLockExclusive(&m_Lock);
-    bool status = status = m_PhysicsEntity.contains(id);
-    ReleaseSRWLockExclusive(&m_Lock);
-    return status;
+    return m_PhysicsEntity.contains(id);
+}
+
+int PhysicsManager::GetCubeCounts()
+{
+    return m_ObjectInfo[1];
+}
+
+int PhysicsManager::GetSphereCounts()
+{
+    return m_ObjectInfo[0];
+}
+
+int PhysicsManager::GetCapsuleCounts()
+{
+    return m_ObjectInfo[2];
+}
+
+int PhysicsManager::GetTotalCounts()
+{
+    return GetCapsuleCounts() + GetCubeCounts() + GetSphereCounts();
+}
+
+Gravity* PhysicsManager::GetGravity() const
+{
+    if (m_Gravity) return m_Gravity.get();
+    return nullptr;
+}
+
+int PhysicsManager::GetColliderKey(const ICollider* collider) const
+{
+    if (collider->GetColliderType() == ColliderType::Capsule)
+    {
+        return 2;
+    }
+    if (collider->GetColliderType() == ColliderType::Cube)
+    {
+        return 1;
+    }
+    if (collider->GetColliderType() == ColliderType::Sphere)
+    {
+        return 0;
+    }
+    return -1;
+}
+
+void PhysicsManager::IncreaseCount(int colliderKey)
+{
+    m_ObjectInfo[colliderKey]++;
+}
+
+void PhysicsManager::DecreaseCount(int colliderKey)
+{
+    m_ObjectInfo[colliderKey]--;
 }
 
 void PhysicsManager::Update(float dt, IntegrationType type)
 {
+    m_TotalTime += dt;
+	// === Integrate bodies ===
     AcquireSRWLockShared(&m_Lock);
+    size_t count = m_PhysicsEntity.size();
+    std::vector<ICollider*> colliders;
+    std::vector<uint64_t> ids;
 
-    // === Integrate bodies ===
-    for (auto& collider : m_PhysicsEntity | std::views::values)
+    for (auto& collider : m_PhysicsEntity)
     {
-        if (!collider) continue;
+        if (!collider.second) continue;
 
-        RigidBody* body = collider->GetRigidBody();
+        RigidBody* body = collider.second->GetRigidBody();
         if (!body) continue;
+        colliders.push_back(collider.second);
+        ids.push_back(collider.first);
 
         body->Integrate(dt, type);
     }
-
-    size_t count = m_PhysicsEntity.size();
-    std::vector<ICollider*> colliders;
-    colliders.reserve(count);
-
-    for (auto& collider : m_PhysicsEntity | std::views::values)
-    {
-        if (collider) colliders.push_back(collider);
-    }
+    m_ForceRegister.UpdateForces(dt);
+    ReleaseSRWLockShared(&m_Lock);
 
     // === Collision detection ===
     std::vector<Contact> contacts;
@@ -112,63 +177,10 @@ void PhysicsManager::Update(float dt, IntegrationType type)
             Contact contact;
             if (colliderA->CheckCollision(colliderB, contact))
             {
-
-                if (colliderA->GetColliderType() == ColliderType::Capsule ||
-                    colliderB->GetColliderType() == ColliderType::Capsule)
-                {
-                    RigidBody* bodyA = colliderA->GetRigidBody();
-                    RigidBody* bodyB = colliderB->GetRigidBody();
-
-                    using namespace DirectX;
-
-                    XMFLOAT3 posA{}, velA{}, angVelA{};
-                    XMFLOAT3 posB{}, velB{}, angVelB{};
-
-                    if (colliderA->GetColliderType() == ColliderType::Capsule ||
-                        colliderB->GetColliderType() == ColliderType::Capsule)
-                    {
-                        RigidBody* bodyA = colliderA->GetRigidBody();
-                        RigidBody* bodyB = colliderB->GetRigidBody();
-
-                        using namespace DirectX;
-
-                        XMFLOAT3 posA{}, velA{}, angVelA{};
-                        XMFLOAT3 posB{}, velB{}, angVelB{};
-
-                        if (bodyA)
-                        {
-                            XMStoreFloat3(&posA, bodyA->GetPosition());
-                            XMStoreFloat3(&velA, bodyA->GetVelocity());
-                            XMStoreFloat3(&angVelA, bodyA->GetAngularVelocity());
-
-                            LOG_INFO(std::string("Capsule A - Pos: (") +
-                                std::to_string(posA.x) + ", " + std::to_string(posA.y) + ", " + std::to_string(posA.z) + "), Vel: (" +
-                                std::to_string(velA.x) + ", " + std::to_string(velA.y) + ", " + std::to_string(velA.z) + "), AngVel: (" +
-                                std::to_string(angVelA.x) + ", " + std::to_string(angVelA.y) + ", " + std::to_string(angVelA.z) + ")"
-                            );
-                        }
-
-                        if (bodyB)
-                        {
-                            XMStoreFloat3(&posB, bodyB->GetPosition());
-                            XMStoreFloat3(&velB, bodyB->GetVelocity());
-                            XMStoreFloat3(&angVelB, bodyB->GetAngularVelocity());
-
-                            LOG_INFO(std::string("Capsule B - Pos: (") +
-                                std::to_string(posB.x) + ", " + std::to_string(posB.y) + ", " + std::to_string(posB.z) + "), Vel: (" +
-                                std::to_string(velB.x) + ", " + std::to_string(velB.y) + ", " + std::to_string(velB.z) + "), AngVel: (" +
-                                std::to_string(angVelB.x) + ", " + std::to_string(angVelB.y) + ", " + std::to_string(angVelB.z) + ")"
-                            );
-                        }
-                    }
-                }
-
                 contacts.push_back(contact);
             }
         }
     }
     // === Resolve all detected contacts ===
-    CollisionResolver::ResolveContacts(contacts, dt);
-
-    ReleaseSRWLockShared(&m_Lock);
+    CollisionResolver::ResolveContacts(contacts, dt, m_TotalTime);
 }

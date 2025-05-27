@@ -32,5 +32,6 @@ private:
 	Scene* m_ActiveScene{ nullptr };
 
 	SRWLOCK m_Lock;
+	LocalTimer m_LocalTimer{};
 };
 

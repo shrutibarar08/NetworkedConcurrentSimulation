@@ -143,6 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Utils\Randomizer.cpp" />
+    <ClCompile Include="Src\GuiManager\Widgets\PhysicsManagerUI.cpp" />
+    <ClCompile Include="Src\RenderManager\ShaderCache.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\ModelCapsuleUI.cpp" />
     <ClCompile Include="Src\RenderManager\Model\Shapes\ModelCapsule.cpp" />
     <ClCompile Include="Src\GuiManager\Widgets\ModelSphereUI.cpp" />
@@ -189,6 +192,10 @@
     <ClCompile Include="Src\ApplicationManager\Clock\SystemClock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Utils\LocalTimer.h" />
+    <ClInclude Include="Src\Utils\Randomizer.h" />
+    <ClInclude Include="Src\GuiManager\Widgets\PhysicsManagerUI.h" />
+    <ClInclude Include="Src\RenderManager\ShaderCache.h" />
     <ClInclude Include="Src\GuiManager\Widgets\ModelCapsuleUI.h" />
     <ClInclude Include="Src\RenderManager\Model\Shapes\ModelCapsule.h" />
     <ClInclude Include="Src\GuiManager\Widgets\ModelSphereUI.h" />

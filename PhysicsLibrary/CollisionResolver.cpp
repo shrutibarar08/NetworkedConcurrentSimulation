@@ -4,23 +4,28 @@
 #include <algorithm>
 #include <random>
 
-void CollisionResolver::ResolveContact(Contact& contact, float deltaTime)
+void CollisionResolver::ResolveContact(Contact& contact, float deltaTime, float totalTime)
 {
     ICollider* a = contact.Colliders[0];
     ICollider* b = contact.Colliders[1];
     if (!a || !b) return;
 
-    ResolvePositionInterpenetration(contact);
     if (IsStatic(a) && IsStatic(b)) return;
-    ResolveVelocity(contact, deltaTime);
+    ResolvePositionInterpenetration(contact);
+	ResolveVelocity(contact, deltaTime);
 }
 
-void CollisionResolver::ResolveContacts(std::vector<Contact>& contacts, float deltaTime)
+void CollisionResolver::ResolveContacts(std::vector<Contact>& contacts, float deltaTime, float totalTime)
 {
     for (Contact& contact : contacts)
     {
-        ResolveContact(contact, deltaTime);
+        ResolveContact(contact, deltaTime, totalTime);
     }
+}
+
+void CollisionResolver::SetToleranceCount(int val)
+{
+    m_ResolveTolerance = val;
 }
 
 void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
@@ -62,7 +67,7 @@ void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
 
     // === Penetration correction params ===
     constexpr float slop = 0.01f;      // Overlap allowed before correction
-    constexpr float percent = 1.0f;    // Resolve full overlap to prevent sticking
+    constexpr float percent = 1.1f;    // Resolve full overlap to prevent sticking
 
     float cd = penetration - slop;
     float correctionDepth = cd > 0.0f ? cd : 0.0f;
@@ -380,21 +385,60 @@ void CollisionResolver::ResolveDynamicVsDynamic(
 
     float invMassA = bodyA->GetInverseMass();
     float invMassB = bodyB->GetInverseMass();
+    if (invMassA + invMassB <= 0.0f) return;
 
-    // === Include elasticity factor (optional) ===
+    // === Combine Restitution and Elasticity ===
     float elasticity = 0.5f * (bodyA->GetElasticity() + bodyB->GetElasticity());
-    float effectiveRestitution = restitution * (1.0f + elasticity); // Boost bounciness slightly
+    float combinedRestitution = restitution * (1.0f + elasticity);
 
-    // === Compute impulse magnitude ===
-    float denom = ComputeDenominator(invMassA, invMassB, rA, rB, normal, invInertiaA, invInertiaB);
-    if (denom <= 0.0f) return;
+    // === Angular Effects ===
+    XMVECTOR rA_cross_n = XMVector3Cross(rA, normal);
+    XMVECTOR rB_cross_n = XMVector3Cross(rB, normal);
 
-    float impulseMag = -effectiveRestitution * sepVel / denom;
+    XMVECTOR angA = XMVector3Cross(XMVector3Transform(rA_cross_n, invInertiaA), rA);
+    XMVECTOR angB = XMVector3Cross(XMVector3Transform(rB_cross_n, invInertiaB), rB);
+
+    float angularEffect = XMVectorGetX(XMVector3Dot(angA + angB, normal));
+    float denom = invMassA + invMassB + angularEffect;
+    if (denom <= 1e-6f) return;
+
+    // === Impulse Magnitude ===
+    float impulseMag = -combinedRestitution * sepVel / denom;
     XMVECTOR impulse = normal * impulseMag;
 
-    // === Apply to both bodies (linear + angular) ===
+    // === LINEAR + ANGULAR ===
     ApplyImpulse(bodyA, impulse, rA, invInertiaA);
     ApplyImpulse(bodyB, -impulse, rB, invInertiaB);
+
+    // === Bounce-back Velocity ===
+    XMVECTOR newVelA = bodyA->GetVelocity() + impulse * invMassA;
+    XMVECTOR newVelB = bodyB->GetVelocity() - impulse * invMassB;
+    bodyA->SetVelocity(newVelA);
+    bodyB->SetVelocity(newVelB);
+
+    // === Friction ===
+    XMVECTOR velA = GetVelocityAtPoint(bodyA, rA);
+    XMVECTOR velB = GetVelocityAtPoint(bodyB, rB);
+    XMVECTOR relativeVel = velA - velB;
+
+    XMVECTOR tangent = relativeVel - normal * XMVector3Dot(relativeVel, normal);
+    if (XMVector3LengthSq(tangent).m128_f32[0] > 1e-6f)
+    {
+        tangent = XMVector3Normalize(tangent);
+
+        float friction = 0.5f * (bodyA->GetFriction() + bodyB->GetFriction());
+        float tangentialVelMag = XMVectorGetX(XMVector3Dot(relativeVel, tangent));
+        float frictionImpulseMag = -tangentialVelMag / denom;
+
+        float normalImpulseMag = XMVectorGetX(XMVector3Length(impulse));
+        float maxFrictionImpulse = friction * normalImpulseMag;
+        frictionImpulseMag = std::clamp(frictionImpulseMag, -maxFrictionImpulse, maxFrictionImpulse);
+
+        XMVECTOR frictionImpulse = tangent * frictionImpulseMag;
+
+        ApplyImpulse(bodyA, frictionImpulse, rA, invInertiaA);
+        ApplyImpulse(bodyB, -frictionImpulse, rB, invInertiaB);
+    }
 }
 
 DirectX::XMVECTOR CollisionResolver::GenerateRandomAngularNoise(float strength)

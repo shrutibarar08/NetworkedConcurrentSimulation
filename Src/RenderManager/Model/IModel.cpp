@@ -5,6 +5,8 @@
 #include <cassert>
 #include <d3dcompiler.h>
 
+#include "RenderManager/ShaderCache.h"
+
 
 IModel::IModel(const MODEL_INIT_DESC* desc)
 	: m_IndexCount(0), m_ModelID(++s_ModelCounter)
@@ -136,6 +138,27 @@ RigidBody* IModel::GetRigidBody()
 	return &m_RigidBody;
 }
 
+void IModel::SetPayload(const CREATE_PAYLOAD& payload)
+{
+	// Set position
+	m_RigidBody.SetPosition(DirectX::XMLoadFloat3(&payload.Position));
+
+	// Set linear velocity and acceleration
+	m_RigidBody.SetVelocity(DirectX::XMLoadFloat3(&payload.Velocity));
+	m_RigidBody.SetAcceleration(DirectX::XMLoadFloat3(&payload.Acceleration));
+
+	// Set angular velocity
+	m_RigidBody.SetAngularVelocity(DirectX::XMLoadFloat3(&payload.AngularVelocity));
+
+	// Set scalar properties
+	m_RigidBody.SetMass(payload.Mass);
+	m_RigidBody.SetElasticity(payload.Elasticity);
+	m_RigidBody.SetRestitution(payload.Restitution);
+	m_RigidBody.SetFriction(payload.Friction);
+	m_RigidBody.SetAngularDamping(payload.AngularDamping);
+	m_RigidBody.SetLinearDamping(payload.LinearDamping);
+}
+
 void IModel::BuildVertexBuffer(ID3D11Device* device)
 {
 	std::vector<VERTEX> vertices = BuildVertex();
@@ -163,48 +186,12 @@ void IModel::BuildVertexBuffer(ID3D11Device* device)
 
 void IModel::BuildVertexShaderBlob(ID3D11Device* device)
 {
-	std::wstring wPath = std::wstring(m_VertexShaderPath.begin(), m_VertexShaderPath.end());
-
-	if (Help_IsSrcExtensionOf(m_VertexShaderPath, "cso"))
-	{
-		
-		HRESULT hr = D3DReadFileToBlob(wPath.c_str(),&m_VertexShaderBlob);
-		THROW_RENDER_EXCEPTION_IF_FAILED(hr);
-
-	}else if (Help_IsSrcExtensionOf(m_VertexShaderPath, "hlsl"))
-	{
-		UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-		compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-		Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
-
-		HRESULT hr = D3DCompileFromFile(
-			wPath.c_str(),
-			nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"main", "vs_4_0",
-			compileFlags, 0,
-			&m_VertexShaderBlob,
-			&errorBlob);
-
-		if (FAILED(hr))
-		{
-			if (errorBlob)
-			{
-				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			}
-			THROW_RENDER_EXCEPTION_HR(hr);
-		}
-	}
-	else
-	{
-		throw std::invalid_argument("Unsupported shader file extension.");
-	}
+	ID3DBlob* blob = ShaderCache::GetShader(m_VertexShaderPath);
+	if (!blob) THROW_EXCEPTION();
 
 	HRESULT hr = device->CreateVertexShader(
-		m_VertexShaderBlob->GetBufferPointer(),
-		m_VertexShaderBlob->GetBufferSize(),
+		blob->GetBufferPointer(),
+		blob->GetBufferSize(),
 		nullptr,
 		&m_VertexShader);
 	
@@ -215,58 +202,12 @@ void IModel::BuildVertexShaderBlob(ID3D11Device* device)
 
 void IModel::BuildPixelShaderBlob(ID3D11Device* device)
 {
-	std::wstring wPath = std::wstring(
-		m_PixelShaderPath.begin(),
-		m_PixelShaderPath.end()
-	);
-
-	if (Help_IsSrcExtensionOf(m_PixelShaderPath, "cso"))
-	{
-
-		HRESULT hr = D3DReadFileToBlob
-		(
-			wPath.c_str(),
-			&m_PixelShaderBlob
-		);
-		
-		THROW_RENDER_EXCEPTION_IF_FAILED(hr);
-
-	}
-	else if (Help_IsSrcExtensionOf(m_PixelShaderPath, "hlsl"))
-	{
-		UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-		compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-		Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
-
-		HRESULT hr = D3DCompileFromFile(
-			wPath.c_str(),
-			nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"main", "ps_4_0",
-			compileFlags, 0,
-			&m_PixelShaderBlob,
-			&errorBlob);
-
-		if (FAILED(hr))
-		{
-			if (errorBlob)
-			{
-				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			}
-			THROW_RENDER_EXCEPTION_HR(hr);
-		}
-	}
-	else
-	{
-		throw std::invalid_argument("Unsupported shader file extension.");
-	}
-
+	ID3DBlob* blob = ShaderCache::GetShader(m_PixelShaderPath);
+	if (!blob) THROW_EXCEPTION();
 
 	HRESULT hr = device->CreatePixelShader(
-		m_PixelShaderBlob->GetBufferPointer(),
-		m_PixelShaderBlob->GetBufferSize(),
+		blob->GetBufferPointer(),
+		blob->GetBufferSize(),
 		nullptr,
 		&m_PixelShader);
 
@@ -322,18 +263,17 @@ void IModel::BuildInputLayout(ID3D11Device* device)
 
 	UINT size = ARRAYSIZE(inputDesc);
 
-	if (m_VertexShaderBlob == nullptr) BuildVertexShaderBlob(device);
-
+	ID3DBlob* blob = ShaderCache::GetShader(m_VertexShaderPath);
+	if (blob == nullptr) BuildVertexShaderBlob(device);
 
 	HRESULT hr = device->CreateInputLayout(
 		inputDesc,
 		size,
-		m_VertexShaderBlob->GetBufferPointer(),
-		m_VertexShaderBlob->GetBufferSize(),
+		blob->GetBufferPointer(),
+		blob->GetBufferSize(),
 		&m_InputLayout
 	);
 	THROW_RENDER_EXCEPTION_IF_FAILED(hr);
-
 
 	LOG_INFO("InputLayout Built");
 }

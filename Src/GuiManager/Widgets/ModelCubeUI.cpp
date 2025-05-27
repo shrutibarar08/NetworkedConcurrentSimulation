@@ -20,9 +20,12 @@ std::string ModelCubeUI::MenuName() const
 
 void ModelCubeUI::RenderOnScreen()
 {
+    if (!m_bStatic) return;
     m_RigidBody = m_Cube->GetRigidBody();
     m_Collider = dynamic_cast<CubeCollider*>(m_Cube->GetCollider());
-    if (!m_RigidBody) return;
+    if (!m_RigidBody || !m_Collider) return;
+    m_bStatic = m_Collider->GetColliderState() == ColliderSate::Static;
+    if (!m_bStatic) return;
 
     std::string headingEdit = "RigidBody (Edit) " + std::to_string(m_Cube->GetModelId());
     if (ImGui::CollapsingHeader(headingEdit.c_str()))
@@ -84,7 +87,7 @@ void ModelCubeUI::RenderOnScreen()
             m_RigidBody->SetFriction(m_Friction);
 
         // === Collider State Combo ===
-        if (m_Collider)
+        if (m_Collider && ImGui::CollapsingHeader("Collider Properties"))
         {
 
             if (ImGui::DragFloat3("Scale", &m_Scale.x, 0.1f))

@@ -10,14 +10,14 @@ public:
 	~ModelCapsule() override = default;
 
 	// Getters
-	float GetRadius() const { return m_Radius; }
-	float GetHeight() const { return m_Height; }
+	float GetRadius() const;
+	float GetHeight() const;
 	UINT GetRings() const { return m_Rings; }
 	UINT GetSegments() const { return m_Segments; }
 
 	// Setters
-	void SetRadius(float radius) { m_Radius = radius; }
-	void SetHeight(float height) { m_Height = height; }
+	void SetRadius(float radius);
+	void SetHeight(float height);
 	void SetRings(UINT rings) { m_Rings = rings; }
 	void SetSegments(UINT segments) { m_Segments = segments; }
 	ICollider* GetCollider() const override;

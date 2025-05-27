@@ -31,3 +31,32 @@ const char* ICollider::GetColliderTypeName() const
 	    default: return "Unknown";
     }
 }
+
+void ICollider::SetLastHitCollider(ICollider* collider)
+{
+	if (m_LastHitCollider && m_LastHitCollider == collider)
+	{
+		m_LastHitColliderCounts++;
+	}else
+	{
+		m_LastHitCollider = collider;
+		m_LastHitColliderCounts = 0;
+		m_LastHitResolved = false;
+	}
+}
+
+int ICollider::GetHitCount(ICollider* collider, float totalTime)
+{
+	if (m_LastHitCollider && m_LastHitCollider == collider)
+	{
+		if (totalTime - m_LastHitTime <= 0.3)
+		{
+			m_LastHitColliderCounts++;
+			return m_LastHitColliderCounts;
+		}
+		m_LastHitColliderCounts = 1;
+		return m_LastHitColliderCounts;
+	}
+	SetLastHitCollider(collider);
+	return m_LastHitColliderCounts;
+}

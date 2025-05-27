@@ -98,12 +98,14 @@ UINT ModelSphere::GetLongitudeSegments() const
 
 float ModelSphere::GetRadius() const
 {
-    return m_Radius;
+    if (!m_Collider) return 1.0f;
+    return m_Collider->GetRadius();
 }
 
 void ModelSphere::SetRadius(float radius)
 {
-    m_Radius = radius;
+    if (!m_Collider) return;
+    m_Collider->SetRadius(radius);
 }
 
 ICollider* ModelSphere::GetCollider() const

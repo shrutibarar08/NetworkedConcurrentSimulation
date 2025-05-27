@@ -8,6 +8,7 @@
 #include "RenderManager/Model/Shapes/ModelSphere.h"
 #include "Utils/Logger.h"
 
+
 Scene::Scene(const std::string& name)
 	: m_Name(name)
 {
@@ -46,11 +47,25 @@ void Scene::OnOffLoad()
 
 void Scene::OnUpdate(float deltaTime)
 {
+	m_DeltaTime += deltaTime;
+
+	if (!m_ObjectsToCreate.empty())
+	{
+		const CREATE_PAYLOAD& next = m_ObjectsToCreate.top();
+
+		if (next.SpawnTime <= m_DeltaTime)
+		{
+			int key = AddObject(next.SpawnObject);
+			m_Models[key]->SetPayload(next);
+			m_ObjectsToCreate.pop();
+			m_DeltaTime = 0.0f;
+		}
+	}
 }
 
-unsigned int Scene::AddObject(SPAWN_OBJECT obj)
+int Scene::AddObject(SPAWN_OBJECT obj)
 {
-	int key = 0;
+	int key = -1;
 	switch (obj)
 	{
 	case SPAWN_OBJECT::CUBE:
@@ -100,9 +115,9 @@ unsigned int Scene::AddObject(SPAWN_OBJECT obj)
 	return key;
 }
 
-unsigned int Scene::AddObject(std::unique_ptr<IModel> model)
+int Scene::AddObject(std::unique_ptr<IModel> model)
 {
-	unsigned int key = model->GetModelId();
+	int key = model->GetModelId();
 	m_SafePointer[key] = model.get();
 	m_Models[key] = std::move(model);
 	if (m_State == State::LOADED) Render3DQueue::AddModel(m_Models[key].get());
@@ -121,7 +136,58 @@ void Scene::RemoveObject(unsigned int objId)
 	m_SafePointer.erase(objId);
 }
 
-std::unordered_map<unsigned int, IModel*> Scene::GetModels()
+void Scene::AutoSpawn(const CREATE_SCENE_PAYLOAD& settings)
+{
+	for (int i = 0; i < settings.quantity; ++i)
+	{
+		if (settings.spawnCube)
+		{
+			CREATE_PAYLOAD payload = GeneratePayloadFromSceneSettings(SPAWN_OBJECT::CUBE, settings);
+			payload.SpawnTime = settings.deltaSpawnTime;
+			m_ObjectsToCreate.push(payload);
+		}
+
+		if (settings.spawnSphere)
+		{
+			CREATE_PAYLOAD payload = GeneratePayloadFromSceneSettings(SPAWN_OBJECT::SPHERE, settings);
+			payload.SpawnTime = settings.deltaSpawnTime;
+			m_ObjectsToCreate.push(payload);
+		}
+
+		if (settings.spawnCapsule)
+		{
+			CREATE_PAYLOAD payload = GeneratePayloadFromSceneSettings(SPAWN_OBJECT::CAPSULE, settings);
+			payload.SpawnTime = settings.deltaSpawnTime;
+			m_ObjectsToCreate.push(payload);
+		}
+	}
+	LOG_INFO("Added Objects to Spawn: " + std::to_string(m_ObjectsToCreate.size()));
+}
+
+CREATE_PAYLOAD Scene::GeneratePayloadFromSceneSettings(SPAWN_OBJECT type, const CREATE_SCENE_PAYLOAD& settings)
+{
+	CREATE_PAYLOAD payload;
+	payload.SpawnObject = type;
+
+	// Use Randomizer class to generate all values
+	payload.Position = m_Randomizer.Vec3(settings.minPosition, settings.maxPosition);
+	payload.Velocity = m_Randomizer.Vec3(settings.minVelocity, settings.maxVelocity);
+	payload.Acceleration = m_Randomizer.Vec3(settings.minAcceleration, settings.maxAcceleration);
+	payload.AngularVelocity = m_Randomizer.Vec3(settings.minAngularVelocity, settings.maxAngularVelocity);
+
+	payload.Mass = m_Randomizer.Float(settings.minMass, settings.maxMass);
+	payload.Elasticity = m_Randomizer.Float(settings.minElasticity, settings.maxElasticity);
+	payload.Restitution = m_Randomizer.Float(settings.minRestitution, settings.maxRestitution);
+	payload.Friction = m_Randomizer.Float(settings.minFriction, settings.maxFriction);
+	payload.AngularDamping = m_Randomizer.Float(settings.minAngularDamping, settings.maxAngularDamping);
+	payload.LinearDamping = m_Randomizer.Float(settings.minLinearDamping, settings.maxLinearDamping);
+
+	payload.SpawnTime = 0.0f;
+
+	return payload;
+}
+
+std::unordered_map<unsigned int, IModel*> Scene::GetModels() const
 {
 	auto copy = m_SafePointer;
 	return copy;

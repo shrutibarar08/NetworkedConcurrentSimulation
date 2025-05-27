@@ -13,11 +13,10 @@ public:
 private:
     ModelSphere* m_Sphere;
     RigidBody* m_RigidBody{ nullptr };
-    // CubeCollider* m_Collider{ nullptr };
+    SphereCollider* m_Collider{ nullptr };
 
     // Editable fields
     DirectX::XMFLOAT3 m_Pos{};
-    DirectX::XMFLOAT3 m_Scale{};
     DirectX::XMFLOAT3 m_Vel{};
     DirectX::XMFLOAT3 m_Acc{};
     DirectX::XMFLOAT3 m_AngVel{};
@@ -28,6 +27,4 @@ private:
     bool m_bStatic{ false };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
-
-    bool m_InitializedFromRigidBody = false;
 };

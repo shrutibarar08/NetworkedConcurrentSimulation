@@ -1,20 +1,20 @@
 #pragma once
 #include <vector>
 #include "ForceGenerator.h"
-#include "RigidBody.h"
+#include "ICollider.h"
 
 class  ForceRegistry
 {
 public:
-    void Add(RigidBody* body, ForceGenerator* fg);
-    void Remove(RigidBody* body, ForceGenerator* fg);
+    void Add(ICollider* collider, ForceGenerator* fg);
+    void Remove(ICollider* collider, ForceGenerator* fg);
     void Clear();
     void UpdateForces(float duration) const;
 
 protected:
     struct ForceRegistration
     {
-        RigidBody* RigidBody;
+        ICollider* Collider;
         ForceGenerator* ForceGenerates;
     };
 

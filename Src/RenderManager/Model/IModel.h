@@ -12,6 +12,38 @@
 
 #include "GuiManager/Widgets/IWidget.h"
 
+enum class SPAWN_OBJECT : uint8_t
+{
+	CUBE,
+	SPHERE,
+	CAPSULE
+};
+
+typedef struct CREATE_PAYLOAD
+{
+	SPAWN_OBJECT SpawnObject;
+
+	DirectX::XMFLOAT3 Position;
+	DirectX::XMFLOAT3 Velocity;
+	DirectX::XMFLOAT3 Acceleration;
+	DirectX::XMFLOAT3 AngularVelocity;
+
+	float Mass;
+	float Elasticity;
+	float Restitution;
+	float Friction;
+	float AngularDamping;
+	float LinearDamping;
+
+	float SpawnTime = 0.0f; // time at which this object should be spawned
+
+	bool operator<(const CREATE_PAYLOAD& other) const
+	{
+		return SpawnTime > other.SpawnTime;
+	}
+
+} CREATE_PAYLOAD;
+
 
 class IModel
 {
@@ -48,6 +80,8 @@ public:
 	}
 	std::string GetName() const { return m_Name; }
 
+	void SetPayload(const CREATE_PAYLOAD& payload);
+
 protected:
 
 	void BuildVertexBuffer(ID3D11Device* device);
@@ -80,8 +114,6 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> m_InputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_VertexConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_PixelConstantBuffer;
-	Microsoft::WRL::ComPtr<ID3DBlob> m_VertexShaderBlob;
-	Microsoft::WRL::ComPtr<ID3DBlob> m_PixelShaderBlob;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_VertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_PixelShader;
 

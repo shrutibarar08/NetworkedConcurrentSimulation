@@ -19,6 +19,8 @@ enum class ColliderSate: uint8_t
     Resting
 };
 
+
+
 class ICollider
 {
 public:
@@ -46,8 +48,20 @@ public:
 
     const char* GetColliderTypeName() const;
 
+    ICollider* LastHitCollider() const { return m_LastHitCollider; }
+    void SetLastHitCollider(ICollider* collider);
+
+    int GetHitCount(ICollider* collider, float totalTime);
+    bool IsLastHitResolved() const { return !m_LastHitResolved; }
+    void SetLastHitResolved(bool val) { m_LastHitResolved = true; }
+
 protected:
     SRWLOCK m_Lock{ SRWLOCK_INIT };
     ColliderSate m_ColliderState = ColliderSate::Dynamic;
     RigidBody* m_RigidBody;
+
+    float m_LastHitTime{ 0.0f };
+    ICollider* m_LastHitCollider{ nullptr };
+    int m_LastHitColliderCounts{ 0 };
+    bool m_LastHitResolved{ false };
 };

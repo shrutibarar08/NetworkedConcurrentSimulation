@@ -1,6 +1,6 @@
 #pragma once
 
-class RigidBody;
+class ICollider;
 
 class ForceGenerator
 {
@@ -13,5 +13,5 @@ public:
 	ForceGenerator& operator=(ForceGenerator&&) = default;
 	ForceGenerator& operator=(const ForceGenerator&) = default;
 
-	virtual void UpdateForce(RigidBody* body, float duration) = 0;
+	virtual void UpdateForce(ICollider* body, float duration) = 0;
 };
