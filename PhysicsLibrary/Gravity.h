@@ -2,7 +2,6 @@
 #include "ForceGenerator.h"
 #include <DirectXMath.h>
 
-#include "CapsuleCollider.h"
 
 class Gravity : public ForceGenerator
 {
@@ -12,9 +11,10 @@ public:
 
     bool IsGravityOn() const;
     void SetGravity(bool flag);
+    void ReverseGravity();
+    DirectX::XMVECTOR GetGravityForce() const;
 
 private:
-    mutable SRWLOCK m_Lock{ SRWLOCK_INIT };
     bool m_GravityOn{ true };
     DirectX::XMVECTOR m_GravityForce;
 };

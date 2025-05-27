@@ -4,6 +4,7 @@
 #include <dxgi1_2.h>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 #include "imgui_impl_dx11.h"
 #include "ExceptionManager/RenderException.h"
@@ -38,9 +39,22 @@ RenderManager::RenderManager(WindowsSystem* windowSystem, PhysicsManager* phxMan
 
 bool RenderManager::Run()
 {
-    ClearScene();
-    SceneBegin();
-    SceneEnd();
+    float m_TargetFrameTime = 1.0f / static_cast<float>(m_TargetGraphicsHz);
+    if (m_Timer.HasElapsed(m_TargetFrameTime))
+    {
+        // === Measure actual elapsed time since last frame ===
+        m_ActualFrameTime = m_Timer.Tick();
+        m_ActualGraphicsHz = 1.0f / m_ActualFrameTime;
+
+        ClearScene();
+        SceneBegin();
+        SceneEnd();
+        m_Timer.Reset();
+    }
+    else
+    {
+        Sleep(1);
+    }
     return true;
 }
 
@@ -255,6 +269,26 @@ std::vector<UINT> RenderManager::GetAllAvailableMSAA() const
 CameraController* RenderManager::GetActiveCamera() const
 {
     return m_CameraManager.GetActiveCamera();
+}
+
+void RenderManager::SetTargetGraphicsHz(int hz)
+{
+    m_TargetGraphicsHz = std::clamp(hz, 1, 1000);
+}
+
+int RenderManager::GetTargetGraphicsHz() const
+{
+    return m_TargetGraphicsHz;
+}
+
+float RenderManager::GetActualFrameTime() const
+{
+    return m_ActualFrameTime;
+}
+
+float RenderManager::GetActualGraphicsHz() const
+{
+    return m_ActualGraphicsHz;
 }
 
 bool RenderManager::BuildParameter(SweetLoader& sweetLoader)

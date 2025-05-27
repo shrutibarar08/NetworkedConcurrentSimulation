@@ -1,5 +1,7 @@
 #include "ISystem.h"
 
+#include "Utils/Logger.h"
+
 void ISystem::SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles)
 {
 	mGlobalEvent.GlobalEndEvent = eventHandles->GlobalEndEvent;
@@ -8,27 +10,51 @@ void ISystem::SetGlobalEvent(const SYSTEM_EVENT_HANDLE* eventHandles)
 
 bool ISystem::Init()
 {
-	if (!mCreateThread) return true;
-	mThreadHandle = CreateThread(
-		nullptr,
-		0,
-		ThreadCall,
-		this,
-		0,
-		nullptr
-	);
-	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-	SetThreadPriority(mThreadHandle, THREAD_PRIORITY_TIME_CRITICAL);
+    if (!mCreateThread)
+        return true;
 
-	mInitializedEventHandle = CreateEvent(
-		nullptr,
-		TRUE,
-		FALSE,
-		nullptr
-	);
+    // === Create the thread ===
+    mThreadHandle = CreateThread(
+        nullptr,
+        0,
+        ThreadCall,
+        this,
+        0,
+        nullptr
+    );
 
-	return mThreadHandle != nullptr;
+    if (!mThreadHandle)
+        return false;
+
+    // === Apply Thread Priority if explicitly set ===
+    if (m_ThreadPriority != THREAD_PRIORITY_NORMAL)
+    {
+        if (!SetThreadPriority(mThreadHandle, m_ThreadPriority))
+        {
+            LOG_WARNING("Failed to set thread priority]!");
+        }
+    }
+
+    // === Apply Thread Affinity if explicitly set ===
+    if (m_ThreadAffinityMask != 0)
+    {
+        if (!SetThreadAffinityMask(mThreadHandle, m_ThreadAffinityMask))
+        {
+            LOG_WARNING("Failed to use thread affinity!");
+        }
+    }
+
+    // === Create the event for thread sync ===
+    mInitializedEventHandle = CreateEvent(
+        nullptr,
+        TRUE,   // Manual reset
+        FALSE,
+        nullptr
+    );
+
+    return true;
 }
+
 
 bool ISystem::Shutdown()
 {

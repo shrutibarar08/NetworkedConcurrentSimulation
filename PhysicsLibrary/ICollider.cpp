@@ -60,3 +60,17 @@ int ICollider::GetHitCount(ICollider* collider, float totalTime)
 	SetLastHitCollider(collider);
 	return m_LastHitColliderCounts;
 }
+
+DirectX::XMMATRIX ICollider::GetTransformationMatrix() const
+{
+	return m_TransformationMatrix;
+}
+
+void ICollider::Update()
+{
+	m_TransformationMatrix =
+		DirectX::XMMatrixScalingFromVector(GetScale()) *
+		DirectX::XMMatrixRotationQuaternion(m_RigidBody->GetOrientation().ToXmVector()) *
+		DirectX::XMMatrixTranslationFromVector(m_RigidBody->GetPosition());
+
+}

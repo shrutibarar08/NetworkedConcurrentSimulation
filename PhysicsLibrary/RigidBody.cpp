@@ -68,7 +68,11 @@ void RigidBody::AddTorque(const DirectX::XMVECTOR& torque)
 void RigidBody::Integrate(float dt, IntegrationType type)
 {
     AcquireSRWLockExclusive(&m_Lock);
-    if (InverseMass <= 0.0f) return;
+    if (InverseMass <= 0.0f)
+    {
+        ReleaseSRWLockExclusive(&m_Lock);
+        return;
+    }
 
     DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(
         Acceleration,
@@ -114,6 +118,8 @@ void RigidBody::Integrate(float dt, IntegrationType type)
     Orientation.Normalize();
 
     if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(Velocity)) < 1e-5f) Velocity = DirectX::XMVectorZero();
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(AngularVelocity)) < 1e-5f)
+        AngularVelocity = DirectX::XMVectorZero();
 
     ReleaseSRWLockExclusive(&m_Lock);
 

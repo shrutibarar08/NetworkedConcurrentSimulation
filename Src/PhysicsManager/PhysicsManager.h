@@ -16,7 +16,7 @@ typedef struct HIT_CACHE
 	float LastTime;
 }HIT_CACHE;
 
-class PhysicsManager final: public ISystem
+class PhysicsManager final : public ISystem
 {
 public:
 	PhysicsManager();
@@ -35,6 +35,20 @@ public:
 
 	Gravity* GetGravity() const;
 
+	void SetTargetDeltaTime(float time);
+	float GetTargetDeltaTime() const;
+	void SetTargetSimulationHz(int hz);
+	int GetTargetSimulationHz() const;
+	float GetActualSimulationFrameTime() const;
+	float GetActualSimulationHz() const;
+
+	void PauseSimulation() { m_Pause = true; }
+	void ResumeSimulation() { m_Pause = false; }
+	bool IsSimulationPause() const { return m_Pause; }
+
+	IntegrationType GetSelectedIntegration() const;
+	void SetIntegration(IntegrationType type);
+
 private:
 	int GetColliderKey(const ICollider* collider) const;
 	void IncreaseCount(int colliderKey);
@@ -51,5 +65,12 @@ private:
 	std::unique_ptr<Gravity>  m_Gravity{ nullptr };
 	float m_TotalTime{ 0.0f };
 	std::unordered_map<uint64_t, ICollider*> m_PhysicsEntity;
+
+	int m_TargetSimulationHz{ 60 };
+	float m_TargetDeltaTime{ 1.f / 60.f };
+	float m_ActualSimulationFrameTime{ 0.0f };
+	float m_ActualSimulationHz{ 0.0f };
 	LocalTimer m_Timer{};
+	bool m_Pause{ false };
+	IntegrationType m_SelectedIntegration{ IntegrationType::SemiImplicitEuler };
 };

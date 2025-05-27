@@ -10,6 +10,7 @@ public:
 	virtual ~RenderManagerUI() override = default;
 	std::string MenuName() const override { return "Render Settings"; }
 	void RenderAsSystemItem() override;
+	void RenderOnScreen() override;
 	void RenderPopups() override;
 	bool Init() override;
 

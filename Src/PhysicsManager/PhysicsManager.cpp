@@ -1,5 +1,7 @@
 #include "PhysicsManager.h"
 
+#include <algorithm>
+
 #include "CollisionResolver.h" 
 #include "RenderManager/Model/IModel.h"
 #include "Utils/Logger.h"
@@ -34,10 +36,21 @@ bool PhysicsManager::Run()
                 break;
             }
         }
-        constexpr float dt = 1.0f / 60.0f; // fixed timestep
-        float time = m_Timer.Tick();
-        Update(time, IntegrationType::Euler);
-        Sleep(dt);
+
+        if (m_Pause)
+        {
+            Sleep(1);
+            continue;
+        }
+        const float targetStep = 1.0f / static_cast<float>(m_TargetSimulationHz);
+        if (m_Timer.HasElapsed(targetStep))
+        {
+            m_ActualSimulationFrameTime = m_Timer.Tick();
+            m_ActualSimulationHz = 1.0f / m_ActualSimulationFrameTime;
+            Update(targetStep, m_SelectedIntegration);
+            m_Timer.Reset();
+        }
+        else Sleep(1);
     }
     return true;
 }
@@ -113,6 +126,48 @@ Gravity* PhysicsManager::GetGravity() const
     return nullptr;
 }
 
+void PhysicsManager::SetTargetDeltaTime(float time)
+{
+    m_TargetDeltaTime = std::clamp(time, 0.001f, 10.0f);
+    m_TargetSimulationHz = static_cast<int>(1.0f / m_TargetDeltaTime);
+}
+
+float PhysicsManager::GetTargetDeltaTime() const
+{
+    return m_TargetDeltaTime;
+}
+
+void PhysicsManager::SetTargetSimulationHz(int hz)
+{
+    m_TargetSimulationHz = std::clamp(hz, 1, 1000);
+    m_TargetDeltaTime = 1.0f / static_cast<float>(m_TargetSimulationHz);
+}
+
+int PhysicsManager::GetTargetSimulationHz() const
+{
+    return m_TargetSimulationHz;
+}
+
+float PhysicsManager::GetActualSimulationFrameTime() const
+{
+    return m_ActualSimulationFrameTime;
+}
+
+float PhysicsManager::GetActualSimulationHz() const
+{
+    return m_ActualSimulationHz;
+}
+
+IntegrationType PhysicsManager::GetSelectedIntegration() const
+{
+    return m_SelectedIntegration;
+}
+
+void PhysicsManager::SetIntegration(IntegrationType type)
+{
+    m_SelectedIntegration = type;
+}
+
 int PhysicsManager::GetColliderKey(const ICollider* collider) const
 {
     if (collider->GetColliderType() == ColliderType::Capsule)
@@ -153,6 +208,7 @@ void PhysicsManager::Update(float dt, IntegrationType type)
     {
         if (!collider.second) continue;
 
+        collider.second->Update();
         RigidBody* body = collider.second->GetRigidBody();
         if (!body) continue;
         colliders.push_back(collider.second);

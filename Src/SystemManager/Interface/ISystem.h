@@ -36,6 +36,14 @@ public:
     }
     IWidget* GetWidget() const { return m_Widget.get(); }
 
+    // === Thread Control API ===
+
+    void SetSystemPriorityLevel(int priority) { m_ThreadPriority = priority; }
+    void SetSystemAffinityMask(DWORD_PTR mask) { m_ThreadAffinityMask = mask; }
+
+    int GetSystemPriorityLevel() const { return m_ThreadPriority; }
+    DWORD_PTR GetSystemAffinityMask() const { return m_ThreadAffinityMask; }
+
 private:
     static DWORD __stdcall ThreadCall(LPVOID ptr);
 
@@ -46,4 +54,7 @@ protected:
     HANDLE mThreadHandle;
     bool mCreateThread{ false };
     std::unique_ptr<IWidget> m_Widget{ nullptr };
+
+    int m_ThreadPriority{ THREAD_PRIORITY_NORMAL };
+    DWORD_PTR m_ThreadAffinityMask{ 0 };
 };

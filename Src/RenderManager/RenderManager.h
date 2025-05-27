@@ -45,6 +45,11 @@ public:
     std::vector<UINT> GetAllAvailableMSAA() const;
 	CameraController* GetActiveCamera() const;
 
+    void SetTargetGraphicsHz(int hz);
+    int GetTargetGraphicsHz() const;
+    float GetActualFrameTime() const;
+    float GetActualGraphicsHz() const;
+
 private:
     bool BuildParameter(SweetLoader& sweetLoader);
 	bool QueryAdapter();
@@ -65,7 +70,6 @@ private:
 
 private:
     SRWLOCK m_Lock;
-
     PhysicsManager* m_PhysicsManager{ nullptr };
 
     CameraManager m_CameraManager{};
@@ -103,4 +107,8 @@ private:
     //~ Cache for ignoring resizing calls if same width and height
     UINT m_PrevHeight{ 0 };
     UINT m_PrevWidth{ 0 };
+    int m_TargetGraphicsHz{ 60 };
+    float m_ActualFrameTime = 0.0f;
+    float m_ActualGraphicsHz = 0.0f;
+    LocalTimer m_Timer{};
 };

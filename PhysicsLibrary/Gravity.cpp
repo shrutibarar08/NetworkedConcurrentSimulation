@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Gravity.h"
+
+#include "ICollider.h"
 #include "RigidBody.h"
 
 Gravity::Gravity(const DirectX::XMVECTOR& g)
@@ -14,9 +16,7 @@ void Gravity::UpdateForce(ICollider* collider, float duration)
     if (!rigidBody->HasFiniteMass() || collider->GetColliderState() == ColliderSate::Static) return;
 
     //~ Thread safe access
-    AcquireSRWLockShared(&m_Lock);
     DirectX::XMVECTOR gravity = m_GravityForce;
-    ReleaseSRWLockShared(&m_Lock);
 
     //~ apply it hehe
     float mass = rigidBody->GetMass();
@@ -29,15 +29,25 @@ void Gravity::UpdateForce(ICollider* collider, float duration)
 
 bool Gravity::IsGravityOn() const
 {
-    AcquireSRWLockShared(&m_Lock);
-    bool result = m_GravityOn;
-    ReleaseSRWLockShared(&m_Lock);
-    return result;
+    return m_GravityOn;
 }
 
 void Gravity::SetGravity(bool flag)
 {
-    AcquireSRWLockExclusive(&m_Lock);
     m_GravityOn = flag;
-    ReleaseSRWLockExclusive(&m_Lock);
+}
+
+void Gravity::ReverseGravity()
+{
+    using namespace DirectX;
+
+    XMFLOAT3 gravity{};
+    XMStoreFloat3(&gravity, m_GravityForce);
+	gravity.y = -gravity.y;
+	m_GravityForce = XMLoadFloat3(&gravity);
+}
+
+DirectX::XMVECTOR Gravity::GetGravityForce() const
+{
+    return m_GravityForce;
 }

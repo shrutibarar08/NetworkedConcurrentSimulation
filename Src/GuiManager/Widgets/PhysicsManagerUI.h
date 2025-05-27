@@ -13,6 +13,6 @@ public:
 
 private:
 	PhysicsManager* m_PhysicsManager{ nullptr };
-	bool m_PopupPhysicsSettings{ false };
+	bool m_PopupPhysicsSettings{ true };
 };
 

@@ -45,6 +45,8 @@ Application::~Application()
 
 bool Application::Init()
 {
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
 	LOG_INFO("Application initialization started.");
 	EventQueue::Init();
 	BuildEventHandler();
@@ -60,6 +62,8 @@ bool Application::Init()
 	m_PhysicsManager = std::make_unique<PhysicsManager>();
 	m_PhysicsManager->CreateOnThread(true);
 	m_PhysicsManager->SetGlobalEvent(&m_GlobalEvent);
+	m_PhysicsManager->SetSystemAffinityMask(1ull << 3); // Core 3rd.
+	m_PhysicsManager->SetSystemPriorityLevel(THREAD_PRIORITY_TIME_CRITICAL);
 
 	m_PhysicsManagerUI = std::make_unique<PhysicsManagerUI>(m_PhysicsManager.get());
 

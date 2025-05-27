@@ -83,23 +83,7 @@ bool Render3DQueue::UpdateVertexConstantBuffer(ID3D11DeviceContext* context)
 	{
 		if (!model->IsBuilt()) continue;
 
-		RigidBody* rb = model->GetRigidBody();
-		if (ICollider* collider = model->GetCollider())
-		{
-			// Get components
-			DirectX::XMVECTOR position = rb->GetPosition();
-			Quaternion orientation = rb->GetOrientation();
-			DirectX::XMVECTOR scale = collider->GetScale();
-
-			// Build matrix
-			DirectX::XMMATRIX scaleMatrix = DirectX::XMMatrixScalingFromVector(scale);
-			DirectX::XMMATRIX rotationMatrix = orientation.ToRotationMatrix();
-			DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(position);
-
-			// Final transformation
-			cb.Transformation = scaleMatrix * rotationMatrix * translationMatrix;
-		}
-		else cb.Transformation = rb->GetTransformMatrix();
+		cb.Transformation = model->GetCollider()->GetTransformationMatrix();
 		model->UpdateVertexCB(context, &cb);
 	}
 	return true;

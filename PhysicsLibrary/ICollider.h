@@ -55,6 +55,9 @@ public:
     bool IsLastHitResolved() const { return !m_LastHitResolved; }
     void SetLastHitResolved(bool val) { m_LastHitResolved = true; }
 
+    DirectX::XMMATRIX GetTransformationMatrix() const;
+    void Update();
+
 protected:
     SRWLOCK m_Lock{ SRWLOCK_INIT };
     ColliderSate m_ColliderState = ColliderSate::Dynamic;
@@ -64,4 +67,5 @@ protected:
     ICollider* m_LastHitCollider{ nullptr };
     int m_LastHitColliderCounts{ 0 };
     bool m_LastHitResolved{ false };
+    DirectX::XMMATRIX m_TransformationMatrix{};
 };

@@ -11,6 +11,23 @@ void RenderManagerUI::RenderAsSystemItem()
 	DisplayDescription();
 }
 
+void RenderManagerUI::RenderOnScreen()
+{
+	if (ImGui::CollapsingHeader("Display Properties"))
+	{
+		// === Graphics Frequency Control ===
+		int targetHz = m_RenderManager->GetTargetGraphicsHz();
+		if (ImGui::SliderInt("Target Graphics Hz", &targetHz, 1, 240))
+		{
+			m_RenderManager->SetTargetGraphicsHz(targetHz);
+		}
+
+		ImGui::Text("Actual Graphics Hz: %.1f", m_RenderManager->GetActualGraphicsHz());
+			ImGui::Text("Actual Frame Time: %.2f ms", m_RenderManager->GetActualFrameTime() * 1000.0f);
+	}
+
+}
+
 void RenderManagerUI::RenderPopups()
 {
 	PopupDescription();
@@ -81,6 +98,7 @@ void RenderManagerUI::DrawRenderDetails() const
 	ImGui::Text("Adapter Name: %s", adapterName);
 	ImGui::Text("Refresh Rate: %d Hz", refreshRate);
 	ImGui::Text("Selected MSAA: %dx", selectedMSAA);
+	
 }
 
 void RenderManagerUI::DrawMSAAOptions() const
