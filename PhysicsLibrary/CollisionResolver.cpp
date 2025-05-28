@@ -11,8 +11,8 @@ void CollisionResolver::ResolveContact(Contact& contact, float deltaTime, float 
     if (!a || !b) return;
 
     if (IsStatic(a) && IsStatic(b)) return;
-    ResolvePositionInterpenetration(contact);
 	ResolveVelocity(contact, deltaTime);
+    ResolvePositionInterpenetration(contact);
 }
 
 void CollisionResolver::ResolveContacts(std::vector<Contact>& contacts, float deltaTime, float totalTime)
