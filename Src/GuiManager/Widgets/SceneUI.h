@@ -13,12 +13,18 @@ public:
 	std::string MenuName() const override;
 
 private:
+    void DisplaySpawnerPop();
+    void DisplayCreateObjectPopup();
 	void DisplayObjects() const;
 
 private:
 	bool m_ShowObjects{ false };
+    bool m_PopUpCreateObject{ false };
 	bool m_PopUpSpawner{ false };
+    SPAWN_OBJECT m_WhatToCreate{};
 	Scene* m_Scene;
+
+    CREATE_PAYLOAD m_Payload{};
 
 	CREATE_SCENE_PAYLOAD m_ScenePayload
 	{
@@ -34,5 +40,5 @@ private:
     0.f, 1.f,   // linear damping
     10,         // quantity
     true, true, true, // spawn all types
-    0.1};
+    0.1f};
 };

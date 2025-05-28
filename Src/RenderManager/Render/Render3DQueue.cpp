@@ -27,10 +27,7 @@ bool Render3DQueue::AddModel(IModel* model)
 		m_ModelsToRender.emplace(model->GetModelId(), model);
 		if (m_PhysicsManager)
 		{
-			m_PhysicsManager->AddRigidBody(model);
-
-			if (m_ModelsToRender.size() == 2) m_2ndID = model->GetModelId();
-
+			m_PhysicsManager->AddModel(model);
 		}
 		status = true;
 	}
@@ -45,7 +42,6 @@ bool Render3DQueue::RemoveModel(const IModel* model)
 	if (m_ModelsToRender.contains(model->GetModelId()))
 	{
 		m_ModelsToRender.erase(model->GetModelId());
-		m_PhysicsManager->RemoveRigidBody(model->GetModelId());
 		status = true;
 	}
 	return status;
@@ -59,6 +55,7 @@ bool Render3DQueue::RemoveModel(uint64_t modelId)
 
 	if (m_ModelsToRender.contains(modelId))
 	{
+		m_PhysicsManager->RemoveModel(modelId);
 		m_ModelsToRender.erase(modelId);
 		status = true;
 	}
@@ -117,4 +114,15 @@ void Render3DQueue::RenderAll(ID3D11DeviceContext* context)
 		if (!model->IsBuilt()) continue;
 		model->PresentModel(context);
 	}
+}
+
+void Render3DQueue::CleanPhysicsManager()
+{
+	if (m_PhysicsManager) m_PhysicsManager->Clear();
+}
+
+void Render3DQueue::Clean()
+{
+	CleanPhysicsManager();
+	m_ModelsToRender.clear();
 }

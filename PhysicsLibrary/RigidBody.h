@@ -66,7 +66,7 @@ private:
 
     DirectX::XMVECTOR ForceAccum;
     float InverseMass{ 10.f };
-    float m_LinearDamping{0.75};
+    float m_LinearDamping{ 0.75 };
     float m_Elastic{ 0.56f };
     float m_Restitution{ 0.35f };
     float m_Friction{ 0.38f };

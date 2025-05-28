@@ -5,8 +5,9 @@
 #include "RigidBody.h"
 
 Gravity::Gravity(const DirectX::XMVECTOR& g)
-: m_GravityForce(g)
-{}
+    : m_GravityForce(g)
+{
+}
 
 void Gravity::UpdateForce(ICollider* collider, float duration)
 {
@@ -43,8 +44,8 @@ void Gravity::ReverseGravity()
 
     XMFLOAT3 gravity{};
     XMStoreFloat3(&gravity, m_GravityForce);
-	gravity.y = -gravity.y;
-	m_GravityForce = XMLoadFloat3(&gravity);
+    gravity.y = -gravity.y;
+    m_GravityForce = XMLoadFloat3(&gravity);
 }
 
 DirectX::XMVECTOR Gravity::GetGravityForce() const

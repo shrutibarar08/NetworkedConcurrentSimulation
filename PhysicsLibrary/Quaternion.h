@@ -1,5 +1,6 @@
 #pragma once
 #include "DirectXMath.h"
+#include <atomic>
 
 class Quaternion
 {
@@ -10,6 +11,8 @@ public:
     Quaternion operator*(const Quaternion& q) const;
     Quaternion operator*(float scalar) const;
     Quaternion& operator+=(const Quaternion& q);
+    Quaternion& operator=(const Quaternion& other);
+    Quaternion(const Quaternion& other);
 
     DirectX::XMMATRIX ToRotationMatrix() const;
 
@@ -21,5 +24,11 @@ public:
 
     friend Quaternion operator*(float scalar, const Quaternion& q);
 
+    float GetR();
+    float GetI();
+    float GetJ();
+    float GetK();
+
+private:
     float R, I, J, K;
 };

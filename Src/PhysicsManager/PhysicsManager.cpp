@@ -47,7 +47,10 @@ bool PhysicsManager::Run()
         {
             m_ActualSimulationFrameTime = m_Timer.Tick();
             m_ActualSimulationHz = 1.0f / m_ActualSimulationFrameTime;
-            Update(targetStep, m_SelectedIntegration);
+
+            // Use actual frame time for variable step
+            Update(m_ActualSimulationFrameTime, m_SelectedIntegration);
+
             m_Timer.Reset();
         }
         else Sleep(1);
@@ -60,14 +63,14 @@ bool PhysicsManager::Build(SweetLoader& sweetLoader)
 	return true;
 }
 
-bool PhysicsManager::AddRigidBody(const IModel* model)
+bool PhysicsManager::AddModel(const IModel* model)
 {
     AcquireSRWLockExclusive(&m_Lock);
     LOG_INFO("Adding A model in Physics Manager!");
     ID id = model->GetModelId();
     if (m_PhysicsEntity.contains(id))
     {
-		LOG_WARNING("Failed To add model into physics loop");
+        LOG_WARNING("Failed To add model into physics loop");
         return false;
     }
 
@@ -76,11 +79,11 @@ bool PhysicsManager::AddRigidBody(const IModel* model)
     int key = GetColliderKey(m_PhysicsEntity[id]);
     IncreaseCount(key);
     ReleaseSRWLockExclusive(&m_Lock);
-	LOG_SUCCESS("Added model in physics loop!");
+    LOG_SUCCESS("Added model in physics loop!");
     return true;
 }
 
-bool PhysicsManager::RemoveRigidBody(ID id)
+bool PhysicsManager::RemoveModel(ID id)
 {
     if (!m_PhysicsEntity.contains(id)) return false;
 
@@ -95,9 +98,11 @@ bool PhysicsManager::RemoveRigidBody(ID id)
     return true;
 }
 
-bool PhysicsManager::HasRigidBody(uint64_t id)
+bool PhysicsManager::Clear()
 {
-    return m_PhysicsEntity.contains(id);
+    m_ForceRegister.Clear();
+    m_PhysicsEntity.clear();
+    return true;
 }
 
 int PhysicsManager::GetCubeCounts()
@@ -168,7 +173,7 @@ void PhysicsManager::SetIntegration(IntegrationType type)
     m_SelectedIntegration = type;
 }
 
-int PhysicsManager::GetColliderKey(const ICollider* collider) const
+int PhysicsManager::GetColliderKey(const ICollider* collider)
 {
     if (collider->GetColliderType() == ColliderType::Capsule)
     {
@@ -198,7 +203,7 @@ void PhysicsManager::DecreaseCount(int colliderKey)
 void PhysicsManager::Update(float dt, IntegrationType type)
 {
     m_TotalTime += dt;
-	// === Integrate bodies ===
+    // === Integrate bodies ===
     AcquireSRWLockShared(&m_Lock);
     size_t count = m_PhysicsEntity.size();
     std::vector<ICollider*> colliders;

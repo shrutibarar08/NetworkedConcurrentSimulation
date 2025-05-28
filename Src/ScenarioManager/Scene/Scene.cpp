@@ -8,6 +8,7 @@
 #include "RenderManager/Model/Shapes/ModelSphere.h"
 #include "Utils/Logger.h"
 
+#include "ICollider.h"
 
 Scene::Scene(const std::string& name)
 	: m_Name(name)
@@ -115,6 +116,13 @@ int Scene::AddObject(SPAWN_OBJECT obj)
 	return key;
 }
 
+int Scene::AddObject(CREATE_PAYLOAD& payload)
+{
+	payload.SpawnTime = 0.01f;
+	m_ObjectsToCreate.push(payload);
+	return 0;
+}
+
 int Scene::AddObject(std::unique_ptr<IModel> model)
 {
 	int key = model->GetModelId();
@@ -211,4 +219,56 @@ void Scene::SetName(const std::string& name)
 bool Scene::IsLoaded() const
 {
 	return m_State == State::LOADED;
+}
+
+void Scene::LoadFromSweetData(SweetLoader& sweetData)
+{
+	for (auto& [index, entry] : sweetData)
+	{
+		std::string typeStr = entry["Type"].GetValue();
+		SPAWN_OBJECT type = StringToSpawnObject(typeStr);
+		int key = AddObject(type);
+		m_Models[key]->LoadFromSweetData(entry[typeStr]);
+	}
+}
+
+SweetLoader Scene::SaveSweetData()
+{
+	SweetLoader sl{};
+	for (int i = 0; i < static_cast<int>(m_Models.size()); ++i)
+	{
+		auto& modelPtr = m_Models[i];
+		if (!modelPtr) continue;  // Skip if the model is null
+
+		//~ Only Save Static Objects
+		if (modelPtr->GetCollider()->GetColliderState() != ColliderSate::Static) continue;;
+
+		auto* collider = modelPtr->GetCollider();
+		if (!collider) continue;  // Skip if collider is null
+
+		std::string indexStr = std::to_string(i);
+		const char* typeStr = collider->ToString();
+
+		sl[indexStr]["Type"] = typeStr;
+		sl[indexStr][typeStr] = modelPtr->GetSweetData();
+	}
+	return sl;
+}
+
+SPAWN_OBJECT Scene::StringToSpawnObject(const std::string& name)
+{
+	if (name == "Cube") return SPAWN_OBJECT::CUBE;
+	if (name == "Capsule") return SPAWN_OBJECT::CAPSULE;
+	if (name == "Sphere") return SPAWN_OBJECT::SPHERE;
+
+	return SPAWN_OBJECT();
+}
+
+std::string Scene::SpawnObjectToString(SPAWN_OBJECT so)
+{
+	if (so == SPAWN_OBJECT::CUBE) return "Cube";
+	if (so == SPAWN_OBJECT::CAPSULE) return "Capsule";
+	if (so == SPAWN_OBJECT::SPHERE) return "Sphere";
+
+	return "unknown";
 }

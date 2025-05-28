@@ -7,36 +7,37 @@
 #include "CapsuleCollider.h"
 #include "CubeCollider.h"
 
+
 SphereCollider::SphereCollider(RigidBody* body)
-	: ICollider(body)
+    : ICollider(body)
 {
 }
 
 bool SphereCollider::CheckCollision(ICollider* other, Contact& outContact)
 {
-	if (other->GetColliderType() == ColliderType::Sphere)
-	{
-		return CheckCollisionWithSphere(other, outContact);
-	}
-	if (other->GetColliderType() == ColliderType::Cube)
-	{
-		return CheckCollisionWithCube(other, outContact);
-	}
+    if (other->GetColliderType() == ColliderType::Sphere)
+    {
+        return CheckCollisionWithSphere(other, outContact);
+    }
+    if (other->GetColliderType() == ColliderType::Cube)
+    {
+        return CheckCollisionWithCube(other, outContact);
+    }
     if (other->GetColliderType() == ColliderType::Capsule)
     {
         return CheckCollisionWithCapsule(other, outContact);
     }
-	return false;
+    return false;
 }
 
 ColliderType SphereCollider::GetColliderType() const
 {
-	return ColliderType::Sphere;
+    return ColliderType::Sphere;
 }
 
 RigidBody* SphereCollider::GetRigidBody() const
 {
-	return ICollider::GetRigidBody();
+    return ICollider::GetRigidBody();
 }
 
 void SphereCollider::SetRadius(float radius)

@@ -10,6 +10,7 @@
 #include <string>
 #include <wrl/client.h>
 
+#include "FileManager/FileLoader/SweetLoader.h"
 #include "GuiManager/Widgets/IWidget.h"
 
 enum class SPAWN_OBJECT : uint8_t
@@ -21,21 +22,24 @@ enum class SPAWN_OBJECT : uint8_t
 
 typedef struct CREATE_PAYLOAD
 {
-	SPAWN_OBJECT SpawnObject;
+	SPAWN_OBJECT SpawnObject{};
 
-	DirectX::XMFLOAT3 Position;
-	DirectX::XMFLOAT3 Velocity;
-	DirectX::XMFLOAT3 Acceleration;
-	DirectX::XMFLOAT3 AngularVelocity;
+	DirectX::XMFLOAT3 Position{ 0.0f, 0.0f, 0.0f };
+	Quaternion Orientation{};
+	DirectX::XMFLOAT3 Velocity{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 Acceleration{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 AngularVelocity{ 0.0f, 0.0f, 0.0f };
 
-	float Mass;
-	float Elasticity;
-	float Restitution;
-	float Friction;
-	float AngularDamping;
-	float LinearDamping;
+	float Mass{ 10.0f };
+	float Elasticity{ 0.5f };
+	float Restitution{ 0.35f };
+	float Friction{ 0.3f };
+	float AngularDamping{ 0.4f };
+	float LinearDamping{ 0.75f };
 
-	float SpawnTime = 0.0f; // time at which this object should be spawned
+	float SpawnTime{ 0.01f };
+	bool Static{ false };
+	bool UiControlNeeded{ false };
 
 	bool operator<(const CREATE_PAYLOAD& other) const
 	{
@@ -82,6 +86,12 @@ public:
 
 	void SetPayload(const CREATE_PAYLOAD& payload);
 
+	SweetLoader GetSweetData();
+	void LoadFromSweetData(SweetLoader& sweetData);
+
+	bool IsUiControlNeeded() const { return m_UiControlNeeded; }
+	void SetUiControlNeeded(bool flag) { m_UiControlNeeded = flag; }
+
 protected:
 
 	void BuildVertexBuffer(ID3D11Device* device);
@@ -97,6 +107,7 @@ protected:
 	virtual std::vector<UINT> BuildIndex() = 0;
 
 protected:
+	bool m_UiControlNeeded{ true };
 	std::string m_Name{ "NO NAME" };
 	std::unique_ptr<IWidget> m_Widget{ nullptr };
 	RigidBody m_RigidBody{};

@@ -7,6 +7,11 @@ Quaternion::Quaternion(float r, float i, float j, float k)
 : R(r), I(i), J(j), K(k)
 {}
 
+DirectX::XMVECTOR Quaternion::ToXmVector() const
+{
+    return DirectX::XMVectorSet(I, J, K, R);
+}
+
 void Quaternion::Normalize()
 {
     float d = R * R + I * I + J * J + K * K;
@@ -17,11 +22,6 @@ void Quaternion::Normalize()
     }
     float inv = 1.0f / std::sqrt(d);
     R *= inv; I *= inv; J *= inv; K *= inv;
-}
-
-DirectX::XMVECTOR Quaternion::ToXmVector() const
-{
-    return DirectX::XMVectorSet(I, J, K, R);
 }
 
 DirectX::XMVECTOR Quaternion::RotateVector(const DirectX::XMVECTOR& v) const
@@ -42,14 +42,36 @@ DirectX::XMVECTOR Quaternion::RotateVector(const DirectX::XMVECTOR& v) const
     return result;
 }
 
+float Quaternion::GetR()
+{
+    return R;
+}
+
+float Quaternion::GetI()
+{
+    return I;
+}
+
+float Quaternion::GetJ()
+{
+    return J;
+}
+
+float Quaternion::GetK()
+{
+    return K;
+}
+
 Quaternion Quaternion::operator*(const Quaternion& q) const
 {
-    return Quaternion(
-        R * q.R - I * q.I - J * q.J - K * q.K,
-        R * q.I + I * q.R + J * q.K - K * q.J,
-        R * q.J + J * q.R + K * q.I - I * q.K,
-        R * q.K + K * q.R + I * q.J - J * q.I
-    );
+    DirectX::XMVECTOR q1 = ToXmVector();
+    DirectX::XMVECTOR q2 = q.ToXmVector();
+
+    DirectX::XMVECTOR result = DirectX::XMQuaternionMultiply(q1, q2);
+
+    DirectX::XMFLOAT4 f;
+    DirectX::XMStoreFloat4(&f, result);
+    return Quaternion(f.w, f.x, f.y, f.z);
 }
 
 void Quaternion::AddScaledVector(const DirectX::XMVECTOR& vector, float scale)
@@ -84,6 +106,7 @@ Quaternion Quaternion::operator*(float scalar) const
     return Quaternion(R * scalar, I * scalar, J * scalar, K * scalar);
 }
 
+
 Quaternion& Quaternion::operator+=(const Quaternion& q)
 {
     R += q.R;
@@ -93,11 +116,30 @@ Quaternion& Quaternion::operator+=(const Quaternion& q)
     return *this;
 }
 
+Quaternion& Quaternion::operator=(const Quaternion& other)
+{
+    if (this == &other) return *this;
+
+    R = other.R;
+    I = other.I;
+    J = other.J;
+    K = other.K;
+
+    return *this;
+}
+
+Quaternion::Quaternion(const Quaternion& other)
+{
+    R = other.R;
+    I = other.I;
+    J = other.J;
+    K = other.K;
+}
+
 DirectX::XMMATRIX Quaternion::ToRotationMatrix() const
 {
     using namespace DirectX;
-    XMVECTOR q = XMVectorSet(I, J, K, R); // (x, y, z, w)
-    return XMMatrixRotationQuaternion(q);
+    return XMMatrixRotationQuaternion(ToXmVector());
 }
 
 Quaternion operator*(float scalar, const Quaternion& q)

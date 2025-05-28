@@ -2,7 +2,7 @@
 #include "ICollider.h"
 
 
-class CubeCollider final: public ICollider
+class CubeCollider final : public ICollider
 {
 public:
 	CubeCollider(RigidBody* body);
@@ -23,7 +23,7 @@ private:
 	bool CheckCollisionWithCapsule(ICollider* other, Contact& outContact);
 
 public:
-	
+
 	void SetScale(const DirectX::XMVECTOR& vector) override;
 	DirectX::XMVECTOR GetScale() const override;
 

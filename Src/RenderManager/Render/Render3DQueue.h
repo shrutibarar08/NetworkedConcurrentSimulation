@@ -18,6 +18,8 @@ public:
 	static bool UpdateVertexConstantBuffer(ID3D11DeviceContext* context);
 	static bool UpdatePixelConstantBuffer(ID3D11DeviceContext* context);
 	static void RenderAll(ID3D11DeviceContext* context);
+	static void CleanPhysicsManager();
+	static void Clean();
 
 private:
 	inline static PhysicsManager* m_PhysicsManager = nullptr;

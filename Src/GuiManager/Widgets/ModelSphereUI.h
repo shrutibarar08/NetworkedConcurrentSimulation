@@ -25,6 +25,7 @@ private:
     float m_Damping = 0.99f;
     float m_Elasticity = 0.5f;
     bool m_bStatic{ false };
+    bool m_UiNeeded{ false };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
 };

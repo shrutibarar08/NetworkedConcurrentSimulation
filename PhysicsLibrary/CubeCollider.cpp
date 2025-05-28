@@ -11,17 +11,18 @@
 
 
 CubeCollider::CubeCollider(RigidBody* body)
-	: ICollider(body)
-{}
+    : ICollider(body)
+{
+}
 
 bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
 {
-	if (!other) return false;
+    if (!other) return false;
 
-	if (other->GetColliderType() == ColliderType::Cube)
-	{
-		return CheckCollisionWithCube(other, outContact);
-	}
+    if (other->GetColliderType() == ColliderType::Cube)
+    {
+        return CheckCollisionWithCube(other, outContact);
+    }
 
     if (other->GetColliderType() == ColliderType::Sphere)
     {
@@ -32,23 +33,23 @@ bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
         return CheckCollisionWithCapsule(other, outContact);
     }
 
-	return false;
+    return false;
 }
 
 ColliderType CubeCollider::GetColliderType() const
 {
-	return ColliderType::Cube;
+    return ColliderType::Cube;
 }
 
 RigidBody* CubeCollider::GetRigidBody() const
 {
-	return ICollider::GetRigidBody();
+    return ICollider::GetRigidBody();
 }
 
 DirectX::XMVECTOR CubeCollider::GetHalfExtents() const
 {
-	DirectX::XMVECTOR scale = GetScale();
-	return DirectX::XMVectorScale(scale, 0.5f);
+    DirectX::XMVECTOR scale = GetScale();
+    return DirectX::XMVectorScale(scale, 0.5f);
 }
 
 bool CubeCollider::CheckCollisionWithCube(ICollider* other, Contact& outContact)

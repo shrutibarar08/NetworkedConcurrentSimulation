@@ -3,7 +3,7 @@
 #include "ICollider.h"
 #include <DirectXMath.h>
 
-class SphereCollider final: public ICollider
+class SphereCollider final : public ICollider
 {
 public:
     explicit SphereCollider(RigidBody* body);

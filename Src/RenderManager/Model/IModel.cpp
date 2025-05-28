@@ -142,7 +142,8 @@ void IModel::SetPayload(const CREATE_PAYLOAD& payload)
 {
 	// Set position
 	m_RigidBody.SetPosition(DirectX::XMLoadFloat3(&payload.Position));
-
+	
+	m_RigidBody.SetOrientation(payload.Orientation);
 	// Set linear velocity and acceleration
 	m_RigidBody.SetVelocity(DirectX::XMLoadFloat3(&payload.Velocity));
 	m_RigidBody.SetAcceleration(DirectX::XMLoadFloat3(&payload.Acceleration));
@@ -157,6 +158,116 @@ void IModel::SetPayload(const CREATE_PAYLOAD& payload)
 	m_RigidBody.SetFriction(payload.Friction);
 	m_RigidBody.SetAngularDamping(payload.AngularDamping);
 	m_RigidBody.SetLinearDamping(payload.LinearDamping);
+
+	ColliderSate state = payload.Static ? ColliderSate::Static : ColliderSate::Dynamic;
+	GetCollider()->SetColliderState(state);
+
+	SetUiControlNeeded(payload.UiControlNeeded);
+}
+
+SweetLoader IModel::GetSweetData()
+{
+	SweetLoader sl{};
+
+	// Position, Velocity, Acceleration, Angular Velocity
+	DirectX::XMFLOAT3 pos, vel, acc, angVel;
+	DirectX::XMStoreFloat3(&pos, m_RigidBody.GetPosition());
+	DirectX::XMStoreFloat3(&vel, m_RigidBody.GetVelocity());
+	DirectX::XMStoreFloat3(&acc, m_RigidBody.GetAcceleration());
+	DirectX::XMStoreFloat3(&angVel, m_RigidBody.GetAngularVelocity());
+
+	sl["Name"] = m_ModelName;
+	sl["Position"]["x"] = std::to_string(pos.x);
+	sl["Position"]["y"] = std::to_string(pos.y);
+	sl["Position"]["z"] = std::to_string(pos.z);
+
+	sl["Orientation"]["r"] = std::to_string(m_RigidBody.GetOrientation().GetR());
+	sl["Orientation"]["i"] = std::to_string(m_RigidBody.GetOrientation().GetI());
+	sl["Orientation"]["j"] = std::to_string(m_RigidBody.GetOrientation().GetJ());
+	sl["Orientation"]["k"] = std::to_string(m_RigidBody.GetOrientation().GetK());
+
+	sl["Velocity"]["x"] = std::to_string(vel.x);
+	sl["Velocity"]["y"] = std::to_string(vel.y);
+	sl["Velocity"]["z"] = std::to_string(vel.z);
+
+	sl["Acceleration"]["x"] = std::to_string(acc.x);
+	sl["Acceleration"]["y"] = std::to_string(acc.y);
+	sl["Acceleration"]["z"] = std::to_string(acc.z);
+
+	sl["AngularVelocity"]["x"] = std::to_string(angVel.x);
+	sl["AngularVelocity"]["y"] = std::to_string(angVel.y);
+	sl["AngularVelocity"]["z"] = std::to_string(angVel.z);
+
+	// Scalars
+	sl["Mass"] = std::to_string(m_RigidBody.GetMass());
+	sl["Elasticity"] = std::to_string(m_RigidBody.GetElasticity());
+	sl["InverseMass"] = std::to_string(m_RigidBody.GetInverseMass());
+	sl["HasFiniteMass"] = m_RigidBody.HasFiniteMass() ? "true" : "false";
+	sl["Damping"] = std::to_string(m_RigidBody.GetDamping());
+	sl["AngularDamping"] = std::to_string(m_RigidBody.GetAngularDamping());
+	sl["Restitution"] = std::to_string(m_RigidBody.GetRestitution());
+	sl["Friction"] = std::to_string(m_RigidBody.GetFriction());
+	sl["RestingState"] = m_RigidBody.GetRestingState() ? "true" : "false";
+
+	// Collider Info
+	sl["ColliderType"] = GetCollider()->GetColliderTypeName();
+	sl["ColliderState"] = std::to_string(static_cast<int>(GetCollider()->GetColliderState()));
+
+	DirectX::XMFLOAT3 scale{};
+	DirectX::XMStoreFloat3(&scale, GetCollider()->GetScale());
+
+	sl["Scale"]["x"] = std::to_string(scale.x);
+	sl["Scale"]["y"] = std::to_string(scale.y);
+	sl["Scale"]["z"] = std::to_string(scale.z);
+
+	return sl;
+}
+
+void IModel::LoadFromSweetData(SweetLoader& sweetData)
+{
+	using namespace DirectX;
+
+	auto loadVec3 = [&](SweetLoader& node) -> XMVECTOR
+	{
+		return XMVectorSet(
+			node["x"].AsFloat(),
+			node["y"].AsFloat(),
+			node["z"].AsFloat(),
+			0.0f
+		);
+	};
+
+	m_RigidBody.SetPosition(loadVec3(sweetData["Position"]));
+	m_RigidBody.SetVelocity(loadVec3(sweetData["Velocity"]));
+	m_RigidBody.SetAcceleration(loadVec3(sweetData["Acceleration"]));
+	m_RigidBody.SetAngularVelocity(loadVec3(sweetData["AngularVelocity"]));
+
+	Quaternion q;
+	q = Quaternion(
+		sweetData["Orientation"]["r"].AsFloat(),
+		sweetData["Orientation"]["i"].AsFloat(),
+		sweetData["Orientation"]["j"].AsFloat(),
+		sweetData["Orientation"]["k"].AsFloat()
+	);
+	m_RigidBody.SetOrientation(q);
+
+	m_RigidBody.SetMass(sweetData["Mass"].AsFloat());
+	m_RigidBody.SetElasticity(sweetData["Elasticity"].AsFloat());
+	m_RigidBody.SetDamping(sweetData["Damping"].AsFloat());
+	m_RigidBody.SetAngularDamping(sweetData["AngularDamping"].AsFloat());
+	m_RigidBody.SetRestitution(sweetData["Restitution"].AsFloat());
+	m_RigidBody.SetFriction(sweetData["Friction"].AsFloat());
+	m_RigidBody.SetRestingState(sweetData["RestingState"].AsBool());
+
+	// Collider data
+	if (ICollider* collider = GetCollider())
+	{
+		XMVECTOR scaleVec = loadVec3(sweetData["Scale"]);
+		collider->SetScale(scaleVec);
+
+		int colliderState = sweetData["ColliderState"].AsInt();
+		collider->SetColliderState(static_cast<ColliderSate>(colliderState));
+	}
 }
 
 void IModel::BuildVertexBuffer(ID3D11Device* device)

@@ -5,6 +5,7 @@
 #include <queue>
 #include <random>
 
+#include "FileManager/FileLoader/SweetLoader.h"
 #include "GuiManager/Widgets/IWidget.h"
 #include "RenderManager/Model/IModel.h"
 #include "Utils/LocalTimer.h"
@@ -82,6 +83,7 @@ public:
 	void OnUpdate(float deltaTime);
 
 	int AddObject(SPAWN_OBJECT obj);
+    int AddObject(CREATE_PAYLOAD& payload);
 	int AddObject(std::unique_ptr<IModel> model);
 	void RemoveObject(unsigned int objId);
 
@@ -95,6 +97,12 @@ public:
 	void SetName(const std::string& name);
 
 	bool IsLoaded() const;
+
+    void LoadFromSweetData(SweetLoader& sweetData);
+    SweetLoader SaveSweetData();
+
+    static SPAWN_OBJECT StringToSpawnObject(const std::string& name);
+    static std::string SpawnObjectToString(SPAWN_OBJECT so);
 
 private:
 	std::unordered_map<unsigned int, std::unique_ptr<IModel>> m_Models;

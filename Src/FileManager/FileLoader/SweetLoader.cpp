@@ -1,58 +1,47 @@
 #include "SweetLoader.h"
 
+#include <algorithm>
 #include <windows.h>
 #include <string>
 #include <sstream>
 #include <iostream>
 
+#include "Utils/Logger.h"
+
 
 void SweetLoader::Load(const std::string& filePath)
 {
-    std::string buffer;
-    if (!ReadFileToBuffer(filePath, buffer))
+    if (!m_FileSystem.OpenForRead(filePath))
         return;
 
-    std::istringstream input(buffer);
-    std::string line;
-    while (std::getline(input, line))
+    uint64_t fileSize = m_FileSystem.GetFileSize();
+    if (fileSize == 0)
     {
-        if (line.empty()) continue;
-        ParseLine(line);
+        m_FileSystem.Close();
+        return;
     }
+
+    std::string content(fileSize, '\0');
+    m_FileSystem.ReadBytes(&content[0], fileSize);
+    m_FileSystem.Close();
+
+    std::istringstream iss(content);
+    FromStream(iss);
 }
 
-void SweetLoader::Save(const std::string& filepath) const
+void SweetLoader::Save(const std::string& filepath)
 {
-    // Open or create the file
-    std::wstring w_filepath = std::wstring(filepath.begin(), filepath.end());
-
-    HANDLE file = CreateFile(
-        w_filepath.c_str(),
-        GENERIC_WRITE,
-        0,
-        nullptr,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr);
-
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        std::cerr << "Failed to open file for writing: " << GetLastError() << "\n";
+    if (!m_FileSystem.OpenForWrite(filepath))
         return;
-    }
 
     std::ostringstream oss;
-    SaveRecursive(oss, ""); // use string stream to compose the text
+    Serialize(oss, 0); // convert into JSON-like string
 
-    std::string content = oss.str();
-    DWORD bytesWritten = 0;
-
-    if (!WriteFile(file, content.data(), static_cast<DWORD>(content.size()), &bytesWritten, nullptr))
+    if (!m_FileSystem.WritePlainText(oss.str()))
     {
-        std::cerr << "WriteFile failed: " << GetLastError() << "\n";
+        LOG_ERROR("Failed To Save!");
     }
-
-    CloseHandle(file);
+    m_FileSystem.Close();
 }
 
 SweetLoader& SweetLoader::operator=(const std::string& value)
@@ -66,108 +55,159 @@ SweetLoader& SweetLoader::operator[](const std::string& name)
     return mChildren[name];
 }
 
-void SweetLoader::DebugPrint(int indent) const
-{
-	std::string prefix(indent, ' ');
-
-	if (!mValue.empty())
-		std::cout << prefix << ": " << mValue << "\n";
-
-	for (const auto& [key, child] : mChildren)
-	{
-		std::cout << prefix << key;
-		child.DebugPrint(indent + 4);
-	}
-}
-
 bool SweetLoader::Contains(const std::string& key) const
 {
     return mChildren.contains(key);
 }
 
-void SweetLoader::SaveRecursive(std::ostream& os, const std::string& prefix) const
+std::string SweetLoader::ToFormattedString(int indent) const
 {
-	if (!mValue.empty())
-		os << prefix << ": " << mValue << "\n";
+	std::ostringstream oss;
+	Serialize(oss, indent);
+	return oss.str();
+}
 
-	for (const auto& [key, child] : mChildren)
+void SweetLoader::FromStream(std::istream& input)
+{
+	mChildren.clear();
+	mValue.clear();
+
+	ParseBlock(input);
+}
+
+void SweetLoader::Flatten(std::unordered_map<std::string, std::string>& out, const std::string& prefix) const
+{
+	if (!mChildren.empty())
 	{
-		std::string fullKey = prefix.empty() ? key : prefix + "::" + key;
-		child.SaveRecursive(os, fullKey);
+		for (const auto& [key, child] : mChildren)
+		{
+			std::string newPrefix = prefix.empty() ? key : prefix + "." + key;
+			child.Flatten(out, newPrefix);
+		}
+	}
+	else if (!mValue.empty())
+	{
+		out[prefix] = mValue;
 	}
 }
 
-size_t SweetLoader::FindKeyValueSeparator(const std::string& line)
+float SweetLoader::AsFloat() const
 {
-    for (size_t i = 0; i < line.length(); ++i)
+	try {
+		return std::stof(mValue);
+	}
+	catch (...) {
+		return 0.0f;
+	}
+}
+
+int SweetLoader::AsInt() const
+{
+	try {
+		return std::stoi(mValue);
+	}
+	catch (...) {
+		return 0;
+	}
+}
+
+bool SweetLoader::AsBool() const
+{
+	std::string val = mValue;
+	std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+	return (val == "true" || val == "1");
+}
+
+void SweetLoader::Serialize(std::ostream& output, int indent) const
+{
+    const std::string indentStr(indent, '\t');
+
+    if (!mChildren.empty())
     {
-        if (line[i] == ':' && (i == 0 || line[i - 1] != ':') && (i + 1 == line.length() || line[i + 1] != ':'))
+        output << "{\n";
+        bool first = true;
+        for (const auto& [key, child] : mChildren)
         {
-            return i;
+            if (!first) output << ",\n";
+            first = false;
+
+            output << indentStr << '\t' << "\"" << key << "\": ";
+            child.Serialize(output, indent + 1);
         }
+        output << '\n' << indentStr << '}';
     }
-    return std::string::npos;
+    else
+    {
+        // Leaf node
+        output << "\"" << mValue << "\"";
+    }
 }
 
-bool SweetLoader::ReadFileToBuffer(const std::string& filePath, std::string& outBuffer)
+void SweetLoader::ParseBlock(std::istream& input)
 {
-    HANDLE file = CreateFileA(
-        filePath.c_str(),
-        GENERIC_READ,
-        FILE_SHARE_READ,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr);
+	auto skipWhitespace = [&](std::istream& in) {
+		while (std::isspace(in.peek())) in.get();
+		};
 
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        std::cerr << "Failed to open file for reading: " << GetLastError() << "\n";
-        return false;
-    }
+	auto readQuotedString = [&](std::istream& in) -> std::string {
+		skipWhitespace(in);
+		if (in.get() != '"') return {};
+		std::string result;
+		char c;
+		while (in.get(c))
+		{
+			if (c == '"') break;
+			result += c;
+		}
+		return result;
+		};
 
-    DWORD fileSize = GetFileSize(file, nullptr);
-    if (fileSize == INVALID_FILE_SIZE || fileSize == 0)
-    {
-        CloseHandle(file);
-        return false;
-    }
+	skipWhitespace(input);
+	if (input.peek() != '{') return;
+	input.get(); // consume '{'
 
-    outBuffer.resize(fileSize);
-    DWORD bytesRead = 0;
+	while (true)
+	{
+		skipWhitespace(input);
+		if (input.peek() == '}')
+		{
+			input.get(); // consume '}'
+			break;
+		}
 
-    if (!ReadFile(file, outBuffer.data(), fileSize, &bytesRead, nullptr))
-    {
-        std::cerr << "ReadFile failed: " << GetLastError() << "\n";
-        CloseHandle(file);
-        return false;
-    }
+		std::string key = readQuotedString(input);
 
-    CloseHandle(file);
-    return true;
+		skipWhitespace(input);
+		if (input.get() != ':') return;
+
+		skipWhitespace(input);
+		if (input.peek() == '{')
+		{
+			// Nested block
+			SweetLoader child;
+			child.ParseBlock(input);
+			mChildren[key] = std::move(child);
+		}
+		else if (input.peek() == '"')
+		{
+			std::string value = readQuotedString(input);
+			mChildren[key].SetValue(value);
+		}
+
+		skipWhitespace(input);
+		if (input.peek() == ',')
+		{
+			input.get(); // consume ','
+			continue;
+		}
+		else if (input.peek() == '}')
+		{
+			continue; // handled by top
+		}
+		else
+		{
+			break; // Invalid format
+		}
+	}
 }
 
-void SweetLoader::ParseLine(const std::string& line)
-{
-    size_t sep = FindKeyValueSeparator(line);
-    if (sep == std::string::npos) return;
-
-    std::string key = line.substr(0, sep);
-    std::string value = line.substr(sep + 1);
-    value.erase(0, value.find_first_not_of(" \t")); // trim leading whitespace
-
-    SweetLoader* current = this;
-    size_t start = 0;
-    size_t end;
-
-    while ((end = key.find("::", start)) != std::string::npos)
-    {
-        std::string segment = key.substr(start, end - start);
-        current = &(*current)[segment];
-        start = end + 2;
-    }
-
-    std::string finalKey = key.substr(start);
-    current = &(*current)[finalKey];
-    current->SetValue(value);
-}

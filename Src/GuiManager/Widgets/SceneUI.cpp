@@ -2,6 +2,7 @@
 
 #include <ranges>
 #include "imgui.h"
+#include "Utils/Logger.h"
 
 SceneUI::SceneUI(Scene* scene)
 	: m_Scene(scene)
@@ -13,15 +14,18 @@ void SceneUI::RenderMenu()
 	{
 		if (ImGui::MenuItem("Add Cube"))
 		{
-			m_Scene->AddObject(SPAWN_OBJECT::CUBE);
+            m_PopUpCreateObject = true;
+            m_WhatToCreate = SPAWN_OBJECT::CUBE;
 		}
         if (ImGui::MenuItem("Add Sphere"))
         {
-            m_Scene->AddObject(SPAWN_OBJECT::SPHERE);
+            m_PopUpCreateObject = true;
+            m_WhatToCreate = SPAWN_OBJECT::SPHERE;
         }
         if (ImGui::MenuItem("Add Capsule"))
         {
-            m_Scene->AddObject(SPAWN_OBJECT::CAPSULE);
+            m_PopUpCreateObject = true;
+            m_WhatToCreate = SPAWN_OBJECT::CAPSULE;
         }
 		ImGui::EndMenu();
 	}
@@ -42,10 +46,21 @@ void SceneUI::RenderMenu()
 
 void SceneUI::RenderOnScreen()
 {
-	// DisplayObjects();
+	DisplayObjects();
 }
 
 void SceneUI::RenderPopups()
+{
+    DisplaySpawnerPop();
+    DisplayCreateObjectPopup();
+}
+
+std::string SceneUI::MenuName() const
+{
+	return "Scene";
+}
+
+void SceneUI::DisplaySpawnerPop()
 {
     if (m_PopUpSpawner)
     {
@@ -103,7 +118,7 @@ void SceneUI::RenderPopups()
 
         if (ImGui::Button("Spawn Objects"))
         {
-        	if (m_Scene) m_Scene->AutoSpawn(m_ScenePayload);
+            if (m_Scene) m_Scene->AutoSpawn(m_ScenePayload);
             ImGui::CloseCurrentPopup();
         }
 
@@ -118,51 +133,101 @@ void SceneUI::RenderPopups()
     }
 }
 
-std::string SceneUI::MenuName() const
+void SceneUI::DisplayCreateObjectPopup()
 {
-	return "Scene";
+    if (!m_PopUpCreateObject) return;
+
+    ImGui::OpenPopup("Create Object");
+    
+    m_Payload.SpawnObject = m_WhatToCreate;
+
+    if (ImGui::BeginPopupModal("Create Object", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Create a new %s", Scene::SpawnObjectToString(m_Payload.SpawnObject).c_str());
+        ImGui::Separator();
+
+        // === Position ===
+        ImGui::DragFloat3("Position", &m_Payload.Position.x, 0.1f);
+
+        // === Orientation (Quaternion) ===
+        float r = m_Payload.Orientation.GetR();
+        float i = m_Payload.Orientation.GetI();
+        float j = m_Payload.Orientation.GetJ();
+        float k = m_Payload.Orientation.GetK();
+
+        bool changed = false;
+        changed |= ImGui::DragFloat("Orientation R", &r, 0.01f);
+        changed |= ImGui::DragFloat("Orientation I", &i, 0.01f);
+        changed |= ImGui::DragFloat("Orientation J", &j, 0.01f);
+        changed |= ImGui::DragFloat("Orientation K", &k, 0.01f);
+
+        if (changed)
+        {
+            m_Payload.Orientation = Quaternion(r, i, j, k);
+            m_Payload.Orientation.Normalize();
+        }
+
+        // === Velocity, Acceleration, Angular Velocity ===
+        ImGui::DragFloat3("Velocity", &m_Payload.Velocity.x, 0.1f);
+        ImGui::DragFloat3("Acceleration", &m_Payload.Acceleration.x, 0.1f);
+        ImGui::DragFloat3("Angular Velocity", &m_Payload.AngularVelocity.x, 0.1f);
+
+        // === Physics Scalars ===
+        ImGui::DragFloat("Mass", &m_Payload.Mass, 0.1f, 0.001f, 1000.0f);
+        ImGui::DragFloat("Elasticity", &m_Payload.Elasticity, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Restitution", &m_Payload.Restitution, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Friction", &m_Payload.Friction, 0.01f, 0.0f, 5.0f);
+        ImGui::DragFloat("Angular Damping", &m_Payload.AngularDamping, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Linear Damping", &m_Payload.LinearDamping, 0.01f, 0.0f, 1.0f);
+
+        // === Spawn Time and Static flag ===
+        ImGui::DragFloat("Spawn Delay (s)", &m_Payload.SpawnTime, 0.01f, 0.0f, 10.0f);
+        ImGui::Checkbox("Is Static?", &m_Payload.Static);
+        ImGui::Checkbox("Need Ui Control?", &m_Payload.UiControlNeeded);
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Create"))
+        {
+            m_Scene->AddObject(m_Payload);
+            ImGui::CloseCurrentPopup();
+            m_PopUpCreateObject = false;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel"))
+        {
+            ImGui::CloseCurrentPopup();
+            m_PopUpCreateObject = false;
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 void SceneUI::DisplayObjects() const
 {
-    for (auto& object : m_Scene->GetModels() | std::views::values)
+    if (ImGui::CollapsingHeader("Object Data", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (!object) continue;
-        if (object->GetCollider()->GetColliderState() != ColliderSate::Static) return;
-
-        if (IWidget* widget = object->GetWidget())
+        for (auto& object : m_Scene->GetModels() | std::views::values)
         {
-            ImGui::PushID(object); // Unique ID for each widget section
+            if (!object || !object->IsUiControlNeeded()) continue;
 
-            // Optional: get a name or type for header
-            std::string name = object->GetName(); // Assuming you have GetName()
-            if (name.empty()) name = "Unnamed Model";
-
-            // Add spacing between model UIs
-            ImGui::Spacing();
-            ImGui::Spacing();
-
-            // Frame it as a collapsing section
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.5f, 0.7f, 1.0f)); // Optional styling
-            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.4f, 0.6f, 0.8f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.2f, 0.4f, 0.6f, 1.0f));
-
-            if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            if (IWidget* widget = object->GetWidget())
             {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6, 6));
+                const int modelId = object->GetModelId();
+                ImGui::PushID(modelId);
 
-                // Draw a framed child window to group the content
-                ImGui::BeginChild("ModelContent", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysUseWindowPadding);
-                widget->RenderOnScreen(); // Renders the RigidBody/Collider customization
-                ImGui::EndChild();
+                std::string label = "Object##" + std::to_string(modelId);
+                if (ImGui::CollapsingHeader(label.c_str()))
+                {
+                    widget->RenderOnScreen();
+                }
 
-                ImGui::PopStyleVar(2);
+                ImGui::PopID();
             }
-
-            ImGui::PopStyleColor(3);
-            ImGui::PopID();
         }
-    }
 
+    }
 }

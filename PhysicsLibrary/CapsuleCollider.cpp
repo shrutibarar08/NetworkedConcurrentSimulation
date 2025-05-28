@@ -9,31 +9,31 @@
 #include "SphereCollider.h"
 
 CapsuleCollider::CapsuleCollider(RigidBody* body)
-	: ICollider(body)
+    : ICollider(body)
 {
 }
 
 bool CapsuleCollider::CheckCollision(ICollider* other, Contact& outContact)
 {
-	if (other->GetColliderType() == ColliderType::Capsule)
-	{
-		return CheckCollisionWithCapsule(other, outContact);
-	}
-	if (other->GetColliderType() == ColliderType::Cube)
-	{
-		return CheckCollisionWithCube(other, outContact);
-	}
-	if (other->GetColliderType() == ColliderType::Sphere)
-	{
-		return CheckCollisionWithSphere(other, outContact);
-	}
+    if (other->GetColliderType() == ColliderType::Capsule)
+    {
+        return CheckCollisionWithCapsule(other, outContact);
+    }
+    if (other->GetColliderType() == ColliderType::Cube)
+    {
+        return CheckCollisionWithCube(other, outContact);
+    }
+    if (other->GetColliderType() == ColliderType::Sphere)
+    {
+        return CheckCollisionWithSphere(other, outContact);
+    }
 
-	return false;
+    return false;
 }
 
 ColliderType CapsuleCollider::GetColliderType() const
 {
-	return ColliderType::Capsule;
+    return ColliderType::Capsule;
 }
 
 void CapsuleCollider::SetRadius(float radius)
@@ -67,18 +67,18 @@ void CapsuleCollider::SetHeight(float height)
 
 float CapsuleCollider::GetRadius() const
 {
-	AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-	float result = m_Radius;
-	ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-	return result;
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_Radius;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 float CapsuleCollider::GetHeight() const
 {
-	AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-	float result = m_Height;
-	ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
-	return result;
+    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    float result = m_Height;
+    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
+    return result;
 }
 
 void CapsuleCollider::SetScale(const DirectX::XMVECTOR& vector)
@@ -291,7 +291,7 @@ bool CapsuleCollider::CheckCollisionWithCube(ICollider* other, Contact& outConta
     // === Collision Slop Threshold ===
     constexpr float collisionSlop = 0.01f;
     float er = capsuleRadius - collisionSlop;
-    float effectiveRadius = er > 0.001f? er: 0.001f;
+    float effectiveRadius = er > 0.001f ? er : 0.001f;
 
     if (distSq > effectiveRadius * effectiveRadius)
         return false;
@@ -313,8 +313,8 @@ bool CapsuleCollider::CheckCollisionWithCube(ICollider* other, Contact& outConta
 }
 
 float CapsuleCollider::ClosestPtSegmentSegment(const DirectX::XMVECTOR& p1, const DirectX::XMVECTOR& p2,
-	const DirectX::XMVECTOR& q1, const DirectX::XMVECTOR& q2, DirectX::XMVECTOR& outPt1, DirectX::XMVECTOR& outPt2,
-	float& outS, float& outT)
+    const DirectX::XMVECTOR& q1, const DirectX::XMVECTOR& q2, DirectX::XMVECTOR& outPt1, DirectX::XMVECTOR& outPt2,
+    float& outS, float& outT)
 {
     const DirectX::XMVECTOR d1 = DirectX::XMVectorSubtract(p2, p1); // Direction vector of segment S1
     const DirectX::XMVECTOR d2 = DirectX::XMVectorSubtract(q2, q1); // Direction vector of segment S2

@@ -1,7 +1,7 @@
 #pragma once
 #include "ICollider.h"
 
-class CapsuleCollider final: public ICollider
+class CapsuleCollider final : public ICollider
 {
 public:
 	CapsuleCollider(RigidBody* body);
@@ -16,14 +16,14 @@ public:
 	float GetHeight() const;
 
 	static void ClosestPtSegmentOBB(
-			const DirectX::XMVECTOR& segStart,
-			const DirectX::XMVECTOR& segEnd,
-			const DirectX::XMVECTOR& boxCenter,
-			const DirectX::XMVECTOR axes[3],
-			const DirectX::XMVECTOR& halfExtents,
-			DirectX::XMVECTOR& outCapsulePt,
-			DirectX::XMVECTOR& outBoxPt
-		);
+		const DirectX::XMVECTOR& segStart,
+		const DirectX::XMVECTOR& segEnd,
+		const DirectX::XMVECTOR& boxCenter,
+		const DirectX::XMVECTOR axes[3],
+		const DirectX::XMVECTOR& halfExtents,
+		DirectX::XMVECTOR& outCapsulePt,
+		DirectX::XMVECTOR& outBoxPt
+	);
 
 	void SetScale(const DirectX::XMVECTOR& vector) override;
 	DirectX::XMVECTOR GetScale() const override;

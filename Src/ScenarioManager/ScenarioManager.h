@@ -26,12 +26,16 @@ public:
 	void OffLoad(Scene* scene);
 
 private:
+	void LoadSweetData();
+	void SaveSweetData();
+
+private:
 	GuiManager* m_GuiManager{ nullptr };
 	std::unordered_map<ID, std::unique_ptr<Scene>> m_Scenes;
 	std::vector<Scene*> m_ScenesPtr;
 	Scene* m_ActiveScene{ nullptr };
 
 	SRWLOCK m_Lock;
+	SweetLoader m_SweetLoader{};
 	LocalTimer m_LocalTimer{};
 };
-

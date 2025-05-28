@@ -3,7 +3,9 @@
 
 #include "ApplicationManager/Clock/SystemClock.h"
 #include "GuiManager/Widgets/ScenarioManagerUI.h"
+#include "RenderManager/Render/Render3DQueue.h"
 #include "Utils/Logger.h"
+
 
 ScenarioManager::ScenarioManager()
 {
@@ -14,6 +16,8 @@ ScenarioManager::ScenarioManager()
 
 bool ScenarioManager::Shutdown()
 {
+	Render3DQueue::Clean();
+	SaveSweetData();
 	return ISystem::Shutdown();
 }
 
@@ -34,6 +38,7 @@ bool ScenarioManager::Run()
 bool ScenarioManager::Build(SweetLoader& sweetLoader)
 {
 	if (m_GuiManager) m_GuiManager->AddUI(GetWidget());
+	LoadSweetData();
 	return true;
 }
 
@@ -126,4 +131,26 @@ void ScenarioManager::OffLoad(Scene* scene)
 	{
 		m_ActiveScene = nullptr;
 	}
+}
+
+void ScenarioManager::LoadSweetData()
+{
+	SweetLoader loader{};
+	loader.Load("Data/SceneData.json");
+
+	for (auto& [sceneName, sceneData] : loader)
+	{
+		auto sceneId = CreateScene(sceneName);
+		m_Scenes[sceneId]->LoadFromSweetData(sceneData);
+	}
+}
+
+void ScenarioManager::SaveSweetData()
+{
+	for (auto& scene : m_Scenes | std::views::values)
+	{
+		m_SweetLoader[scene->GetName()] = scene->SaveSweetData();
+	}
+
+	m_SweetLoader.Save("Data/SceneData.json");
 }

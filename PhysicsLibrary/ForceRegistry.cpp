@@ -6,7 +6,7 @@
 
 void ForceRegistry::Add(ICollider* collider, ForceGenerator* fg)
 {
-    RegisteredForces.push_back({collider,fg});
+    RegisteredForces.push_back({ collider,fg });
 }
 
 void ForceRegistry::Remove(ICollider* collider, ForceGenerator* fg)

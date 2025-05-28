@@ -286,113 +286,85 @@ void RigidBody::SetInverseInertiaTensor(const DirectX::XMMATRIX& tensor)
 // Getters
 DirectX::XMVECTOR RigidBody::GetPosition() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = Position;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetVelocity() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = Velocity;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetAcceleration() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = Acceleration;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 DirectX::XMVECTOR RigidBody::GetAngularVelocity() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = AngularVelocity;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 Quaternion RigidBody::GetOrientation() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = Orientation;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetMass() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = (InverseMass > 0.0f) ? 1.0f / InverseMass : INFINITY;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetElasticity() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_Elastic;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetInverseMass() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = InverseMass;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 DirectX::XMMATRIX RigidBody::GetInverseInertiaTensor() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     auto result = InverseInertiaTensor;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 bool RigidBody::HasFiniteMass() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     bool result = (InverseMass > 0.0f);
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetDamping() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_LinearDamping;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetAngularDamping()
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = AngularDamping;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetRestitution() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_Restitution;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float RigidBody::GetFriction() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_Friction;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
@@ -405,19 +377,17 @@ void RigidBody::SetRestingState(bool state)
 
 bool RigidBody::GetRestingState() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     bool result = m_Resting;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 void RigidBody::ConstrainVelocity(const DirectX::XMVECTOR& contactNormal)
 {
-	DirectX::XMVECTOR v = GetVelocity();
+    DirectX::XMVECTOR v = GetVelocity();
     float vIntoSurface = DirectX::XMVectorGetX(DirectX::XMVector3Dot(v, contactNormal));
     if (vIntoSurface < 0.0f)
     {
-	    DirectX::XMVECTOR correction = DirectX::XMVectorScale(contactNormal, vIntoSurface);
+        DirectX::XMVECTOR correction = DirectX::XMVectorScale(contactNormal, vIntoSurface);
         SetVelocity(DirectX::XMVectorSubtract(v, correction));
     }
 }
