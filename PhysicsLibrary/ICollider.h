@@ -57,7 +57,6 @@ public:
     void Update();
 
 protected:
-    SRWLOCK m_Lock{ SRWLOCK_INIT };
     ColliderSate m_ColliderState = ColliderSate::Dynamic;
     RigidBody* m_RigidBody;
     DirectX::XMMATRIX m_TransformationMatrix{};

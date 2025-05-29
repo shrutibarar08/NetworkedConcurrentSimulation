@@ -11,6 +11,7 @@
 CapsuleCollider::CapsuleCollider(RigidBody* body)
     : ICollider(body)
 {
+    m_RigidBody->ComputeInverseInertiaTensorCapsule(m_Radius, m_Height);
 }
 
 bool CapsuleCollider::CheckCollision(ICollider* other, Contact& outContact)
@@ -48,6 +49,7 @@ void CapsuleCollider::SetRadius(float radius)
     scale.x = diameter;
     scale.z = diameter;
     m_Scale = DirectX::XMLoadFloat3(&scale);
+    m_RigidBody->ComputeInverseInertiaTensorCapsule(m_Radius, m_Height);
 }
 
 void CapsuleCollider::SetHeight(float height)
@@ -59,6 +61,7 @@ void CapsuleCollider::SetHeight(float height)
     DirectX::XMStoreFloat3(&scale, m_Scale);
     scale.y = height;
     m_Scale = DirectX::XMLoadFloat3(&scale);
+    m_RigidBody->ComputeInverseInertiaTensorCapsule(m_Radius, m_Height);
 }
 
 float CapsuleCollider::GetRadius() const
@@ -86,6 +89,7 @@ void CapsuleCollider::SetScale(const DirectX::XMVECTOR& vector)
     m_Scale = vector;
     m_Radius = avgRadius;
     m_Height = height;
+    m_RigidBody->ComputeInverseInertiaTensorCapsule(m_Radius, m_Height);
 }
 
 DirectX::XMVECTOR CapsuleCollider::GetScale() const

@@ -13,6 +13,8 @@
 CubeCollider::CubeCollider(RigidBody* body)
     : ICollider(body)
 {
+    DirectX::XMFLOAT3 scale; DirectX::XMStoreFloat3(&scale, m_Scale);
+    m_RigidBody->ComputeInverseInertiaTensorBox(scale.x, scale.y, scale.z);
 }
 
 bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
@@ -296,9 +298,9 @@ bool CubeCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outConta
 
 void CubeCollider::SetScale(const DirectX::XMVECTOR& vector)
 {
-    AcquireSRWLockExclusive(&m_Lock);
     m_Scale = vector;
-    ReleaseSRWLockExclusive(&m_Lock);
+    DirectX::XMFLOAT3 scale; DirectX::XMStoreFloat3(&scale, m_Scale);
+    m_RigidBody->ComputeInverseInertiaTensorBox(scale.x, scale.y, scale.z);
 }
 
 DirectX::XMVECTOR CubeCollider::GetScale() const

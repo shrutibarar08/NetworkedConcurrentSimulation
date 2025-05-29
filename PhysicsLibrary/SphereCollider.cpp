@@ -11,6 +11,7 @@
 SphereCollider::SphereCollider(RigidBody* body)
     : ICollider(body)
 {
+    m_RigidBody->ComputeInverseInertiaTensorSphere(m_Radius);
 }
 
 bool SphereCollider::CheckCollision(ICollider* other, Contact& outContact)
@@ -42,16 +43,13 @@ RigidBody* SphereCollider::GetRigidBody() const
 
 void SphereCollider::SetRadius(float radius)
 {
-    AcquireSRWLockExclusive(&m_Lock);
     m_Radius = (radius > 0.01f) ? radius : 0.01f;
-    ReleaseSRWLockExclusive(&m_Lock);
+    m_RigidBody->ComputeInverseInertiaTensorSphere(m_Radius);
 }
 
 float SphereCollider::GetRadius() const
 {
-    AcquireSRWLockShared(&m_Lock);
     auto result = m_Radius;
-    ReleaseSRWLockShared(&m_Lock);
     return result;
 }
 
@@ -64,18 +62,14 @@ void SphereCollider::SetScale(const DirectX::XMVECTOR& vector)
     XMStoreFloat3(&scale, vector);
     float avg = (scale.x + scale.y + scale.z) / 3.0f;
 
-    AcquireSRWLockExclusive(&m_Lock);
     m_Radius = avg * 0.5f;
     m_Scale = { scale.x, scale.y, scale.z };
-    ReleaseSRWLockExclusive(&m_Lock);
+    m_RigidBody->ComputeInverseInertiaTensorSphere(m_Radius);
 }
 
 DirectX::XMVECTOR SphereCollider::GetScale() const
 {
-    AcquireSRWLockShared(&m_Lock);
     float diameter = m_Radius;
-    ReleaseSRWLockShared(&m_Lock);
-
     return DirectX::XMVectorSet(diameter, diameter, diameter, 0.0f);
 }
 

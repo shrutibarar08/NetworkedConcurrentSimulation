@@ -68,6 +68,7 @@ public:
     float GetElasticity() const;
     float GetInverseMass() const;
     DirectX::XMMATRIX GetInverseInertiaTensor() const;
+    DirectX::XMMATRIX GetInverseInertiaTensorWorld() const;
     bool HasFiniteMass() const;
     float GetDamping() const;
     float GetAngularDamping();
@@ -78,6 +79,11 @@ public:
     bool GetRestingState() const;
 
     void ConstrainVelocity(const DirectX::XMVECTOR& contactNormal);
+
+    void ComputeInverseInertiaTensorBox(float width, float height, float depth);
+    void ComputeInverseInertiaTensorSphere(float radius);
+    void ComputeInverseInertiaTensorCapsule(float radius, float height);
+
 private:
     std::atomic<bool> m_Resting{ false };
     std::atomic<float> InverseMass{ 10.f };
@@ -97,7 +103,7 @@ private:
     AtomicVector AngularVelocity;
     AtomicVector TorqueAccum;
 
-    DirectX::XMMATRIX InverseInertiaTensor;
+    DirectX::XMMATRIX m_InverseInertiaTensorLocal;
     DirectX::XMMATRIX InverseInertiaTensorWorld;
     DirectX::XMMATRIX TransformMatrix;
 };

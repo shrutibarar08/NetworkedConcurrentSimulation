@@ -10,7 +10,7 @@ RigidBody::RigidBody()
     InverseMass(1.0f),
     Orientation(1, 0, 0, 0)
 {
-    InverseInertiaTensor = DirectX::XMMatrixIdentity();
+    m_InverseInertiaTensorLocal = DirectX::XMMatrixIdentity();
     CalculateDerivedData();
 }
 
@@ -86,6 +86,8 @@ void RigidBody::AddTorque(const DirectX::XMVECTOR& torque)
 
 void RigidBody::Integrate(float dt, IntegrationType type)
 {
+    CalculateDerivedData();
+
     float invMass = InverseMass.load(std::memory_order_relaxed);
     if (invMass <= 0.0f)
         return;
@@ -138,7 +140,7 @@ void RigidBody::Integrate(float dt, IntegrationType type)
     DirectX::XMVECTOR torque = TorqueAccum.Get();
     DirectX::XMVECTOR angVel = AngularVelocity.Get();
 
-    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(torque, InverseInertiaTensor);
+    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(torque, m_InverseInertiaTensorLocal);
     angVel = DirectX::XMVectorAdd(angVel, DirectX::XMVectorScale(angularAcc, dt));
 
     float angularDamping = AngularDamping.load(std::memory_order_relaxed);
@@ -182,7 +184,7 @@ void RigidBody::CalculateDerivedData()
 
     XMMATRIX rotTranspose = XMMatrixTranspose(rotMatrix);
     InverseInertiaTensorWorld = XMMatrixMultiply(
-        XMMatrixMultiply(rotMatrix, InverseInertiaTensor),
+        XMMatrixMultiply(rotMatrix, m_InverseInertiaTensorLocal),
         rotTranspose
     );
 }
@@ -272,7 +274,7 @@ void RigidBody::SetAngularDamping(float d)
 
 void RigidBody::SetInverseInertiaTensor(const DirectX::XMMATRIX& tensor)
 {
-    InverseInertiaTensor = tensor;
+    m_InverseInertiaTensorLocal = tensor;
 }
 
 
@@ -321,7 +323,12 @@ float RigidBody::GetInverseMass() const
 
 DirectX::XMMATRIX RigidBody::GetInverseInertiaTensor() const
 {
-    return InverseInertiaTensor; // Safe since this is not atomic and assumed to be read-only
+    return m_InverseInertiaTensorLocal;
+}
+
+DirectX::XMMATRIX RigidBody::GetInverseInertiaTensorWorld() const
+{
+    return InverseInertiaTensorWorld;
 }
 
 bool RigidBody::HasFiniteMass() const
@@ -370,4 +377,98 @@ void RigidBody::ConstrainVelocity(const DirectX::XMVECTOR& contactNormal)
         DirectX::XMVECTOR constrained = DirectX::XMVectorSubtract(velocity, correction);
         SetVelocity(constrained);
     }
+}
+
+void RigidBody::ComputeInverseInertiaTensorBox(float width, float height, float depth)
+{
+    using namespace DirectX;
+
+    float Ixx = (1.0f / 12.0f) * GetMass() * (height * height + depth * depth);
+    float Iyy = (1.0f / 12.0f) * GetMass() * (width * width + depth * depth);
+    float Izz = (1.0f / 12.0f) * GetMass() * (width * width + height * height);
+
+    // Invert each component for the inverse tensor
+    float invIxx = (Ixx > 0.0f) ? (1.0f / Ixx) : 0.0f;
+    float invIyy = (Iyy > 0.0f) ? (1.0f / Iyy) : 0.0f;
+    float invIzz = (Izz > 0.0f) ? (1.0f / Izz) : 0.0f;
+
+    m_InverseInertiaTensorLocal = XMMatrixSet(
+        invIxx, 0.0f, 0.0f, 0.0f,
+        0.0f, invIyy, 0.0f, 0.0f,
+        0.0f, 0.0f, invIzz, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    );
+}
+
+void RigidBody::ComputeInverseInertiaTensorSphere(float radius)
+{
+    float mass = GetMass();
+    if (mass <= 0.0f)
+    {
+        m_InverseInertiaTensorLocal.r[0] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[1] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[2] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[3] = DirectX::XMVectorZero();
+        return;
+    }
+
+    float factor = 2.0f / 5.0f * mass * radius * radius;
+    float inv = 1.0f / factor;
+
+    m_InverseInertiaTensorLocal = DirectX::XMMatrixIdentity();
+    m_InverseInertiaTensorLocal.r[0] = DirectX::XMVectorSet(inv, 0, 0, 0);
+    m_InverseInertiaTensorLocal.r[1] = DirectX::XMVectorSet(0, inv, 0, 0);
+    m_InverseInertiaTensorLocal.r[2] = DirectX::XMVectorSet(0, 0, inv, 0);
+    m_InverseInertiaTensorLocal.r[3] = DirectX::XMVectorSet(0, 0, 0, 1);
+}
+
+void RigidBody::ComputeInverseInertiaTensorCapsule(float radius, float height)
+{
+    using namespace DirectX;
+
+    float mass = GetMass();
+    if (mass <= 0.0f)
+    {
+        m_InverseInertiaTensorLocal.r[0] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[1] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[2] = DirectX::XMVectorZero();
+        m_InverseInertiaTensorLocal.r[3] = DirectX::XMVectorZero();
+        return;
+    }
+
+    float r2 = radius * radius;
+    float h = height;
+    float cylMass = mass * (height / (height + (4.0f / 3.0f) * radius)); // approx mass split
+    float sphMass = mass - cylMass;
+
+    // Cylinder inertia (Y-axis is height axis)
+    float IxxCyl = 0.25f * cylMass * r2 + (1.0f / 12.0f) * cylMass * h * h;
+    float IyyCyl = 0.5f * cylMass * r2;
+    float IzzCyl = IxxCyl;
+
+    // Sphere inertia
+    float I_sphere = (2.0f / 5.0f) * sphMass * r2;
+
+    // Use parallel axis theorem for spheres
+    float offset = (h / 2.0f);
+    float IxxSph = I_sphere + sphMass * offset * offset;
+    float IyySph = I_sphere;
+    float IzzSph = IxxSph;
+
+    // Total inertia
+    float Ixx = IxxCyl + IxxSph;
+    float Iyy = IyyCyl + IyySph;
+    float Izz = IzzCyl + IzzSph;
+
+    // Invert for inverse tensor
+    float invIxx = (Ixx > 0.0f) ? 1.0f / Ixx : 0.0f;
+    float invIyy = (Iyy > 0.0f) ? 1.0f / Iyy : 0.0f;
+    float invIzz = (Izz > 0.0f) ? 1.0f / Izz : 0.0f;
+
+    m_InverseInertiaTensorLocal = XMMatrixSet(
+        invIxx, 0.0f, 0.0f, 0.0f,
+        0.0f, invIyy, 0.0f, 0.0f,
+        0.0f, 0.0f, invIzz, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    );
 }

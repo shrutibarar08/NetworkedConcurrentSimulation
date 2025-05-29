@@ -28,7 +28,6 @@ private:
     float ClosestPtPointSegment(DirectX::XMVECTOR p, DirectX::XMVECTOR a, DirectX::XMVECTOR b);
 
 private:
-    mutable SRWLOCK m_Lock{ SRWLOCK_INIT };
     float m_Radius{ 1.f };
     DirectX::XMVECTOR m_Scale{ 1.f, 1.f, 1.f };
 };
