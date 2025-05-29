@@ -32,4 +32,5 @@ private:
 	float m_Height = 1.f;
 	UINT m_Rings = 8;
 	UINT m_Segments = 16;
+	std::vector<std::vector<DirectX::XMFLOAT4>> m_Colors;
 };

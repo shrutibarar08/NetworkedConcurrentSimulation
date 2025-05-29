@@ -1,5 +1,7 @@
 #include "ModelCapsule.h"
 
+#include <random>
+
 #include "CapsuleCollider.h"
 #include "GuiManager/Widgets/ModelCapsuleUI.h"
 
@@ -9,6 +11,20 @@ ModelCapsule::ModelCapsule(const MODEL_INIT_DESC* desc)
 	SetWidget(std::make_unique<ModelCapsuleUI>(this));
 	m_Collider = std::make_unique<CapsuleCollider>(&m_RigidBody);
 	m_RigidBody.SetMass(10);
+
+	m_Colors = 
+	{
+		{
+			{ 96.f / 255.f, 130.f / 255.f, 133.f / 255.f, 1.f },  // Dusty Cyan
+			{ 112.f / 255.f, 128.f / 255.f, 144.f / 255.f, 1.f }, // Slate Gray
+			{ 119.f / 255.f, 136.f / 255.f, 153.f / 255.f, 1.f }, // Light Slate
+			{ 70.f / 255.f, 130.f / 255.f, 180.f / 255.f, 1.f },  // Steel Blue
+			{ 88.f / 255.f, 108.f / 255.f, 121.f / 255.f, 1.f },  // Charcoal Blue
+			{ 100.f / 255.f, 149.f / 255.f, 237.f / 255.f, 1.f }, // Cornflower Blue
+			{ 79.f / 255.f, 102.f / 255.f, 120.f / 255.f, 1.f },  // Dusty Blue
+			{ 105.f / 255.f, 105.f / 255.f, 105.f / 255.f, 1.f }, // Dim Gray
+		},
+	};
 }
 
 float ModelCapsule::GetRadius() const
@@ -50,36 +66,56 @@ std::vector<VERTEX> ModelCapsule::BuildVertex()
 	const UINT rings = GetRings();
 	const UINT segments = GetSegments();
 
+	// === Defensive color selection ===
+	std::random_device rd;
+	std::mt19937 rng(rd());
+
+	std::vector<DirectX::XMFLOAT4> fallbackColorSet = {
+		{1.0f, 1.0f, 1.0f, 1.0f} // plain white
+	};
+
+	const auto& colorSets = m_Colors.empty() ? std::vector<std::vector<DirectX::XMFLOAT4>>{fallbackColorSet} : m_Colors;
+
+	std::uniform_int_distribution<size_t> setDist(0, colorSets.size() - 1);
+	const auto& colorSet = colorSets[setDist(rng)];
+
+	const bool emptySet = colorSet.empty();
+	std::uniform_int_distribution<size_t> colorDist(0, emptySet ? 0 : colorSet.size() - 1);
+
+	auto getRandomColor = [&]()
+		{
+			if (emptySet)
+				return DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+			return colorSet[colorDist(rng)];
+		};
+
 	// === Cylinder Section ===
 	for (UINT y = 0; y <= rings; ++y)
 	{
-		float t = (float)y / rings;
+		float t = static_cast<float>(y) / rings;
 		float cy = -height * 0.5f + t * height;
 
 		for (UINT x = 0; x <= segments; ++x)
 		{
-			float angle = (float)x / segments * DirectX::XM_2PI;
+			float angle = static_cast<float>(x) / segments * DirectX::XM_2PI;
 			float cx = cosf(angle) * radius;
 			float cz = sinf(angle) * radius;
 
-			float r = 0.5f + 0.5f * cosf(angle);
-			float g = t;
-			float b = 1.0f - t;
-
-			vertices.emplace_back(cx, cy, cz, r, g, b, 1.0f);
+			const auto& color = getRandomColor();
+			vertices.emplace_back(cx, cy, cz, color.x, color.y, color.z, color.w);
 		}
 	}
 
 	// === Top Hemisphere ===
 	for (UINT y = 0; y <= rings; ++y)
 	{
-		float phi = (float)y / rings * DirectX::XM_PIDIV2;
+		float phi = static_cast<float>(y) / rings * DirectX::XM_PIDIV2;
 		float sinPhi = sinf(phi);
 		float cosPhi = cosf(phi);
 
 		for (UINT x = 0; x <= segments; ++x)
 		{
-			float theta = (float)x / segments * DirectX::XM_2PI;
+			float theta = static_cast<float>(x) / segments * DirectX::XM_2PI;
 			float sinTheta = sinf(theta);
 			float cosTheta = cosf(theta);
 
@@ -87,24 +123,21 @@ std::vector<VERTEX> ModelCapsule::BuildVertex()
 			float py = radius * cosPhi + height * 0.5f;
 			float pz = radius * sinPhi * sinTheta;
 
-			float r = sinf(phi);
-			float g = 1.0f - r;
-			float b = 0.5f + 0.5f * cosf(theta);
-
-			vertices.emplace_back(px, py, pz, r, g, b, 1.0f);
+			const auto& color = getRandomColor();
+			vertices.emplace_back(px, py, pz, color.x, color.y, color.z, color.w);
 		}
 	}
 
 	// === Bottom Hemisphere ===
 	for (UINT y = 0; y <= rings; ++y)
 	{
-		float phi = (float)y / rings * DirectX::XM_PIDIV2;
+		float phi = static_cast<float>(y) / rings * DirectX::XM_PIDIV2;
 		float sinPhi = sinf(phi);
 		float cosPhi = cosf(phi);
 
 		for (UINT x = 0; x <= segments; ++x)
 		{
-			float theta = (float)x / segments * DirectX::XM_2PI;
+			float theta = static_cast<float>(x) / segments * DirectX::XM_2PI;
 			float sinTheta = sinf(theta);
 			float cosTheta = cosf(theta);
 
@@ -112,16 +145,14 @@ std::vector<VERTEX> ModelCapsule::BuildVertex()
 			float py = -radius * cosPhi - height * 0.5f;
 			float pz = radius * sinPhi * sinTheta;
 
-			float r = 0.2f + 0.8f * sinf(theta);
-			float g = 0.5f * (1.0f - cosf(phi));
-			float b = 1.0f - r;
-
-			vertices.emplace_back(px, py, pz, r, g, b, 1.0f);
+			const auto& color = getRandomColor();
+			vertices.emplace_back(px, py, pz, color.x, color.y, color.z, color.w);
 		}
 	}
 
 	return vertices;
 }
+
 
 std::vector<UINT> ModelCapsule::BuildIndex()
 {

@@ -16,5 +16,7 @@ protected:
 
 private:
 	std::unique_ptr<CubeCollider> m_Collider{ nullptr };
+
+	std::vector<std::vector<DirectX::XMFLOAT4>> m_Colors;
 };
 

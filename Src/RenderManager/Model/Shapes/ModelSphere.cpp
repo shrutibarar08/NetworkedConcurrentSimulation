@@ -1,5 +1,7 @@
 #include "ModelSphere.h"
 
+#include <random>
+
 #include "SphereCollider.h"
 #include "GuiManager/Widgets/ModelSphereUI.h"
 
@@ -11,6 +13,17 @@ ModelSphere::ModelSphere(const MODEL_INIT_DESC* desc)
     m_Collider = std::make_unique<SphereCollider>(&m_RigidBody);
     m_Collider->SetRadius(GetRadius());
 	m_RigidBody.SetMass(10);
+
+    m_Colors.push_back({
+    { 123.f / 255.f,  63.f / 255.f,   0.f / 255.f, 1.f }, // Dark Chocolate
+    { 92.f / 255.f,  51.f / 255.f,  23.f / 255.f, 1.f }, // Bitter Brown
+    { 101.f / 255.f,  67.f / 255.f,  33.f / 255.f, 1.f }, // Saddle Chocolate
+    { 139.f / 255.f,  69.f / 255.f,  19.f / 255.f, 1.f }, // Saddle Brown
+    { 111.f / 255.f,  78.f / 255.f,  55.f / 255.f, 1.f }, // Cocoa
+    { 120.f / 255.f,  66.f / 255.f,  18.f / 255.f, 1.f }, // Fudge
+    { 160.f / 255.f,  82.f / 255.f,  45.f / 255.f, 1.f }, // Peru
+    { 210.f / 255.f, 105.f / 255.f,  30.f / 255.f, 1.f }, // Chocolate
+        });
 }
 
 std::vector<VERTEX> ModelSphere::BuildVertex()
@@ -21,15 +34,38 @@ std::vector<VERTEX> ModelSphere::BuildVertex()
     UINT latSegments = GetLatitudeSegments();
     UINT lonSegments = GetLongitudeSegments();
 
+    // === Defensive color set selection ===
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    std::vector<DirectX::XMFLOAT4> fallbackColorSet = {
+        {1.0f, 1.0f, 1.0f, 1.0f} // fallback white
+    };
+    
+    const auto& colorSets = m_Colors.empty() ? std::vector<std::vector<DirectX::XMFLOAT4>>{fallbackColorSet} : m_Colors;
+
+    std::uniform_int_distribution<size_t> setDist(0, colorSets.size() - 1);
+    const auto& colorSet = colorSets[setDist(rng)];
+
+    const bool emptySet = colorSet.empty();
+    std::uniform_int_distribution<size_t> colorDist(0, emptySet ? 0 : colorSet.size() - 1);
+
+    auto getRandomColor = [&]() -> DirectX::XMFLOAT4
+        {
+            if (emptySet)
+                return { 1.0f, 1.0f, 1.0f, 1.0f };
+            return colorSet[colorDist(rng)];
+        };
+
     for (UINT lat = 0; lat <= latSegments; ++lat)
     {
-        float theta = static_cast<float>(lat) * DirectX::XM_PI / static_cast<float>(latSegments); // [0, PI]
+        float theta = static_cast<float>(lat) * DirectX::XM_PI / static_cast<float>(latSegments);
         float sinTheta = sinf(theta);
         float cosTheta = cosf(theta);
 
         for (UINT lon = 0; lon <= lonSegments; ++lon)
         {
-            float phi = static_cast<float>(lon) * 2.0f * DirectX::XM_PI / static_cast<float>(lonSegments); // [0, 2PI]
+            float phi = static_cast<float>(lon) * 2.0f * DirectX::XM_PI / static_cast<float>(lonSegments);
             float sinPhi = sinf(phi);
             float cosPhi = cosf(phi);
 
@@ -37,16 +73,14 @@ std::vector<VERTEX> ModelSphere::BuildVertex()
             float y = radius * cosTheta;
             float z = radius * sinTheta * sinPhi;
 
-            // Color based on position for fun
-            float r = (x / radius + 1.0f) * 0.5f;
-            float g = (y / radius + 1.0f) * 0.5f;
-            float b = (z / radius + 1.0f) * 0.5f;
-
-            vertices.emplace_back(x, y, z, r, g, b, 1.0f);
+            const auto& color = getRandomColor();
+            vertices.emplace_back(x, y, z, color.x, color.y, color.z, color.w);
         }
     }
+
     return vertices;
 }
+
 
 std::vector<UINT> ModelSphere::BuildIndex()
 {

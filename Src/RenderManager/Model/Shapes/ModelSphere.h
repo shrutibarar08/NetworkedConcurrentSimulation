@@ -29,5 +29,6 @@ private:
 	float m_Radius{ 1.0f };
 	UINT m_LatitudeSegments = 16;
 	UINT m_LongitudeSegments = 32;
+	std::vector<std::vector<DirectX::XMFLOAT4>> m_Colors{};
 };
 
