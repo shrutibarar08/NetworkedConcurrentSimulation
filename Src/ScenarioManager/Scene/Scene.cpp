@@ -191,6 +191,11 @@ CREATE_PAYLOAD Scene::GeneratePayloadFromSceneSettings(SPAWN_OBJECT type, const 
 	payload.AngularDamping = m_Randomizer.Float(settings.minAngularDamping, settings.maxAngularDamping);
 	payload.LinearDamping = m_Randomizer.Float(settings.minLinearDamping, settings.maxLinearDamping);
 
+	payload.Radius = m_Randomizer.Float(settings.minRadius, settings.maxRadius);
+	payload.Height = m_Randomizer.Float(settings.minHeight, settings.maxHeight);
+	payload.Width = m_Randomizer.Float(settings.minWidth, settings.maxWidth);
+	payload.Depth = m_Randomizer.Float(settings.minDepth, settings.maxDepth);
+
 	payload.SpawnTime = 0.0f;
 
 	return payload;

@@ -106,6 +106,18 @@ void SceneUI::DisplaySpawnerPop()
         ImGui::DragFloat("Min Linear Damping", &p.minLinearDamping, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Max Linear Damping", &p.maxLinearDamping, 0.01f, 0.0f, 1.0f);
 
+        ImGui::DragFloat("Min Radius", &p.minRadius, 0.01f, 0.1f, 10.0f);
+        ImGui::DragFloat("Max Radius", &p.maxRadius, 0.01f, 0.1f, 10.0f);
+
+        ImGui::DragFloat("Min Height", &p.minHeight, 0.01f, 0.1f, 10.0f);
+        ImGui::DragFloat("Max Height", &p.maxHeight, 0.01f, 0.1f, 10.0f);
+
+        ImGui::DragFloat("Min Width", &p.minWidth, 0.01f, 0.1f, 10.0f);
+        ImGui::DragFloat("Max Width", &p.maxWidth, 0.01f, 0.1f, 10.0f);
+
+        ImGui::DragFloat("Min Depth", &p.minDepth, 0.01f, 0.1f, 10.0f);
+        ImGui::DragFloat("Max Depth", &p.maxDepth, 0.01f, 0.1f, 10.0f);
+
         ImGui::DragInt("Spawn Quantity", &p.quantity, 1, 1, 300);
 
         ImGui::Text("Types to Spawn:");

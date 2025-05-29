@@ -58,6 +58,18 @@ typedef struct CREATE_SCENE_PAYLOAD
 
     float deltaSpawnTime;
 
+    float minRadius = 0.3f;
+    float maxRadius = 4.0f;
+
+    float minHeight = 0.3f;
+    float maxHeight = 4.0f;
+
+    float minWidth = 0.3f;
+    float maxWidth = 4.0f;
+
+    float minDepth = 0.3f;
+    float maxDepth = 4.0f;
+
 } CREATE_SCENE_PAYLOAD;
 
 enum class State : uint8_t

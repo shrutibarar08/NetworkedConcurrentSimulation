@@ -5,6 +5,9 @@
 #include <cassert>
 #include <d3dcompiler.h>
 
+#include "CapsuleCollider.h"
+#include "CubeCollider.h"
+#include "SphereCollider.h"
 #include "RenderManager/ShaderCache.h"
 
 
@@ -163,6 +166,24 @@ void IModel::SetPayload(const CREATE_PAYLOAD& payload)
 	GetCollider()->SetColliderState(state);
 
 	SetUiControlNeeded(payload.UiControlNeeded);
+
+	if (GetCollider()->GetColliderType() == ColliderType::Cube)
+	{
+		auto collider = dynamic_cast<CubeCollider*>(GetCollider());
+		DirectX::XMVECTOR scale{ payload.Width, payload.Height, payload.Depth };
+		collider->SetScale(scale);
+	}
+	if (GetCollider()->GetColliderType() == ColliderType::Sphere)
+	{
+		auto collider = dynamic_cast<SphereCollider*>(GetCollider());
+		collider->SetRadius(payload.Radius);
+	}
+	if (GetCollider()->GetColliderType() == ColliderType::Capsule)
+	{
+		auto collider = dynamic_cast<CapsuleCollider*>(GetCollider());
+		collider->SetRadius(payload.Radius);
+		collider->SetHeight(payload.Height);
+	}
 }
 
 SweetLoader IModel::GetSweetData()

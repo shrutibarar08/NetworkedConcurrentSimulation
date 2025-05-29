@@ -41,6 +41,11 @@ typedef struct CREATE_PAYLOAD
 	bool Static{ false };
 	bool UiControlNeeded{ false };
 
+	float Radius{ 1.0f };
+	float Height{ 1.0f };
+	float Width{ 1.0f };
+	float Depth{ 1.0f };
+
 	bool operator<(const CREATE_PAYLOAD& other) const
 	{
 		return SpawnTime > other.SpawnTime;
