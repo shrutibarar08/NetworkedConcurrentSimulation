@@ -36,9 +36,9 @@ bool PhysicsManager::Run()
                 break;
             }
         }
-
         if (m_Pause)
         {
+            m_Timer.Tick();
             Sleep(1);
             continue;
         }
@@ -55,7 +55,11 @@ bool PhysicsManager::Run()
         }
         else
         {
-            UseCache();
+            if (!m_WaitCleaning)
+            {
+                UseCache();
+            }
+            else Sleep(1);
         }
     }
     return true;
@@ -74,11 +78,13 @@ bool PhysicsManager::AddModel(ICollider* model)
 
 bool PhysicsManager::Clear()
 {
+    m_WaitCleaning = true;
     m_ForceRegister.Clear();
 
     ICollider* collider;
     while (m_PhysicsEntity.try_pop(collider)) { /* drop all */ }
 
+    m_WaitCleaning = false;
     return true;
 }
 

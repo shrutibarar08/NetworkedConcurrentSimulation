@@ -74,4 +74,6 @@ private:
 	IntegrationType m_SelectedIntegration{ IntegrationType::SemiImplicitEuler };
 	Concurrency::concurrent_queue<ICollider*> m_PhysicsEntity;
 	Concurrency::concurrent_queue<ICollider*> m_CacheRequest;
+
+	bool m_WaitCleaning{ false };
 };
