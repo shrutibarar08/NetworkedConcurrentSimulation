@@ -43,5 +43,4 @@ private:
 	float m_Radius{ 1.0f };
 	float m_Height{ 1.0f };
 	DirectX::XMVECTOR m_Scale{ 1, 1, 1 };
-	SRWLOCK m_Lock{ SRWLOCK_INIT };
 };

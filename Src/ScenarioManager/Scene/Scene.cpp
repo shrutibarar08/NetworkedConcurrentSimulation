@@ -40,6 +40,7 @@ void Scene::OnOffLoad()
 	m_State = State::UNLOADED;
 	LOG_INFO("Off Loading Scene...");
 
+	Render3DQueue::Clean();
 	for (auto& model : m_Models | std::views::values)
 	{
 		Render3DQueue::RemoveModel(model.get());

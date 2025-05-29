@@ -38,23 +38,20 @@ ColliderType CapsuleCollider::GetColliderType() const
 
 void CapsuleCollider::SetRadius(float radius)
 {
-    AcquireSRWLockExclusive(&m_Lock);
     m_Radius = radius;
 
     // Update X and Z components of scale (diameter)
-    float diameter = radius * 1.3f; // Computational issue temp solution
+    float diameter = radius * 1.3f;
 
     DirectX::XMFLOAT3 scale;
     DirectX::XMStoreFloat3(&scale, m_Scale);
     scale.x = diameter;
     scale.z = diameter;
     m_Scale = DirectX::XMLoadFloat3(&scale);
-    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 void CapsuleCollider::SetHeight(float height)
 {
-    AcquireSRWLockExclusive(&m_Lock);
     m_Height = height;
 
     // Update Y component of scale
@@ -62,22 +59,17 @@ void CapsuleCollider::SetHeight(float height)
     DirectX::XMStoreFloat3(&scale, m_Scale);
     scale.y = height;
     m_Scale = DirectX::XMLoadFloat3(&scale);
-    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 float CapsuleCollider::GetRadius() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_Radius;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
 float CapsuleCollider::GetHeight() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     float result = m_Height;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return result;
 }
 
@@ -91,18 +83,14 @@ void CapsuleCollider::SetScale(const DirectX::XMVECTOR& vector)
     float avgRadius = (scaleVec.x + scaleVec.z) * 0.5f * 0.5f;
     float height = scaleVec.y;
 
-    AcquireSRWLockExclusive(&m_Lock);
     m_Scale = vector;
     m_Radius = avgRadius;
     m_Height = height;
-    ReleaseSRWLockExclusive(&m_Lock);
 }
 
 DirectX::XMVECTOR CapsuleCollider::GetScale() const
 {
-    AcquireSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     DirectX::XMVECTOR scale = m_Scale;
-    ReleaseSRWLockShared(const_cast<SRWLOCK*>(&m_Lock));
     return scale;
 }
 

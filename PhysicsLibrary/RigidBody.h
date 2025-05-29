@@ -5,6 +5,29 @@
 #include "Quaternion.h"
 #include "IntegrationType.h"
 
+
+struct AtomicVector
+{
+    DirectX::XMVECTOR value = DirectX::XMVectorZero();
+    std::atomic_flag lock = ATOMIC_FLAG_INIT;
+
+    DirectX::XMVECTOR Get()
+    {
+        while (lock.test_and_set(std::memory_order_acquire)); // spin
+        DirectX::XMVECTOR val = value;
+        lock.clear(std::memory_order_release);
+        return val;
+    }
+
+    void Set(DirectX::XMVECTOR v)
+    {
+        while (lock.test_and_set(std::memory_order_acquire)); // spin
+        value = v;
+        lock.clear(std::memory_order_release);
+    }
+};
+
+
 class RigidBody
 {
 public:
@@ -17,7 +40,7 @@ public:
     void AddForce(const DirectX::XMVECTOR& force);
     void AddTorque(const DirectX::XMVECTOR& torque);
     void Integrate(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
-    DirectX::XMMATRIX GetTransformMatrix() const;
+    DirectX::XMMATRIX GetTransformMatrix();
 
     // Setters
     void SetPosition(const DirectX::XMVECTOR& pos);
@@ -36,10 +59,10 @@ public:
     void SetFriction(float v);
 
     // Getters
-    DirectX::XMVECTOR GetPosition() const;
-    DirectX::XMVECTOR GetVelocity() const;
-    DirectX::XMVECTOR GetAcceleration() const;
-    DirectX::XMVECTOR GetAngularVelocity() const;
+    DirectX::XMVECTOR GetPosition();
+    DirectX::XMVECTOR GetVelocity();
+    DirectX::XMVECTOR GetAcceleration();
+    DirectX::XMVECTOR GetAngularVelocity();
     Quaternion GetOrientation() const;
     float GetMass() const;
     float GetElasticity() const;
@@ -56,25 +79,23 @@ public:
 
     void ConstrainVelocity(const DirectX::XMVECTOR& contactNormal);
 private:
-    bool m_Resting{ false };
-    DirectX::XMVECTOR Position;
-    DirectX::XMVECTOR m_LastPosition{};
-    DirectX::XMVECTOR Velocity;
-    DirectX::XMVECTOR Acceleration;
+    std::atomic<bool> m_Resting{ false };
+    std::atomic<float> InverseMass{ 10.f };
+    std::atomic<float> m_LinearDamping{ 0.75f };
+    std::atomic<float> m_Elastic{ 0.56f };
+    std::atomic<float> m_Restitution{ 0.35f };
+    std::atomic<float> m_Friction{ 0.38f };
+    std::atomic<float> AngularDamping{ 0.39f };
 
-    SRWLOCK m_Lock{ SRWLOCK_INIT };
-
-    DirectX::XMVECTOR ForceAccum;
-    float InverseMass{ 10.f };
-    float m_LinearDamping{ 0.75 };
-    float m_Elastic{ 0.56f };
-    float m_Restitution{ 0.35f };
-    float m_Friction{ 0.38f };
 
     Quaternion Orientation;
-    DirectX::XMVECTOR AngularVelocity;
-    DirectX::XMVECTOR TorqueAccum;
-    float AngularDamping{ 0.39f };
+    AtomicVector Position;
+    AtomicVector m_LastPosition;
+    AtomicVector Velocity;
+    AtomicVector Acceleration;
+    AtomicVector ForceAccum;
+    AtomicVector AngularVelocity;
+    AtomicVector TorqueAccum;
 
     DirectX::XMMATRIX InverseInertiaTensor;
     DirectX::XMMATRIX InverseInertiaTensorWorld;

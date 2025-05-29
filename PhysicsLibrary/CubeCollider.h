@@ -28,6 +28,5 @@ public:
 	DirectX::XMVECTOR GetScale() const override;
 
 private:
-	mutable SRWLOCK m_Lock{ SRWLOCK_INIT };
 	DirectX::XMVECTOR m_Scale{ 1.0f, 1.0f, 1.0f };
 };

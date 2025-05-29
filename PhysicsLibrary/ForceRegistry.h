@@ -3,13 +3,16 @@
 #include "ForceGenerator.h"
 #include "ICollider.h"
 
+#include <concurrent_queue.h>
+
+
 class  ForceRegistry
 {
 public:
     void Add(ICollider* collider, ForceGenerator* fg);
     void Remove(ICollider* collider, ForceGenerator* fg);
     void Clear();
-    void UpdateForces(float duration) const;
+    void UpdateForces(float duration);
 
 protected:
     struct ForceRegistration
@@ -18,5 +21,5 @@ protected:
         ForceGenerator* ForceGenerates;
     };
 
-    std::vector<ForceRegistration> RegisteredForces;
+    Concurrency::concurrent_queue<ForceRegistration> RegisteredForces;
 };

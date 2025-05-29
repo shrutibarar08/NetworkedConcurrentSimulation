@@ -53,7 +53,10 @@ bool PhysicsManager::Run()
 
             m_Timer.Reset();
         }
-        else Sleep(1);
+        else
+        {
+            UseCache();
+        }
     }
     return true;
 }
@@ -63,45 +66,19 @@ bool PhysicsManager::Build(SweetLoader& sweetLoader)
 	return true;
 }
 
-bool PhysicsManager::AddModel(const IModel* model)
+bool PhysicsManager::AddModel(ICollider* model)
 {
-    AcquireSRWLockExclusive(&m_Lock);
-    LOG_INFO("Adding A model in Physics Manager!");
-    ID id = model->GetModelId();
-    if (m_PhysicsEntity.contains(id))
-    {
-        LOG_WARNING("Failed To add model into physics loop");
-        return false;
-    }
-
-    m_PhysicsEntity[id] = model->GetCollider();
-    m_ForceRegister.Add(model->GetCollider(), m_Gravity.get());
-    int key = GetColliderKey(m_PhysicsEntity[id]);
-    IncreaseCount(key);
-    ReleaseSRWLockExclusive(&m_Lock);
-    LOG_SUCCESS("Added model in physics loop!");
-    return true;
-}
-
-bool PhysicsManager::RemoveModel(ID id)
-{
-    if (!m_PhysicsEntity.contains(id)) return false;
-
-    AcquireSRWLockExclusive(&m_Lock);
-    m_ForceRegister.Remove(m_PhysicsEntity[id], m_Gravity.get());
-    int key = GetColliderKey(m_PhysicsEntity[id]);
-    DecreaseCount(key);
-
-    m_PhysicsEntity.erase(id);
-    ReleaseSRWLockExclusive(&m_Lock);
-
-    return true;
+    m_CacheRequest.push(model);
+    return false;
 }
 
 bool PhysicsManager::Clear()
 {
     m_ForceRegister.Clear();
-    m_PhysicsEntity.clear();
+
+    ICollider* collider;
+    while (m_PhysicsEntity.try_pop(collider)) { /* drop all */ }
+
     return true;
 }
 
@@ -203,28 +180,29 @@ void PhysicsManager::DecreaseCount(int colliderKey)
 void PhysicsManager::Update(float dt, IntegrationType type)
 {
     m_TotalTime += dt;
+
     // === Integrate bodies ===
-    AcquireSRWLockShared(&m_Lock);
-    size_t count = m_PhysicsEntity.size();
     std::vector<ICollider*> colliders;
-    std::vector<uint64_t> ids;
 
-    for (auto& collider : m_PhysicsEntity)
+    // Save off colliders for collision
+
+    ICollider* collider = nullptr;
+    while (m_PhysicsEntity.try_pop(collider))
     {
-        if (!collider.second) continue;
+        if (!collider) continue;
 
-        collider.second->Update();
-        RigidBody* body = collider.second->GetRigidBody();
+        collider->Update();
+
+        RigidBody* body = collider->GetRigidBody();
         if (!body) continue;
-        colliders.push_back(collider.second);
-        ids.push_back(collider.first);
 
         body->Integrate(dt, type);
+        colliders.push_back(collider);
     }
-    m_ForceRegister.UpdateForces(dt);
-    ReleaseSRWLockShared(&m_Lock);
 
-    // === Collision detection ===
+    m_ForceRegister.UpdateForces(dt);
+
+    // === Collision Detection ===
     std::vector<Contact> contacts;
     for (size_t i = 0; i < colliders.size(); ++i)
     {
@@ -242,6 +220,32 @@ void PhysicsManager::Update(float dt, IntegrationType type)
             }
         }
     }
-    // === Resolve all detected contacts ===
+
+    // === Contact Resolution ===
     CollisionResolver::ResolveContacts(contacts, dt, m_TotalTime);
+
+    // re-queue
+    for (ICollider* collider : colliders)
+    {
+        m_PhysicsEntity.push(collider);
+    }
+
+}
+
+void PhysicsManager::UseCache()
+{
+    ICollider* collider = nullptr;
+    if (!m_CacheRequest.try_pop(collider) || !collider || collider == reinterpret_cast<ICollider*>(-1))
+        return;
+
+    switch (collider->GetColliderType())
+    {
+    case ColliderType::Capsule: m_ObjectInfo[2]++; break;
+    case ColliderType::Cube:    m_ObjectInfo[1]++; break;
+    case ColliderType::Sphere:  m_ObjectInfo[0]++; break;
+    default: break;
+    }
+
+    m_ForceRegister.Add(collider, m_Gravity.get());
+    m_PhysicsEntity.push(collider);
 }

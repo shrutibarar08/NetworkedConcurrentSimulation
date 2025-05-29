@@ -303,9 +303,7 @@ void CubeCollider::SetScale(const DirectX::XMVECTOR& vector)
 
 DirectX::XMVECTOR CubeCollider::GetScale() const
 {
-    AcquireSRWLockShared(&m_Lock);
     DirectX::XMVECTOR scale = m_Scale;
-    ReleaseSRWLockShared(&m_Lock);
     return scale;
 }
 

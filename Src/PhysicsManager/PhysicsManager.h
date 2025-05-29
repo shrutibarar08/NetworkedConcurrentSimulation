@@ -6,6 +6,7 @@
 #include "IntegrationType.h"
 #include "Utils/LocalTimer.h"
 
+#include <concurrent_queue.h>
 
 class IModel;
 
@@ -24,8 +25,7 @@ public:
 	bool Run() override;
 	bool Build(SweetLoader& sweetLoader) override;
 
-	bool AddModel(const IModel* model);
-	bool RemoveModel(ID id);
+	bool AddModel(ICollider* model);
 	bool Clear();
 
 	int GetCubeCounts();
@@ -57,6 +57,8 @@ private:
 
 	void Update(float dt, IntegrationType type = IntegrationType::SemiImplicitEuler);
 
+	void UseCache();
+
 private:
 	ForceRegistry m_ForceRegister{};
 	std::unique_ptr<Gravity>  m_Gravity{ nullptr };
@@ -70,5 +72,6 @@ private:
 	float m_ActualSimulationHz{ 0.0f };
 	bool m_Pause{ false };
 	IntegrationType m_SelectedIntegration{ IntegrationType::SemiImplicitEuler };
-	std::unordered_map<uint64_t, ICollider*> m_PhysicsEntity;
+	Concurrency::concurrent_queue<ICollider*> m_PhysicsEntity;
+	Concurrency::concurrent_queue<ICollider*> m_CacheRequest;
 };

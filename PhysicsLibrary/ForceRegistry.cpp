@@ -3,36 +3,58 @@
 #include <algorithm>
 
 
-
 void ForceRegistry::Add(ICollider* collider, ForceGenerator* fg)
 {
-    RegisteredForces.push_back({ collider,fg });
+    RegisteredForces.push({ collider, fg });
 }
 
 void ForceRegistry::Remove(ICollider* collider, ForceGenerator* fg)
 {
-    RegisteredForces.erase(
-        std::remove_if(RegisteredForces.begin(), RegisteredForces.end(),
-            [&](const ForceRegistration& reg)
-            {
-                return reg.Collider == collider && reg.ForceGenerates == fg;
-            }),
-        RegisteredForces.end()
-    );
+    Concurrency::concurrent_queue<ForceRegistration> tempQueue;
+
+    ForceRegistration reg;
+    while (RegisteredForces.try_pop(reg))
+    {
+        if (!(reg.Collider == collider && reg.ForceGenerates == fg))
+        {
+            tempQueue.push(reg); // Keep it
+        }
+    }
+
+    // Restore filtered entries
+    ForceRegistration requeue;
+    while (tempQueue.try_pop(requeue))
+    {
+        RegisteredForces.push(requeue);
+    }
 }
 
 void ForceRegistry::Clear()
 {
-    RegisteredForces.clear();
+    ForceRegistration reg;
+    while (RegisteredForces.try_pop(reg)) { /* drop all */ }
 }
 
-void ForceRegistry::UpdateForces(float duration) const
+void ForceRegistry::UpdateForces(float duration)
 {
-    for (auto& reg : RegisteredForces)
+    Concurrency::concurrent_queue<ForceRegistration> tempQueue;
+
+    ForceRegistration reg;
+    while (RegisteredForces.try_pop(reg))
     {
-        if (reg.Collider)
+        if (reg.Collider && reg.ForceGenerates)
         {
             reg.ForceGenerates->UpdateForce(reg.Collider, duration);
         }
+
+        // Re-add it after use (preserves queue)
+        tempQueue.push(reg);
+    }
+
+    // Restore the original queue
+    ForceRegistration requeue;
+    while (tempQueue.try_pop(requeue))
+    {
+        RegisteredForces.push(requeue);
     }
 }

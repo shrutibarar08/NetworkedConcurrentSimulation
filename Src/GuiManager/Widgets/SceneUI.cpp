@@ -106,7 +106,7 @@ void SceneUI::DisplaySpawnerPop()
         ImGui::DragFloat("Min Linear Damping", &p.minLinearDamping, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Max Linear Damping", &p.maxLinearDamping, 0.01f, 0.0f, 1.0f);
 
-        ImGui::DragInt("Spawn Quantity", &p.quantity, 1, 1, 1000);
+        ImGui::DragInt("Spawn Quantity", &p.quantity, 1, 1, 300);
 
         ImGui::Text("Types to Spawn:");
         ImGui::Checkbox("Cube", &p.spawnCube);

@@ -8,17 +8,13 @@ ICollider::ICollider(RigidBody* attachBody)
 
 ColliderSate ICollider::GetColliderState()
 {
-	AcquireSRWLockShared(&m_Lock);
 	ColliderSate state = m_ColliderState;
-	ReleaseSRWLockShared(&m_Lock);
 	return state;
 }
 
 void ICollider::SetColliderState(ColliderSate state)
 {
-	AcquireSRWLockExclusive(&m_Lock);
 	m_ColliderState = state;
-	ReleaseSRWLockExclusive(&m_Lock);
 }
 
 const char* ICollider::ToString() const

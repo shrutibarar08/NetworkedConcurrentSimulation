@@ -24,11 +24,11 @@ public:
 
     friend Quaternion operator*(float scalar, const Quaternion& q);
 
-    float GetR();
-    float GetI();
-    float GetJ();
-    float GetK();
+    float GetR() const { return R.load(std::memory_order_relaxed); }
+    float GetI() const { return I.load(std::memory_order_relaxed); }
+    float GetJ() const { return J.load(std::memory_order_relaxed); }
+    float GetK() const { return K.load(std::memory_order_relaxed); }
 
 private:
-    float R, I, J, K;
+    std::atomic<float> R, I, J, K;
 };

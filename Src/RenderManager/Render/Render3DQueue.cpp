@@ -1,11 +1,9 @@
 #include "Render3DQueue.h"
 
-#include <iostream>
-#include <ranges>
-
 #include "Utils/Logger.h"
 #include "ICollider.h"
 
+#include <ranges>
 
 Render3DQueue::Render3DQueue(CameraController* controller, ID3D11Device* device)
 {
@@ -27,7 +25,7 @@ bool Render3DQueue::AddModel(IModel* model)
 		m_ModelsToRender.emplace(model->GetModelId(), model);
 		if (m_PhysicsManager)
 		{
-			m_PhysicsManager->AddModel(model);
+			m_PhysicsManager->AddModel(model->GetCollider());
 		}
 		status = true;
 	}
@@ -55,7 +53,6 @@ bool Render3DQueue::RemoveModel(uint64_t modelId)
 
 	if (m_ModelsToRender.contains(modelId))
 	{
-		m_PhysicsManager->RemoveModel(modelId);
 		m_ModelsToRender.erase(modelId);
 		status = true;
 	}
