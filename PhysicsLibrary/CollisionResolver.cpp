@@ -654,7 +654,7 @@ void CollisionResolver::ResolveVelocity(Contact& contact, float deltaTime)
     // Use restitution and elasticity together
     float restitution = contact.Restitution;
     float elasticity = contact.Elasticity;
-    float combinedRestitution = restitution * (1.0f + elasticity);
+    float combinedRestitution = std::clamp(restitution * (1.0f + elasticity), 0.0f, 1.0f);
 
     XMMATRIX invInertiaA = bodyA->GetInverseInertiaTensor();
     XMMATRIX invInertiaB = bodyB->GetInverseInertiaTensor();
