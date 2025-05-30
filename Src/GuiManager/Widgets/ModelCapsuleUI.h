@@ -34,6 +34,6 @@ private:
     float m_Friction = 0.0f;
     float m_Radius = 0.0f;
     float m_Height = 0.0f;
-
+	char m_NameBuffer[128] = {};
     bool m_InitializedFromRigidBody = false;
 };

@@ -28,4 +28,5 @@ private:
     bool m_UiNeeded{ false };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
+    char m_NameBuffer[128] = {};
 };

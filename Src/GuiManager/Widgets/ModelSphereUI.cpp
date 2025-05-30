@@ -34,6 +34,8 @@ void ModelSphereUI::RenderOnScreen()
     DirectX::XMStoreFloat3(&m_Acc, m_RigidBody->GetAcceleration());
     DirectX::XMStoreFloat3(&m_AngVel, m_RigidBody->GetAngularVelocity());
 
+
+
     Quaternion q = m_RigidBody->GetOrientation();
     m_Orientation[0] = q.GetI();
     m_Orientation[1] = q.GetJ();
@@ -45,6 +47,16 @@ void ModelSphereUI::RenderOnScreen()
     m_Elasticity = m_RigidBody->GetElasticity();
     m_Restitution = m_RigidBody->GetRestitution();
     m_Friction = m_RigidBody->GetFriction();
+
+    ImGui::Text("Object Identity");
+    ImGui::Separator();
+
+    ImGui::InputText("Name", m_NameBuffer, sizeof(m_NameBuffer));
+
+    if (ImGui::Button("Apply Name"))
+    {
+        m_Sphere->SetName(std::string(m_NameBuffer));
+    }
 
     ImGui::Text("Rigidbody Properties");
     ImGui::Separator();

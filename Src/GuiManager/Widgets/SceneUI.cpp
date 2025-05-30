@@ -1,5 +1,6 @@
 #include "SceneUI.h"
 
+#include <iostream>
 #include <ranges>
 #include "imgui.h"
 #include "Utils/Logger.h"
@@ -231,12 +232,11 @@ void SceneUI::DisplayObjects() const
                 const int modelId = object->GetModelId();
                 ImGui::PushID(modelId);
 
-                std::string label = "Object##" + std::to_string(modelId);
-                if (ImGui::CollapsingHeader(label.c_str()))
+                std::string name = object->GetName();
+                if (ImGui::CollapsingHeader(name.c_str()))
                 {
                     widget->RenderOnScreen();
                 }
-
                 ImGui::PopID();
             }
         }

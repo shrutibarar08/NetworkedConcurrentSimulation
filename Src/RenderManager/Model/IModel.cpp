@@ -198,6 +198,7 @@ SweetLoader IModel::SaveSweetModelData()
 	DirectX::XMStoreFloat3(&acc, m_RigidBody.GetAcceleration());
 	DirectX::XMStoreFloat3(&angVel, m_RigidBody.GetAngularVelocity());
 
+	root.GetOrCreate("Name") = GetName();
 	root.GetOrCreate("Position").GetOrCreate("x") = std::to_string(pos.x);
 	root.GetOrCreate("Position").GetOrCreate("y") = std::to_string(pos.y);
 	root.GetOrCreate("Position").GetOrCreate("z") = std::to_string(pos.z);
@@ -284,7 +285,7 @@ void IModel::LoadFromSweetData(const SweetLoader& sweetData)
 		);
 		m_RigidBody.SetOrientation(q);
 	}
-
+	SetName(sweetData["Name"].GetValue());
 	m_RigidBody.SetMass(sweetData["Mass"].AsFloat());
 	m_RigidBody.SetElasticity(sweetData["Elasticity"].AsFloat());
 	m_RigidBody.SetDamping(sweetData["Damping"].AsFloat());

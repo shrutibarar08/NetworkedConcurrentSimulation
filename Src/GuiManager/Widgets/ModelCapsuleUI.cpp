@@ -49,6 +49,15 @@ void ModelCapsuleUI::RenderOnScreen()
     m_Radius = m_Collider->GetRadius();
     m_Height = m_Collider->GetHeight();
 
+    ImGui::Text("Object Identity");
+    ImGui::Separator();
+
+    ImGui::InputText("Name", m_NameBuffer, sizeof(m_NameBuffer));
+
+    if (ImGui::Button("Apply Name"))
+    {
+        m_Capsule->SetName(std::string(m_NameBuffer));
+    }
     // === Rigidbody UI ===
     ImGui::Text("RigidBody");
     ImGui::Separator();

@@ -34,6 +34,7 @@ private:
     float m_Friction = 0.0f;
     bool m_Platform{ false };
     bool m_UiNeeded{ false };
+    char m_NameBuffer[128] = {};
 
     bool m_InitializedFromRigidBody = false;
 };

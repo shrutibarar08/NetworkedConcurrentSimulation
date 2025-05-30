@@ -54,6 +54,16 @@ void ModelCubeUI::RenderOnScreen()
 
     DirectX::XMStoreFloat3(&m_Scale, m_Collider->GetScale());
 
+    ImGui::Text("Object Identity");
+    ImGui::Separator();
+
+    ImGui::InputText("Name", m_NameBuffer, sizeof(m_NameBuffer));
+
+    if (ImGui::Button("Apply Name"))
+    {
+        m_Cube->SetName(std::string(m_NameBuffer));
+    }
+
     // === RigidBody Section ===
     ImGui::Text("Rigidbody Properties");
     ImGui::Separator();
