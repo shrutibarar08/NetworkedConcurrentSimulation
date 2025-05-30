@@ -17,7 +17,7 @@ private:
 
     //~ Cube vs Cube
     static void ResolveContactWithCubeVsCube(Contact& contact, float deltaTime, float totalTime);
-    static void ResolvePenetrationWithCubeVsCube(Contact& contact, float deltaTime);
+    static void ResolvePenetration(Contact& contact, float deltaTime);
     static void ResolveVelocityWithCubeVsCube(Contact& contact, float deltaTime);
     static void ResolveFrictionWithCubeVsCube(Contact& contact, float deltaTime);
     static void ResolveRestingStateWithCubeVsCube(Contact& contact, float deltaTime);
@@ -25,6 +25,7 @@ private:
 
     //~ Specific to spheres
     static void ResolveVelocityWithCubeVsSphere(Contact& contact, float deltaTime);
+    static void ResolvePenetrationWithCubeVsSphere(Contact& contact, float deltaTime);
 
     //~ Resolve Inter Penetration
     static void ResolvePositionInterpenetration(const Contact& contact);
@@ -34,6 +35,7 @@ private:
 
     //~ Helper Functions
     static void ApplyFriction(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse);
+    static void ApplyFrictionImproved(Contact& contact, DirectX::XMVECTOR relativeVelocity, DirectX::XMVECTOR impulse);
     static bool IsStatic(ICollider* collider);
     static DirectX::XMVECTOR GetVelocityAtPoint(RigidBody* body, const DirectX::XMVECTOR& r);
     static float ComputeDenominator(

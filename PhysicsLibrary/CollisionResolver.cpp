@@ -17,10 +17,24 @@ void CollisionResolver::ResolveContact(Contact& contact, float deltaTime, float 
     {
         ResolveContactWithCubeVsCube(contact, deltaTime, totalTime);
     }
+    else if (a->GetColliderType() == ColliderType::Cube && b->GetColliderType() == ColliderType::Sphere)
+    {
+        ResolveVelocity(contact, deltaTime);
+        ResolvePenetrationWithCubeVsSphere(contact, deltaTime);
+    }
+    else if (a->GetColliderType() == ColliderType::Sphere && b->GetColliderType() == ColliderType::Cube)
+    {
+        ICollider* a = contact.Colliders[0];
+        ICollider* b = contact.Colliders[1];
+        contact.Colliders[1] = a;
+        contact.Colliders[0] = b;
+        ResolveVelocity(contact, deltaTime);
+        ResolvePenetrationWithCubeVsSphere(contact, deltaTime);
+    }
 	else
     {
         ResolveVelocity(contact, deltaTime);
-        ResolvePenetrationWithCubeVsCube(contact, deltaTime);
+        ResolvePenetration(contact, deltaTime);
     }
 }
 
@@ -41,12 +55,12 @@ void CollisionResolver::ResolveContactWithCubeVsCube(Contact& contact, float del
 {
     ResolveVelocityWithCubeVsCube(contact, deltaTime);
     ResolveFrictionWithCubeVsCube(contact, deltaTime);
-    ResolvePenetrationWithCubeVsCube(contact, deltaTime);
+    ResolvePenetration(contact, deltaTime);
     ResolveRestingStateWithCubeVsCube(contact, deltaTime);
     ResolveAngularDampingWithCubeVsCube(contact, deltaTime);
 }
 
-void CollisionResolver::ResolvePenetrationWithCubeVsCube(Contact& contact, float deltaTime)
+void CollisionResolver::ResolvePenetration(Contact& contact, float deltaTime)
 {
     using namespace DirectX;
 
@@ -405,6 +419,8 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
 
     float restitution = contact.Restitution * contact.Elasticity;
     std::cout << "Combined Restitution: " << restitution << "\n";
+    std::cout << "Friction: " << contact.Friction << "\n";
+    std::cout << "Sphere Damping: " << bodyB->GetDamping() << ", Angular: " << bodyB->GetAngularDamping() << "\n";
 
     XMVECTOR raCrossN = XMVector3Cross(rA, normal);
     XMVECTOR raInertia = XMVector3Transform(raCrossN, bodyA->GetInverseInertiaTensorWorld());
@@ -427,12 +443,47 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
         return;
     }
 
+    if (vRelAlongNormal > 0.0f)
+    {
+        if (contact.PenetrationDepth > 0.001f)
+        {
+            float biasRestitution = 0.01f; // small bias to push them apart
+            float jBias = -(1.0f + biasRestitution) * vRelAlongNormal / denom;
+            XMVECTOR biasImpulse = XMVectorScale(normal, jBias);
+
+            std::cout << "[Bias Resolver] Applying bias impulse: " << jBias << "\n";
+
+            if (!isStaticA)
+            {
+                bodyA->ApplyLinearImpulse(biasImpulse);
+                bodyA->ApplyAngularImpulse(biasImpulse, rA);
+            }
+
+            if (!isStaticB)
+            {
+                XMVECTOR negBiasImpulse = XMVectorNegate(biasImpulse);
+                bodyB->ApplyLinearImpulse(negBiasImpulse);
+                bodyB->ApplyAngularImpulse(negBiasImpulse, rB);
+            }
+
+            std::cout << "[Bias Resolver] Applied.\n";
+        }
+        else
+        {
+            std::cout << "[Resolver] Separating. Skipping velocity resolution.\n";
+        }
+        return;
+    }
+
     float j = -(1.0f + restitution) * vRelAlongNormal / denom;
     contact.NormalImpulseMagnitude = j;
 
-    std::cout << "Impulse Magnitude: " << j << "\n";
+    std::cout << "Impulse Magnitude (j): " << j << "\n";
+
 
     XMVECTOR impulse = XMVectorScale(normal, j);
+
+    XMVECTOR velBefore = bodyB->GetVelocity(); // velocity before impulse
 
     if (!isStaticA)
     {
@@ -455,11 +506,99 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
             << XMVectorGetZ(negImpulse) << "\n";
 
         bodyB->ApplyLinearImpulse(negImpulse);
-        bodyB->ApplyAngularImpulse(negImpulse, rB); // optional for spin
+        bodyB->ApplyAngularImpulse(negImpulse, rB); // optional
+
+        XMVECTOR velAfter = bodyB->GetVelocity();
+        std::cout << "Sphere Velocity Before: "
+            << XMVectorGetX(velBefore) << ", "
+            << XMVectorGetY(velBefore) << ", "
+            << XMVectorGetZ(velBefore) << "\n";
+        std::cout << "Sphere Velocity After:  "
+            << XMVectorGetX(velAfter) << ", "
+            << XMVectorGetY(velAfter) << ", "
+            << XMVectorGetZ(velAfter) << "\n";
     }
 
     std::cout << "=== Collision Resolved ===\n\n";
 }
+
+void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, float deltaTime)
+{
+    using namespace DirectX;
+
+    ICollider* colliderA = contact.Colliders[0]; // Cube
+    ICollider* colliderB = contact.Colliders[1]; // Sphere
+
+    RigidBody* bodyA = colliderA->GetRigidBody();
+    RigidBody* bodyB = colliderB->GetRigidBody();
+
+    const bool isStaticA = colliderA->GetColliderState() == ColliderState::Static;
+    const bool isStaticB = colliderB->GetColliderState() == ColliderState::Static;
+
+    // Exit early if both are static
+    if (isStaticA && isStaticB)
+        return;
+
+    const float slop = 0.0001f;    // tolerance before pushing
+    const float percent = 1.0f;    // aggressive correction
+
+    float penetration = contact.PenetrationDepth - slop;
+    if (penetration <= 0.0f)
+        return;
+
+    XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&contact.ContactNormal));
+
+    std::cout << "[Penetration Resolver]\n";
+    std::cout << "Penetration to Resolve: " << penetration << "\n";
+
+    // Calculate the correction vector
+    XMVECTOR correction = XMVectorScale(normal, penetration * percent);
+
+    if (isStaticA)
+    {
+        // Push only sphere
+        XMVECTOR posB = bodyB->GetPosition();
+        posB = XMVectorAdd(posB, correction);
+        bodyB->SetPosition(posB);
+
+        std::cout << "Static Cube: pushing Sphere by +correction\n";
+    }
+    else if (isStaticB)
+    {
+        // Push only cube
+        XMVECTOR posA = bodyA->GetPosition();
+        posA = XMVectorSubtract(posA, correction);
+        bodyA->SetPosition(posA);
+
+        std::cout << "Static Sphere: pushing Cube by -correction\n";
+    }
+    else
+    {
+        // Both dynamic  split by inverse mass
+        float invMassA = bodyA->GetInverseMass();
+        float invMassB = bodyB->GetInverseMass();
+        float totalInvMass = invMassA + invMassB;
+
+        if (totalInvMass <= 0.0f)
+            return;
+
+        XMVECTOR pushA = XMVectorScale(correction, invMassA / totalInvMass);
+        XMVECTOR pushB = XMVectorScale(correction, invMassB / totalInvMass);
+
+        XMVECTOR posA = bodyA->GetPosition();
+        XMVECTOR posB = bodyB->GetPosition();
+
+        bodyA->SetPosition(XMVectorSubtract(posA, pushA));
+        bodyB->SetPosition(XMVectorAdd(posB, pushB));
+
+        std::cout << "Dynamic Both: Cube - "
+            << XMVectorGetX(pushA) << ", Sphere + "
+            << XMVectorGetX(pushB) << "\n";
+    }
+
+    std::cout << "Penetration Resolution Complete.\n\n";
+}
+
 
 void CollisionResolver::ResolvePositionInterpenetration(const Contact& contact)
 {
@@ -585,12 +724,14 @@ void CollisionResolver::ResolveVelocity(Contact& contact, float deltaTime)
     else if (aStatic)
     {
         ReflectFromStatic(bodyB, -normal, sepVel, combinedRestitution, rB, invInertiaB);
-        ApplyFriction(contact, relativeVel, normal * sepVel);
+        //ApplyFriction(contact, relativeVel, normal * sepVel);
+        ApplyFrictionImproved(contact, relativeVel, normal * sepVel);
     }
     else
     {
         ResolveDynamicVsDynamic(bodyA, bodyB, normal, sepVel, combinedRestitution, rA, rB, invInertiaA, invInertiaB);
-        ApplyFriction(contact, relativeVel, normal * sepVel);
+        //ApplyFriction(contact, relativeVel, normal * sepVel);
+        ApplyFrictionImproved(contact, relativeVel, normal * sepVel);
     }
 }
 
@@ -681,6 +822,93 @@ void CollisionResolver::ApplyFriction(Contact& contact, DirectX::XMVECTOR relati
         angImpulseB *= damping;
 
         bodyB->SetAngularVelocity(angVelB + angImpulseB);
+
+        if (XMVectorGetX(XMVector3LengthSq(angVelB)) < 0.01f)
+        {
+            float noiseStrength = normalImpulseMag * 0.05f;
+            XMVECTOR randomTorque = GenerateRandomAngularNoise(noiseStrength);
+            bodyB->SetAngularVelocity(bodyB->GetAngularVelocity() + randomTorque);
+        }
+    }
+}
+
+void CollisionResolver::ApplyFrictionImproved(Contact& contact, DirectX::XMVECTOR relativeVelocity,
+	DirectX::XMVECTOR impulse)
+{
+    using namespace DirectX;
+
+    RigidBody* bodyA = contact.Colliders[0]->GetRigidBody();
+    RigidBody* bodyB = contact.Colliders[1]->GetRigidBody();
+    if (!bodyA || !bodyB) return;
+
+    float invMassA = bodyA->GetInverseMass();
+    float invMassB = bodyB->GetInverseMass();
+    if (invMassA + invMassB <= 0.0f) return;
+
+    bool isStaticA = IsStatic(contact.Colliders[0]);
+    bool isStaticB = IsStatic(contact.Colliders[1]);
+
+    XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&contact.ContactNormal));
+    XMVECTOR contactPoint = XMLoadFloat3(&contact.ContactPoint);
+
+    // --- Tangent Vector ---
+    XMVECTOR tangent = relativeVelocity - normal * XMVector3Dot(relativeVelocity, normal);
+    float tangentLenSq = XMVectorGetX(XMVector3LengthSq(tangent));
+    if (tangentLenSq < 1e-6f) return;
+
+    tangent = XMVectorScale(tangent, 1.0f / std::sqrt(tangentLenSq));
+
+    // --- Friction Impulse ---
+    float friction = contact.Friction;
+    float normalImpulseMag = XMVectorGetX(XMVector3Length(impulse));
+    float maxFrictionImpulseMag = friction * normalImpulseMag;
+
+    float tangentialVelMag = XMVectorGetX(XMVector3Dot(relativeVelocity, tangent));
+    float denom = invMassA + invMassB;
+    float frictionImpulseMag = -tangentialVelMag / denom;
+    frictionImpulseMag = std::clamp(frictionImpulseMag, -maxFrictionImpulseMag, maxFrictionImpulseMag);
+
+    XMVECTOR frictionImpulse = tangent * frictionImpulseMag;
+
+    // --- Apply Linear Impulse ---
+    if (!isStaticA && invMassA > 0.0f)
+        bodyA->ApplyLinearImpulse(-frictionImpulse);
+
+    if (!isStaticB && invMassB > 0.0f)
+        bodyB->ApplyLinearImpulse(frictionImpulse);
+
+    // --- Apply Angular Friction ---
+    XMVECTOR rA = contactPoint - bodyA->GetPosition();
+    XMVECTOR rB = contactPoint - bodyB->GetPosition();
+
+    XMMATRIX invInertiaA = bodyA->GetInverseInertiaTensor();
+    XMMATRIX invInertiaB = bodyB->GetInverseInertiaTensor();
+
+    if (!isStaticA && invMassA > 0.0f)
+    {
+        XMVECTOR angularImpulseA = XMVector3Transform(XMVector3Cross(rA, -frictionImpulse), invInertiaA);
+        float damping = std::clamp(5.0f * invMassA, 0.1f, 1.0f);
+        angularImpulseA *= damping;
+
+        XMVECTOR angVelA = bodyA->GetAngularVelocity();
+        bodyA->SetAngularVelocity(angVelA + angularImpulseA);
+
+        if (XMVectorGetX(XMVector3LengthSq(angVelA)) < 0.01f)
+        {
+            float noiseStrength = normalImpulseMag * 0.05f;
+            XMVECTOR randomTorque = GenerateRandomAngularNoise(noiseStrength);
+            bodyA->SetAngularVelocity(bodyA->GetAngularVelocity() + randomTorque);
+        }
+    }
+
+    if (!isStaticB && invMassB > 0.0f)
+    {
+        XMVECTOR angularImpulseB = XMVector3Transform(XMVector3Cross(rB, frictionImpulse), invInertiaB);
+        float damping = std::clamp(5.0f * invMassB, 0.1f, 1.0f);
+        angularImpulseB *= damping;
+
+        XMVECTOR angVelB = bodyB->GetAngularVelocity();
+        bodyB->SetAngularVelocity(angVelB + angularImpulseB);
 
         if (XMVectorGetX(XMVector3LengthSq(angVelB)) < 0.01f)
         {
