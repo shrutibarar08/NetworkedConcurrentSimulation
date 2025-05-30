@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <memory>
+#include <unordered_map>
 
 struct Contact;
 
@@ -15,7 +16,7 @@ enum class ColliderType: uint8_t
     Capsule,
 };
 
-enum class ColliderSate: uint8_t
+enum class ColliderState: uint8_t
 {
 	Dynamic,
     Static,
@@ -34,11 +35,13 @@ public:
     virtual bool CheckCollision(ICollider* other, Contact& outContact) = 0;
     virtual ColliderType GetColliderType() const = 0;
 
+    void RegisterCollision(const ICollider* collider);
+
     // Access to parent rigid body
     virtual RigidBody* GetRigidBody() const { return m_RigidBody; }
 
-    ColliderSate GetColliderState();
-    void SetColliderState(ColliderSate state);
+    ColliderState GetColliderState();
+    void SetColliderState(ColliderState state);
     virtual void SetScale(const DirectX::XMVECTOR& vector) = 0;
     virtual DirectX::XMVECTOR GetScale() const = 0;
 
@@ -51,13 +54,35 @@ public:
     template<typename T>
     const T* As() const { return dynamic_cast<const T*>(this); }
 
+    template<typename T>
+    constexpr const T& Min(const T& a, const T& b)
+    {
+        return (a < b) ? a : b;
+    }
+
     const char* GetColliderTypeName() const;
 
     DirectX::XMMATRIX GetTransformationMatrix() const;
-    void Update();
+    void Update(float deltaTime);
+    DirectX::XMMATRIX GetWorldMatrix() const;
+
+    void SetReverseAware(bool flag) { m_ReverseAware = flag; }
+    bool IsReverseAware() const { return m_ReverseAware; }
 
 protected:
-    ColliderSate m_ColliderState = ColliderSate::Dynamic;
+    bool m_ReverseAware{ false };
+    ColliderState m_ColliderState = ColliderState::Dynamic;
     RigidBody* m_RigidBody;
     DirectX::XMMATRIX m_TransformationMatrix{};
+
+    //~ Platform
+    struct CollisionInfo
+    {
+        int hitCount = 0;
+        float lastHitTime = 0.0f;
+    } m_PlatformCollisionInfo{};
+
+    float mTotalElapsedTime = 0.0f;
+    int mRestThreshold{ 10 };
+    float mRestTimeThreshold{ 2.f };
 };

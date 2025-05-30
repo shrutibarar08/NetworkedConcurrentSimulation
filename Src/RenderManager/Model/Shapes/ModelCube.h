@@ -14,6 +14,10 @@ protected:
 	std::vector<VERTEX> BuildVertex() override;
 	std::vector<UINT> BuildIndex() override;
 
+public:
+	void SaveChildSweetData(SweetLoader& sweetData) override;
+	void LoadChildSweetData(const SweetLoader& sweetData) override;
+
 private:
 	std::unique_ptr<CubeCollider> m_Collider{ nullptr };
 

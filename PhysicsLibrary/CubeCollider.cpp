@@ -23,7 +23,10 @@ bool CubeCollider::CheckCollision(ICollider* other, Contact& outContact)
 
     if (other->GetColliderType() == ColliderType::Cube)
     {
-        return CheckCollisionWithCube(other, outContact);
+        Contact contact = GenerateContactWithCube(other->As<CubeCollider>());
+        outContact = contact;
+
+        return contact.PenetrationDepth > 0.0f;
     }
 
     if (other->GetColliderType() == ColliderType::Sphere)
@@ -200,7 +203,7 @@ bool CubeCollider::CheckCollisionWithSphere(ICollider* other, Contact& outContac
     for (int i = 0; i < 3; ++i)
     {
         float distance = XMVectorGetX(XMVector3Dot(relative, axes[i]));
-        float extent = XMVectorGetByIndex(cubeHalfExtents, i); // .x .y .z depending on axis
+        float extent = std::abs(XMVectorGetByIndex(cubeHalfExtents, i)); // Ensure extent is non-negative
         float clamped = std::clamp(distance, -extent, extent);
         closest += axes[i] * clamped;
     }
@@ -278,7 +281,16 @@ bool CubeCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outConta
         return false;
 
     float distance = std::sqrt(distSq);
-    XMVECTOR normal = (distance > 1e-6f) ? XMVector3Normalize(delta) : XMVectorSet(1, 0, 0, 0);
+    XMVECTOR normal;
+    if (distance > 1e-6f)
+    {
+        normal = XMVector3Normalize(delta); // Good: from cube sphere
+    }
+    else
+    {
+        // Fallback: still preserve direction from A to B
+        normal = XMVector3Normalize(capsuleBody->GetPosition() - cubeCenter); // or delta from center
+    }
     XMVECTOR contactPoint = cubePt;
 
     // === STEP 4: Fill Contact ===
@@ -294,6 +306,59 @@ bool CubeCollider::CheckCollisionWithCapsule(ICollider* other, Contact& outConta
     outContact.Elasticity = 0.5f * (cubeBody->GetElasticity() + capsuleBody->GetElasticity());
 
     return true;
+}
+
+Contact CubeCollider::GenerateContactWithCube(CubeCollider* other)
+{
+    using namespace DirectX;
+
+    Contact contact{};
+
+    // Step 1: Compute axes
+    XMVECTOR axesA[3];
+    XMVECTOR axesB[3];
+    this->ComputeWorldAxes(axesA);
+    other->ComputeWorldAxes(axesB);
+
+    // Step 2: Build SAT test axes
+    std::vector<XMVECTOR> testAxes;
+    BuildSATTestAxes(axesA, axesB, testAxes);
+
+    // Step 3: Run SAT test
+    float penetration;
+    XMVECTOR normal;
+    bool collided = TestOBBsWithSAT(this, other, testAxes, penetration, normal);
+
+    if (!collided)
+        return contact; // No collision
+
+    // Step 4: Ensure normal points from A to B
+    XMVECTOR centerA = this->GetCenter();
+    XMVECTOR centerB = other->GetCenter();
+    XMVECTOR centerDelta = XMVectorSubtract(centerB, centerA);
+
+    if (XMVectorGetX(XMVector3Dot(centerDelta, normal)) < 0.0f)
+    {
+        normal = XMVectorNegate(normal);
+    }
+
+    // Step 5: Fill out contact
+    XMStoreFloat3(&contact.ContactNormal, normal);
+    contact.PenetrationDepth = penetration;
+
+    // Approximate contact point: midpoint between centers
+    XMVECTOR midPoint = XMVectorScale(XMVectorAdd(centerA, centerB), 0.5f);
+    XMStoreFloat3(&contact.ContactPoint, midPoint);
+
+    contact.Colliders[0] = this;
+    contact.Colliders[1] = other;
+
+    // Transfer physical properties
+    contact.Restitution = Min(m_RigidBody->GetRestitution(), other->GetRigidBody()->GetRestitution());
+    contact.Friction = std::sqrt(m_RigidBody->GetFriction() * other->GetRigidBody()->GetFriction());
+    contact.Elasticity = Min(m_RigidBody->GetElasticity(), other->GetRigidBody()->GetElasticity());
+
+    return contact;
 }
 
 void CubeCollider::SetScale(const DirectX::XMVECTOR& vector)
@@ -332,4 +397,157 @@ bool CubeCollider::TryNormalize(DirectX::XMVECTOR& axis)
     if (XMVector3LengthSq(axis).m128_f32[0] < 1e-6f) return false;
     axis = XMVector3Normalize(axis);
     return true;
+}
+
+void CubeCollider::ComputeWorldAxes(DirectX::XMVECTOR outAxes[3]) const
+{
+    using namespace DirectX;
+
+    static const XMVECTOR LOCAL_AXES[3] = {
+        XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), // X
+        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), // Y
+        XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f)  // Z
+    };
+
+    const Quaternion orientation = m_RigidBody->GetOrientation();
+    const XMVECTOR halfScale = XMVectorScale(m_Scale, 0.5f); // Convert full size to half extents
+
+    for (int i = 0; i < 3; ++i)
+    {
+        XMVECTOR rotated = XMVector3Rotate(LOCAL_AXES[i], orientation.ToXmVector());
+
+        // Scale by half extent along that axis
+        float axisScale = XMVectorGetByIndex(halfScale, i); // Get half extent along x/y/z
+        outAxes[i] = XMVectorScale(rotated, axisScale);
+    }
+}
+
+void CubeCollider::BuildSATTestAxes(const DirectX::XMVECTOR axesA[3], const DirectX::XMVECTOR axesB[3],
+	std::vector<DirectX::XMVECTOR>& outAxes)
+{
+    using namespace DirectX;
+    outAxes.clear();
+    outAxes.reserve(15);
+
+    // === 3 Axes from A ===
+    for (int i = 0; i < 3; ++i)
+    {
+        XMVECTOR axis = XMVector3Normalize(axesA[i]);
+        outAxes.push_back(axis);
+    }
+
+    // === 3 Axes from B ===
+    for (int i = 0; i < 3; ++i)
+    {
+        XMVECTOR axis = XMVector3Normalize(axesB[i]);
+        outAxes.push_back(axis);
+    }
+
+    // === 9 Cross Product Axes ===
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            XMVECTOR cross = XMVector3Cross(axesA[i], axesB[j]);
+            float lengthSq = XMVectorGetX(XMVector3LengthSq(cross));
+
+            if (lengthSq > 1e-6f) // Ignore near-zero axes due to collinearity
+            {
+                outAxes.push_back(XMVector3Normalize(cross));
+            }
+        }
+    }
+}
+
+bool CubeCollider::TestOBBsWithSAT(const CubeCollider* boxA, const CubeCollider* boxB,
+	const std::vector<DirectX::XMVECTOR>& axes, float& minPenetrationDepth, DirectX::XMVECTOR& outCollisionNormal)
+{
+    using namespace DirectX;
+
+    const XMVECTOR centerA = boxA->GetCenter();
+    const XMVECTOR centerB = boxB->GetCenter();
+
+    XMVECTOR axesA[3], axesB[3];
+    boxA->ComputeWorldAxes(axesA);
+    boxB->ComputeWorldAxes(axesB);
+
+    const XMVECTOR centerOffset = XMVectorSubtract(centerB, centerA);
+
+    minPenetrationDepth = FLT_MAX;
+    outCollisionNormal = XMVectorZero();
+
+    for (const auto& axis : axes)
+    {
+        if (XMVector3Equal(axis, XMVectorZero())) continue;
+
+        XMVECTOR normalizedAxis = XMVector3Normalize(axis);
+
+        // === Projection of box A onto axis ===
+        float projectionA = 0.0f;
+        for (int i = 0; i < 3; ++i)
+        {
+            projectionA += abs(XMVectorGetX(XMVector3Dot(normalizedAxis, axesA[i])));
+        }
+
+        // === Projection of box B onto axis ===
+        float projectionB = 0.0f;
+        for (int i = 0; i < 3; ++i)
+        {
+            projectionB += abs(XMVectorGetX(XMVector3Dot(normalizedAxis, axesB[i])));
+        }
+
+        // === Distance between centers on this axis ===
+        float centerDistance = abs(XMVectorGetX(XMVector3Dot(normalizedAxis, centerOffset)));
+
+        float totalProjection = projectionA + projectionB;
+
+        if (centerDistance > totalProjection)
+        {
+            // Found a separating axis
+            return false;
+        }
+
+        float overlap = totalProjection - centerDistance;
+        if (overlap < minPenetrationDepth)
+        {
+            minPenetrationDepth = overlap;
+            outCollisionNormal = normalizedAxis;
+
+            // Ensure normal always points from A to B
+            if (XMVectorGetX(XMVector3Dot(normalizedAxis, centerOffset)) < 0)
+            {
+                outCollisionNormal = XMVectorNegate(normalizedAxis);
+            }
+        }
+    }
+
+    return true;
+}
+
+DirectX::XMVECTOR CubeCollider::GetCenter() const
+{
+    return m_RigidBody->GetPosition();
+}
+
+DirectX::XMVECTOR CubeCollider::GetClosestPoint(DirectX::XMVECTOR point) const
+{
+    using namespace DirectX;
+
+    // Step 1: Get the cube's world transform
+    XMMATRIX world = GetWorldMatrix();
+    XMMATRIX invWorld = XMMatrixInverse(nullptr, world);
+
+    // Step 2: Transform the point into the cube's local space
+    XMVECTOR localPoint = XMVector3TransformCoord(point, invWorld);
+
+    // Step 3: Clamp the point to the cube's local AABB [-0.5, 0.5] in each axis
+    XMVECTOR clamped = XMVectorClamp(
+        localPoint,
+        XMVectorSet(-0.5f, -0.5f, -0.5f, 0.0f),
+        XMVectorSet(0.5f, 0.5f, 0.5f, 0.0f)
+    );
+
+    // Step 4: Transform the clamped point back to world space
+    XMVECTOR worldClosestPoint = XMVector3TransformCoord(clamped, world);
+    return worldClosestPoint;
 }

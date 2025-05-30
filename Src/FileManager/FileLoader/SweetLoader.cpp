@@ -50,9 +50,19 @@ SweetLoader& SweetLoader::operator=(const std::string& value)
     return *this;
 }
 
-SweetLoader& SweetLoader::operator[](const std::string& name)
+const SweetLoader& SweetLoader::operator[](const std::string& key) const
 {
-    return mChildren[name];
+	auto it = mChildren.find(key);
+	if (it != mChildren.end())
+		return it->second;
+
+	static const SweetLoader invalidNode;  // Not connected to anything
+	return invalidNode;
+}
+
+SweetLoader& SweetLoader::GetOrCreate(const std::string& key)
+{
+	return mChildren[key];
 }
 
 bool SweetLoader::Contains(const std::string& key) const
@@ -93,6 +103,8 @@ void SweetLoader::Flatten(std::unordered_map<std::string, std::string>& out, con
 
 float SweetLoader::AsFloat() const
 {
+	if (!IsValid()) return 0.0f;
+
 	try {
 		return std::stof(mValue);
 	}
@@ -103,6 +115,8 @@ float SweetLoader::AsFloat() const
 
 int SweetLoader::AsInt() const
 {
+	if (!IsValid()) return 0;
+
 	try {
 		return std::stoi(mValue);
 	}
@@ -113,9 +127,18 @@ int SweetLoader::AsInt() const
 
 bool SweetLoader::AsBool() const
 {
+	if (!IsValid()) return false;
+
 	std::string val = mValue;
 	std::transform(val.begin(), val.end(), val.begin(), ::tolower);
 	return (val == "true" || val == "1");
+}
+
+
+bool SweetLoader::IsValid() const
+
+{
+	return !mValue.empty() || !mChildren.empty();
 }
 
 void SweetLoader::Serialize(std::ostream& output, int indent) const

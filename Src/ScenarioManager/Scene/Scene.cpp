@@ -227,7 +227,7 @@ bool Scene::IsLoaded() const
 	return m_State == State::LOADED;
 }
 
-void Scene::LoadFromSweetData(SweetLoader& sweetData)
+void Scene::LoadFromSweetData(const SweetLoader& sweetData)
 {
 	for (auto& [index, entry] : sweetData)
 	{
@@ -241,23 +241,25 @@ void Scene::LoadFromSweetData(SweetLoader& sweetData)
 SweetLoader Scene::SaveSweetData()
 {
 	SweetLoader sl{};
+
 	for (int i = 0; i < static_cast<int>(m_Models.size()); ++i)
 	{
 		auto& modelPtr = m_Models[i];
-		if (!modelPtr) continue;  // Skip if the model is null
+		if (!modelPtr) continue;
 
-		//~ Only Save Static Objects
-		if (modelPtr->GetCollider()->GetColliderState() != ColliderSate::Static) continue;;
-
-		auto* collider = modelPtr->GetCollider();
-		if (!collider) continue;  // Skip if collider is null
+		// Only save static objects
+		ICollider* collider = modelPtr->GetCollider();
+		if (!collider || collider->GetColliderState() != ColliderState::Static)
+			continue;
 
 		std::string indexStr = std::to_string(i);
-		const char* typeStr = collider->ToString();
+		const char* typeStr = collider->ToString(); // e.g., "Cube", "Sphere", "Capsule"
 
-		sl[indexStr]["Type"] = typeStr;
-		sl[indexStr][typeStr] = modelPtr->GetSweetData();
+		SweetLoader& modelNode = sl.GetOrCreate(indexStr);
+		modelNode.GetOrCreate("Type") = typeStr;
+		modelNode.GetOrCreate(typeStr) = modelPtr->SaveSweetModelData();
 	}
+
 	return sl;
 }
 

@@ -222,3 +222,39 @@ std::vector<UINT> ModelCapsule::BuildIndex()
 
 	return indices;
 }
+
+void ModelCapsule::SaveChildSweetData(SweetLoader& sweetData)
+{
+	if (!GetCollider()) return;
+
+	CapsuleCollider* capsule = GetCollider()->As<CapsuleCollider>();
+	if (!capsule) return;
+
+	sweetData.GetOrCreate("Radius") = std::to_string(capsule->GetRadius());
+	sweetData.GetOrCreate("Height") = std::to_string(capsule->GetHeight());
+}
+
+void ModelCapsule::LoadChildSweetData(const SweetLoader& sweetData)
+{
+	const SweetLoader& radiusNode = sweetData["Radius"];
+	const SweetLoader& heightNode = sweetData["Height"];
+
+	float radius = radiusNode.IsValid() ? radiusNode.AsFloat() : 0.0f;
+	float height = heightNode.IsValid() ? heightNode.AsFloat() : 0.0f;
+
+	if (!GetCollider()) return;
+
+	CapsuleCollider* capsule = GetCollider()->As<CapsuleCollider>();
+	if (!capsule) return;
+
+	if (radius > 0.0f)
+	{
+		capsule->SetRadius(radius);
+		SetRadius(radius);
+	}
+	if (height > 0.0f)
+	{
+		capsule->SetHeight(height);
+		SetHeight(height);
+	}
+}

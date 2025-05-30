@@ -26,6 +26,10 @@ protected:
 	std::vector<VERTEX> BuildVertex() override;
 	std::vector<UINT> BuildIndex() override;
 
+public:
+	void SaveChildSweetData(SweetLoader& sweetData) override;
+	void LoadChildSweetData(const SweetLoader& sweetData) override;
+
 private:
 	std::unique_ptr<CapsuleCollider> m_Collider{ nullptr };
 	float m_Radius = 1.f;

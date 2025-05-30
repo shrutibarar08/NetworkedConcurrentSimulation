@@ -15,6 +15,7 @@ public:
     DirectX::XMVECTOR GetGravityForce() const;
 
 private:
+    bool m_Reversed{ false };
     bool m_GravityOn{ false };
     DirectX::XMVECTOR m_GravityForce;
 };

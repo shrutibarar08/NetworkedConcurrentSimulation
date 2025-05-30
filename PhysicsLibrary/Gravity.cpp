@@ -14,7 +14,13 @@ void Gravity::UpdateForce(ICollider* collider, float duration)
     //~ Pre checks
     if (!IsGravityOn() || !collider) return;
     RigidBody* rigidBody = collider->GetRigidBody();
-    if (!rigidBody->HasFiniteMass() || collider->GetColliderState() == ColliderSate::Static) return;
+    if (collider->IsReverseAware() != m_Reversed)
+    {
+        collider->SetReverseAware(m_Reversed);
+        rigidBody->SetRestingState(false);
+    }
+    if (rigidBody->GetRestingState()) return;
+    if (!rigidBody->HasFiniteMass() || collider->GetColliderState() == ColliderState::Static) return;
 
     //~ Thread safe access
     DirectX::XMVECTOR gravity = m_GravityForce;
@@ -41,6 +47,8 @@ void Gravity::SetGravity(bool flag)
 void Gravity::ReverseGravity()
 {
     using namespace DirectX;
+
+    m_Reversed = !m_Reversed;
 
     XMFLOAT3 gravity{};
     XMStoreFloat3(&gravity, m_GravityForce);

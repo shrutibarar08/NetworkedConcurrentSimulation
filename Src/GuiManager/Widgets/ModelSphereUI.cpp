@@ -96,6 +96,6 @@ void ModelSphereUI::RenderOnScreen()
 
     if (ImGui::Combo("Collider State", &stateIdx, stateLabels, IM_ARRAYSIZE(stateLabels)))
     {
-        m_Collider->SetColliderState(static_cast<ColliderSate>(stateIdx));
+        m_Collider->SetColliderState(static_cast<ColliderState>(stateIdx));
     }
 }

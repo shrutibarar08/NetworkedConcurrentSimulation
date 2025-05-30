@@ -32,6 +32,8 @@ private:
     bool m_UiNeeded{ true };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
+    float m_Radius = 0.0f;
+    float m_Height = 0.0f;
 
     bool m_InitializedFromRigidBody = false;
 };

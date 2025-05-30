@@ -149,7 +149,7 @@ void ScenarioManager::SaveSweetData()
 {
 	for (auto& scene : m_Scenes | std::views::values)
 	{
-		m_SweetLoader[scene->GetName()] = scene->SaveSweetData();
+		m_SweetLoader.GetOrCreate(scene->GetName()) = scene->SaveSweetData();
 	}
 
 	m_SweetLoader.Save("Data/SceneData.json");

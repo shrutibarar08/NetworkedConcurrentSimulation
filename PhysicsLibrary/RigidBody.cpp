@@ -14,61 +14,6 @@ RigidBody::RigidBody()
     CalculateDerivedData();
 }
 
-void RigidBody::Integrate(float duration)
-{
-    CalculateDerivedData();
-
-    // Atomically read inverse mass
-    float invMass = InverseMass.load(std::memory_order_relaxed);
-    if (invMass <= 0.0f) return;
-
-    // === Linear motion ===
-    DirectX::XMVECTOR pos = Position.Get();
-    DirectX::XMVECTOR vel = Velocity.Get();
-    DirectX::XMVECTOR acc = Acceleration.Get();
-    DirectX::XMVECTOR force = ForceAccum.Get();
-
-    pos = DirectX::XMVectorAdd(pos, DirectX::XMVectorScale(vel, duration));
-
-    DirectX::XMVECTOR linearAcc = DirectX::XMVectorAdd(
-        acc,
-        DirectX::XMVectorScale(force, invMass)
-    );
-
-    vel = DirectX::XMVectorAdd(vel, DirectX::XMVectorScale(linearAcc, duration));
-
-    float damping = m_LinearDamping.load(std::memory_order_relaxed);
-    vel = DirectX::XMVectorScale(vel, std::pow(damping, duration));
-
-    Position.Set(pos);
-    Velocity.Set(vel);
-
-    // === Angular motion ===
-    DirectX::XMVECTOR angVel = AngularVelocity.Get();
-    DirectX::XMVECTOR torque = TorqueAccum.Get();
-
-    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(torque, InverseInertiaTensorWorld);
-    angVel = DirectX::XMVectorAdd(angVel, DirectX::XMVectorScale(angularAcc, duration));
-
-    float angDamp = AngularDamping.load(std::memory_order_relaxed);
-    angVel = DirectX::XMVectorScale(angVel, std::pow(angDamp, duration));
-
-    AngularVelocity.Set(angVel);
-
-    // === Orientation ===
-    float x = DirectX::XMVectorGetX(angVel);
-    float y = DirectX::XMVectorGetY(angVel);
-    float z = DirectX::XMVectorGetZ(angVel);
-
-    Quaternion deltaRot(0.0f, x, y, z);
-    deltaRot = deltaRot * Orientation;
-    Orientation += deltaRot * 0.5f * duration;
-    Orientation.Normalize();
-
-    CalculateDerivedData();
-    ClearAccumulators();
-}
-
 void RigidBody::AddForce(const DirectX::XMVECTOR& force)
 {
     DirectX::XMVECTOR current = ForceAccum.Get();
@@ -83,85 +28,21 @@ void RigidBody::AddTorque(const DirectX::XMVECTOR& torque)
     TorqueAccum.Set(updated);
 }
 
-
 void RigidBody::Integrate(float dt, IntegrationType type)
 {
-    CalculateDerivedData();
-
-    float invMass = InverseMass.load(std::memory_order_relaxed);
-    if (invMass <= 0.0f)
-        return;
-
-    DirectX::XMVECTOR acc = Acceleration.Get();
-    DirectX::XMVECTOR force = ForceAccum.Get();
-
-    DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(
-        acc,
-        DirectX::XMVectorScale(force, invMass)
-    );
-
-    DirectX::XMVECTOR vel = Velocity.Get();
-    DirectX::XMVECTOR pos = Position.Get();
-    DirectX::XMVECTOR lastPos = m_LastPosition.Get();
-
     switch (type)
     {
     case IntegrationType::Euler:
-    {
-        pos = DirectX::XMVectorAdd(pos, DirectX::XMVectorScale(vel, dt));
-        vel = DirectX::XMVectorAdd(vel, DirectX::XMVectorScale(acceleration, dt));
+        IntegrateEuler(dt);
         break;
-    }
     case IntegrationType::SemiImplicitEuler:
-    {
-        vel = DirectX::XMVectorAdd(vel, DirectX::XMVectorScale(acceleration, dt));
-        pos = DirectX::XMVectorAdd(pos, DirectX::XMVectorScale(vel, dt));
+        IntegrateSemiImplicitEuler(dt);
         break;
-    }
     case IntegrationType::Verlet:
-    {
-        DirectX::XMVECTOR posDelta = DirectX::XMVectorSubtract(pos, lastPos);
-        DirectX::XMVECTOR accelTerm = DirectX::XMVectorScale(acceleration, dt * dt);
-        DirectX::XMVECTOR newPos = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(posDelta, accelTerm));
-
-        m_LastPosition.Set(pos);
-        pos = newPos;
+        IntegrateVerlet(dt);
         break;
     }
-    }
-
-    float linearDamping = m_LinearDamping.load(std::memory_order_relaxed);
-    vel = DirectX::XMVectorScale(vel, std::pow(linearDamping, dt));
-
-    Position.Set(pos);
-    Velocity.Set(vel);
-
-    // === Angular motion ===
-    DirectX::XMVECTOR torque = TorqueAccum.Get();
-    DirectX::XMVECTOR angVel = AngularVelocity.Get();
-
-    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(torque, m_InverseInertiaTensorLocal);
-    angVel = DirectX::XMVectorAdd(angVel, DirectX::XMVectorScale(angularAcc, dt));
-
-    float angularDamping = AngularDamping.load(std::memory_order_relaxed);
-    angVel = DirectX::XMVectorScale(angVel, std::pow(angularDamping, dt));
-    AngularVelocity.Set(angVel);
-
-    // === Orientation ===
-    Orientation.AddScaledVector(angVel, dt);
-    Orientation.Normalize();
-
-    // === Apply sleep threshold ===
-    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(vel)) < 1e-5f)
-        Velocity.Set(DirectX::XMVectorZero());
-
-    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(angVel)) < 1e-5f)
-        AngularVelocity.Set(DirectX::XMVectorZero());
-
-    // === Done ===
-    ClearAccumulators();
 }
-
 
 DirectX::XMMATRIX RigidBody::GetTransformMatrix()
 {
@@ -198,11 +79,13 @@ void RigidBody::ClearAccumulators()
 void RigidBody::SetPosition(const DirectX::XMVECTOR& pos)
 {
     Position.Set(pos);
+    m_VerletNeedsReset = true;
 }
 
 void RigidBody::SetVelocity(const DirectX::XMVECTOR& vel)
 {
     Velocity.Set(vel);
+    m_VerletNeedsReset = true;
 }
 
 void RigidBody::SetDamping(float d)
@@ -379,6 +262,16 @@ void RigidBody::ConstrainVelocity(const DirectX::XMVECTOR& contactNormal)
     }
 }
 
+void RigidBody::SetAsPlatform(bool state)
+{
+    m_Platform.store(state, std::memory_order_relaxed);
+}
+
+bool RigidBody::IsPlatform() const
+{
+    return m_Platform.load(std::memory_order_relaxed);
+}
+
 void RigidBody::ComputeInverseInertiaTensorBox(float width, float height, float depth)
 {
     using namespace DirectX;
@@ -471,4 +364,162 @@ void RigidBody::ComputeInverseInertiaTensorCapsule(float radius, float height)
         0.0f, 0.0f, invIzz, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     );
+}
+
+void RigidBody::ApplyLinearImpulse(const DirectX::XMVECTOR& impulse)
+{
+    if (GetInverseMass() <= 0.0f)
+        return;
+
+	SetVelocity(DirectX::XMVectorAdd(GetVelocity(), DirectX::XMVectorScale(impulse, GetInverseMass())));
+}
+
+void RigidBody::ApplyAngularImpulse(const DirectX::XMVECTOR& impulse, const DirectX::XMVECTOR& contactVector)
+{
+    DirectX::XMVECTOR torque = DirectX::XMVector3Cross(contactVector, impulse);
+    DirectX::XMVECTOR deltaAngular = DirectX::XMVector3Transform(torque, InverseInertiaTensorWorld);
+
+    SetAngularVelocity(DirectX::XMVectorAdd(GetAngularVelocity(), deltaAngular));
+}
+
+void RigidBody::IntegrateEuler(float dt)
+{
+    CalculateDerivedData();
+
+    if (InverseMass.load(std::memory_order_relaxed) <= 0.0f) return;
+
+    DirectX::XMVECTOR pos = Position.Get();
+    DirectX::XMVECTOR vel = Velocity.Get();
+    DirectX::XMVECTOR acc = Acceleration.Get();
+    DirectX::XMVECTOR force = ForceAccum.Get();
+
+    DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(acc, DirectX::XMVectorScale(force, InverseMass));
+
+    pos = DirectX::XMVectorAdd(pos, DirectX::XMVectorScale(vel, dt));
+    vel = DirectX::XMVectorAdd(vel, DirectX::XMVectorScale(acceleration, dt));
+
+    ApplyLinearDamping(vel, dt);
+
+    Position.Set(pos);
+    Velocity.Set(vel);
+
+    IntegrateAngular(dt);
+    ClearAccumulators();
+}
+
+void RigidBody::IntegrateSemiImplicitEuler(float dt)
+{
+    CalculateDerivedData();
+
+    if (InverseMass.load(std::memory_order_relaxed) <= 0.0f) return;
+
+    DirectX::XMVECTOR pos = Position.Get();
+    DirectX::XMVECTOR vel = Velocity.Get();
+    DirectX::XMVECTOR acc = Acceleration.Get();
+    DirectX::XMVECTOR force = ForceAccum.Get();
+
+    DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(acc, DirectX::XMVectorScale(force, InverseMass));
+
+    vel = DirectX::XMVectorAdd(vel, DirectX::XMVectorScale(acceleration, dt));
+    pos = DirectX::XMVectorAdd(pos, DirectX::XMVectorScale(vel, dt));
+
+    ApplyLinearDamping(vel, dt);
+
+    Position.Set(pos);
+    Velocity.Set(vel);
+
+    IntegrateAngular(dt);
+    ClearAccumulators();
+}
+
+void RigidBody::IntegrateVerlet(float dt)
+{
+    CalculateDerivedData();
+
+    if (InverseMass.load(std::memory_order_relaxed) <= 0.0f) return;
+
+    DirectX::XMVECTOR pos = Position.Get();
+
+    if (m_VerletNeedsReset)
+    {
+        DirectX::XMVECTOR vel = Velocity.Get();
+        DirectX::XMVECTOR lastPos = DirectX::XMVectorSubtract(pos, DirectX::XMVectorScale(vel, dt));
+        m_LastPosition.Set(lastPos);
+        m_VerletNeedsReset = false;
+    }
+
+    DirectX::XMVECTOR lastPos = m_LastPosition.Get();
+    DirectX::XMVECTOR acc = Acceleration.Get();
+    DirectX::XMVECTOR force = ForceAccum.Get();
+
+    DirectX::XMVECTOR acceleration = DirectX::XMVectorAdd(acc, DirectX::XMVectorScale(force, InverseMass));
+    acceleration = ClampVectorLength(acceleration, 100.0f);
+
+    DirectX::XMVECTOR posDelta = DirectX::XMVectorSubtract(pos, lastPos);
+    DirectX::XMVECTOR accelTerm = DirectX::XMVectorScale(acceleration, dt * dt);
+    DirectX::XMVECTOR newPos = DirectX::XMVectorAdd(pos, DirectX::XMVectorAdd(posDelta, accelTerm));
+
+    DirectX::XMVECTOR vel = DirectX::XMVectorScale(posDelta, 1.0f / dt);
+    ApplyLinearDamping(vel, dt);
+
+    m_LastPosition.Set(pos);
+    Position.Set(newPos);
+    Velocity.Set(vel);
+
+    IntegrateAngular(dt);
+    ClearAccumulators();
+}
+
+void RigidBody::IntegrateAngular(float dt)
+{
+    DirectX::XMVECTOR angVel = AngularVelocity.Get();
+    DirectX::XMVECTOR torque = TorqueAccum.Get();
+
+    DirectX::XMVECTOR angularAcc = DirectX::XMVector3Transform(torque, m_InverseInertiaTensorLocal);
+    angVel = DirectX::XMVectorAdd(angVel, DirectX::XMVectorScale(angularAcc, dt));
+
+    float angDamp = AngularDamping.load(std::memory_order_relaxed);
+    angVel = DirectX::XMVectorScale(angVel, std::pow(angDamp, dt));
+
+    AngularVelocity.Set(angVel);
+
+    Orientation.AddScaledVector(angVel, dt);
+    Orientation.Normalize();
+
+    // Optional: sleep threshold
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(angVel)) < 1e-5f)
+        AngularVelocity.Set(DirectX::XMVectorZero());
+}
+
+void RigidBody::ApplyLinearDamping(DirectX::XMVECTOR& vel, float dt) const
+{
+    float damping = m_LinearDamping.load(std::memory_order_relaxed);
+    vel = DirectX::XMVectorScale(vel, std::pow(damping, dt));
+
+    if (DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(vel)) < 1e-5f)
+        vel = DirectX::XMVectorZero();
+}
+
+void RigidBody::ResetVerletState(float delta)
+{
+    const auto pos = Position.Get();
+    const auto vel = Velocity.Get();
+    const auto lastPos = DirectX::XMVectorSubtract(pos, DirectX::XMVectorScale(vel, delta));
+    m_LastPosition.Set(lastPos);
+}
+
+DirectX::XMVECTOR RigidBody::ClampVectorLength(DirectX::XMVECTOR vec, float maxLength)
+{
+    using namespace DirectX;
+
+    XMVECTOR lenSq = XMVector3LengthSq(vec);
+    float lengthSquared = XMVectorGetX(lenSq);
+
+    if (lengthSquared > maxLength * maxLength)
+    {
+        XMVECTOR len = XMVectorSqrt(lenSq);
+        vec = XMVectorDivide(XMVectorScale(vec, maxLength), len); // vec * (max / length)
+    }
+
+    return vec;
 }

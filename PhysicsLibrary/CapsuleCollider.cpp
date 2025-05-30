@@ -205,10 +205,20 @@ bool CapsuleCollider::CheckCollisionWithSphere(ICollider* other, Contact& outCon
     XMVECTOR ab = b - a;
     XMVECTOR ap = sphereCenter - a;
 
-    float t = std::clamp(
-        XMVectorGetX(XMVector3Dot(ap, ab)) / XMVectorGetX(XMVector3Dot(ab, ab)),
-        0.0f, 1.0f
-    );
+    float denom = XMVectorGetX(XMVector3Dot(ab, ab));
+    float t = 0.0f;
+
+    if (denom > 1e-6f) // small epsilon to avoid divide-by-zero
+    {
+        t = std::clamp(
+            XMVectorGetX(XMVector3Dot(ap, ab)) / denom,
+            0.0f, 1.0f
+        );
+    }
+    else
+    {
+        t = 0.0f; // default to start of segment when degenerate
+    }
 
     XMVECTOR closest = a + ab * t;
 

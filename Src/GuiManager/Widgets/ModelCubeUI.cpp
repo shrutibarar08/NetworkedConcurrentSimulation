@@ -91,6 +91,11 @@ void ModelCubeUI::RenderOnScreen()
     if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
         m_RigidBody->SetFriction(m_Friction);
 
+    if (ImGui::Checkbox("Platform", &m_Platform))
+    {
+        m_RigidBody->SetAsPlatform(m_Platform);
+    }
+
     // === Collider Section ===
     ImGui::Spacing();
     ImGui::Text("Collider Properties");
@@ -104,7 +109,7 @@ void ModelCubeUI::RenderOnScreen()
 
     if (ImGui::Combo("Collider State", &currentStateIndex, stateLabels, IM_ARRAYSIZE(stateLabels)))
     {
-        m_Collider->SetColliderState(static_cast<ColliderSate>(currentStateIndex));
+        m_Collider->SetColliderState(static_cast<ColliderState>(currentStateIndex));
     }
 }
 

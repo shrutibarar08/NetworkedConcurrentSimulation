@@ -14,6 +14,18 @@ public:
     static void SetToleranceCount(int val);
 
 private:
+
+    //~ Cube vs Cube
+    static void ResolveContactWithCubeVsCube(Contact& contact, float deltaTime, float totalTime);
+    static void ResolvePenetrationWithCubeVsCube(Contact& contact, float deltaTime);
+    static void ResolveVelocityWithCubeVsCube(Contact& contact, float deltaTime);
+    static void ResolveFrictionWithCubeVsCube(Contact& contact, float deltaTime);
+    static void ResolveRestingStateWithCubeVsCube(Contact& contact, float deltaTime);
+    static void ResolveAngularDampingWithCubeVsCube(Contact& contact, float deltaTime);
+
+    //~ Specific to spheres
+    static void ResolveVelocityWithCubeVsSphere(Contact& contact, float deltaTime);
+
     //~ Resolve Inter Penetration
     static void ResolvePositionInterpenetration(const Contact& contact);
 

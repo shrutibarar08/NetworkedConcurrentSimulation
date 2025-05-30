@@ -15,7 +15,9 @@ public:
 
 	// === Accessors ===
 	SweetLoader& operator=(const std::string& value);
-	SweetLoader& operator[](const std::string& key);
+	const SweetLoader& operator[](const std::string& key) const;
+	SweetLoader& GetOrCreate(const std::string& key);
+
 	auto begin() { return mChildren.begin(); }
 	auto end() { return mChildren.end(); }
 	auto begin() const { return mChildren.begin(); }
@@ -36,7 +38,7 @@ public:
 	float AsFloat() const;
 	int AsInt() const;
 	bool AsBool() const;
-
+	bool IsValid() const;
 
 private:
 	// === Private Recursive Parsers

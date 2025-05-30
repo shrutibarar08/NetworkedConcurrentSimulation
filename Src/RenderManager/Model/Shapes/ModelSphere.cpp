@@ -110,6 +110,34 @@ std::vector<UINT> ModelSphere::BuildIndex()
     return indices;
 }
 
+void ModelSphere::SaveChildSweetData(SweetLoader& sweetData)
+{
+    if (!GetCollider()) return;
+
+    SphereCollider* collider = GetCollider()->As<SphereCollider>();
+    if (!collider) return;
+
+    sweetData.GetOrCreate("Radius") = std::to_string(collider->GetRadius());
+}
+
+void ModelSphere::LoadChildSweetData(const SweetLoader& sweetData)
+{
+    if (!GetCollider()) return;
+
+    SphereCollider* collider = GetCollider()->As<SphereCollider>();
+    if (!collider) return;
+
+    const SweetLoader& radiusNode = sweetData["Radius"];
+    if (!radiusNode.IsValid()) return;
+
+    float radius = radiusNode.AsFloat();
+    if (radius > 0.0f)
+    {
+        collider->SetRadius(radius);
+        SetRadius(radius);
+    }
+}
+
 void ModelSphere::SetLatitudeSegments(UINT segs)
 {
 	m_LatitudeSegments = segs;

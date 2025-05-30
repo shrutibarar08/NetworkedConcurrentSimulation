@@ -110,7 +110,7 @@ public:
 
 	bool IsLoaded() const;
 
-    void LoadFromSweetData(SweetLoader& sweetData);
+    void LoadFromSweetData(const SweetLoader& sweetData);
     SweetLoader SaveSweetData();
 
     static SPAWN_OBJECT StringToSpawnObject(const std::string& name);

@@ -33,7 +33,6 @@ class RigidBody
 public:
     RigidBody();
 
-    void Integrate(float duration);
     void CalculateDerivedData();
 
     void ClearAccumulators();
@@ -80,11 +79,30 @@ public:
 
     void ConstrainVelocity(const DirectX::XMVECTOR& contactNormal);
 
+    void SetAsPlatform(bool state);
+    bool IsPlatform() const;
+
     void ComputeInverseInertiaTensorBox(float width, float height, float depth);
     void ComputeInverseInertiaTensorSphere(float radius);
     void ComputeInverseInertiaTensorCapsule(float radius, float height);
 
+    void ApplyLinearImpulse(const DirectX::XMVECTOR& impulse);
+    void ApplyAngularImpulse(const DirectX::XMVECTOR& impulse, const DirectX::XMVECTOR& contactVector);
+
 private:
+    void IntegrateEuler(float dt);
+    void IntegrateSemiImplicitEuler(float dt);
+    void IntegrateVerlet(float dt);
+
+    void IntegrateAngular(float dt);
+    void ApplyLinearDamping(DirectX::XMVECTOR& vel, float dt) const;
+
+    void ResetVerletState(float delta);
+    DirectX::XMVECTOR ClampVectorLength(DirectX::XMVECTOR vec, float maxLength);
+
+private:
+    bool m_VerletNeedsReset{ false };
+    std::atomic<bool> m_Platform{ false };
     std::atomic<bool> m_Resting{ false };
     std::atomic<float> InverseMass{ 10.f };
     std::atomic<float> m_LinearDamping{ 0.75f };

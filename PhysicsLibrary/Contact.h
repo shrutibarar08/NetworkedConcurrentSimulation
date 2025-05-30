@@ -16,4 +16,5 @@ struct Contact
     float Restitution = 1.0f;
     float Friction = 0.5f;
     float Elasticity = 1.0f;
+    float NormalImpulseMagnitude = 0.0f;
 };

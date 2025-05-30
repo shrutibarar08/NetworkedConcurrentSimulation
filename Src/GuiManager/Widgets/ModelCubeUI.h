@@ -32,6 +32,7 @@ private:
     bool m_bStatic{ true };
     float m_Restitution = 0.0f;
     float m_Friction = 0.0f;
+    bool m_Platform{ false };
     bool m_UiNeeded{ false };
 
     bool m_InitializedFromRigidBody = false;

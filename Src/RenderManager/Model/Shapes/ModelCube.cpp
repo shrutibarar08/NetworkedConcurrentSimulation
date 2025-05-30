@@ -141,3 +141,13 @@ std::vector<UINT> ModelCube::BuildIndex()
 
     return indices;
 }
+
+void ModelCube::SaveChildSweetData(SweetLoader& sweetData)
+{
+
+}
+
+void ModelCube::LoadChildSweetData(const SweetLoader& sweetData)
+{
+
+}

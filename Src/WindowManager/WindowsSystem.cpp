@@ -150,7 +150,7 @@ bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)
     else
     {
         m_WindowWidth = Draco::Windows::DEFAULT_WIDTH;
-        sweetLoader[widthKey] = std::to_string(m_WindowWidth);
+        sweetLoader.GetOrCreate(widthKey) = std::to_string(m_WindowWidth);
     }
 
     //~ Loading / Saving Height
@@ -161,7 +161,7 @@ bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)
     else
     {
         m_WindowHeight = Draco::Windows::DEFAULT_HEIGHT;
-        sweetLoader[heightKey] = std::to_string(m_WindowHeight);
+        sweetLoader.GetOrCreate(heightKey) = std::to_string(m_WindowHeight);
     }
 
     //~ Loading / Saving Windows Name
@@ -173,7 +173,7 @@ bool WindowsSystem::InitParameters(SweetLoader& sweetLoader)
     else
     {
         m_WindowName = Draco::Windows::DEFAULT_WINDOW_NAME;
-        sweetLoader[windowNameKey] = std::string(m_WindowName.begin(), m_WindowName.end());
+        sweetLoader.GetOrCreate(windowNameKey) = std::string(m_WindowName.begin(), m_WindowName.end());
     }
     return true;
 }

@@ -197,7 +197,7 @@ void PhysicsManager::Update(float dt, IntegrationType type)
     {
         if (!collider) continue;
 
-        collider->Update();
+        collider->Update(dt);
 
         RigidBody* body = collider->GetRigidBody();
         if (!body) continue;
@@ -222,6 +222,8 @@ void PhysicsManager::Update(float dt, IntegrationType type)
             Contact contact;
             if (colliderA->CheckCollision(colliderB, contact))
             {
+                colliderA->RegisterCollision(colliderB);
+                colliderB->RegisterCollision(colliderA);
                 contacts.push_back(contact);
             }
         }

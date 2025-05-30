@@ -46,6 +46,8 @@ void ModelCapsuleUI::RenderOnScreen()
     m_Elasticity = m_RigidBody->GetElasticity();
     m_Restitution = m_RigidBody->GetRestitution();
     m_Friction = m_RigidBody->GetFriction();
+    m_Radius = m_Collider->GetRadius();
+    m_Height = m_Collider->GetHeight();
 
     // === Rigidbody UI ===
     ImGui::Text("RigidBody");
@@ -81,7 +83,7 @@ void ModelCapsuleUI::RenderOnScreen()
     if (ImGui::DragFloat("Restitution", &m_Restitution, 0.01f, 0.0f, 1.0f))
         m_RigidBody->SetRestitution(m_Restitution);
 
-    if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
+    if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 1.0f))
         m_RigidBody->SetFriction(m_Friction);
 
     // === Collider UI ===
@@ -89,18 +91,16 @@ void ModelCapsuleUI::RenderOnScreen()
     ImGui::Text("Capsule Collider");
     ImGui::Separator();
 
-    float height = m_Collider->GetHeight();
-    float radius = m_Collider->GetRadius();
 
-    if (ImGui::DragFloat("Height", &height, 0.01f, 0.0f, 10.0f))
-        m_Collider->SetHeight(height);
+    if (ImGui::DragFloat("Height", &m_Height, 0.01f, 0.0f, 10.0f))
+        m_Collider->SetHeight(m_Height);
 
-    if (ImGui::DragFloat("Radius", &radius, 0.01f, 0.0f, 10.0f))
-        m_Collider->SetRadius(radius);
+    if (ImGui::DragFloat("Radius", &m_Radius, 0.01f, 0.0f, 10.0f))
+        m_Collider->SetRadius(m_Radius);
 
     static const char* stateLabels[] = { "Dynamic", "Static", "Resting" };
     int stateIndex = static_cast<int>(m_Collider->GetColliderState());
 
     if (ImGui::Combo("Collider State", &stateIndex, stateLabels, IM_ARRAYSIZE(stateLabels)))
-        m_Collider->SetColliderState(static_cast<ColliderSate>(stateIndex));
+        m_Collider->SetColliderState(static_cast<ColliderState>(stateIndex));
 }

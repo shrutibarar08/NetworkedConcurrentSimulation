@@ -36,7 +36,7 @@ bool SystemHandler::BuildAll(SweetLoader& sweetLoader)
             if (system->Init())
             {
                 LOG_WARNING("Building: " + name);
-                system->Build(sweetLoader[name]);
+                system->Build(sweetLoader.GetOrCreate(name));
                 LOG_SUCCESS("Built: " + name);
             }else
             {

@@ -91,8 +91,11 @@ public:
 
 	void SetPayload(const CREATE_PAYLOAD& payload);
 
-	SweetLoader GetSweetData();
-	void LoadFromSweetData(SweetLoader& sweetData);
+	SweetLoader SaveSweetModelData();
+	void LoadFromSweetData(const SweetLoader& sweetData);
+
+	virtual void SaveChildSweetData(SweetLoader& sweetData) = 0;
+	virtual void LoadChildSweetData(const SweetLoader& sweetData) = 0;
 
 	bool IsUiControlNeeded() const { return m_UiControlNeeded; }
 	void SetUiControlNeeded(bool flag) { m_UiControlNeeded = flag; }
