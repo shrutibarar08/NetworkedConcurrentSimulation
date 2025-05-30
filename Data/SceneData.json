@@ -241,6 +241,104 @@
 			}
 		}
 	},
+	"test ": {
+		"18": {
+			"Type": "Cube",
+			"Cube": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "false",
+				"Platform": "false",
+				"Position": {
+					"x": "-9.900000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Cube",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "1.000000",
+					"y": "1.000000",
+					"z": "1.000000"
+				}
+			}
+		},
+		"19": {
+			"Type": "Cube",
+			"Cube": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "false",
+				"Platform": "false",
+				"Position": {
+					"x": "11.900000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Cube",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "1.000000",
+					"y": "1.000000",
+					"z": "1.000000"
+				}
+			}
+		}
+	},
 	"Scenario_1": {
 		"6": {
 			"Type": "Cube",
@@ -340,8 +438,8 @@
 			}
 		},
 		"11": {
-			"Type": "Sphere",
-			"Sphere": {
+			"Type": "Cube",
+			"Cube": {
 				"Velocity": {
 					"x": "0.000000",
 					"y": "0.000000",
@@ -350,9 +448,9 @@
 				"RestingState": "false",
 				"Platform": "false",
 				"Position": {
-					"x": "1.500000",
-					"y": "-2.600000",
-					"z": "-2.500000"
+					"x": "3.600000",
+					"y": "27.299999",
+					"z": "5.200000"
 				},
 				"Mass": "10.000000",
 				"Orientation": {
@@ -377,15 +475,14 @@
 				"Restitution": "0.350000",
 				"HasFiniteMass": "true",
 				"Damping": "0.750000",
-				"ColliderType": "Sphere",
+				"ColliderType": "Cube",
 				"AngularDamping": "0.400000",
 				"Friction": "0.300000",
 				"Scale": {
-					"x": "1.000000",
-					"y": "1.000000",
-					"z": "1.000000"
-				},
-				"Radius": "1.000000"
+					"x": "11.800000",
+					"y": "8.000000",
+					"z": "-1.100000"
+				}
 			}
 		},
 		"8": {
@@ -437,6 +534,55 @@
 			}
 		},
 		"10": {
+			"Type": "Sphere",
+			"Sphere": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "false",
+				"Platform": "false",
+				"Position": {
+					"x": "1.500000",
+					"y": "-2.600000",
+					"z": "-2.500000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Sphere",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "1.000000",
+					"y": "1.000000",
+					"z": "1.000000"
+				},
+				"Radius": "1.000000"
+			}
+		},
+		"9": {
 			"Type": "Cube",
 			"Cube": {
 				"Velocity": {
@@ -481,54 +627,6 @@
 					"x": "45.299999",
 					"y": "2.800000",
 					"z": "26.500000"
-				}
-			}
-		},
-		"9": {
-			"Type": "Cube",
-			"Cube": {
-				"Velocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"RestingState": "false",
-				"Platform": "false",
-				"Position": {
-					"x": "3.600000",
-					"y": "27.299999",
-					"z": "5.200000"
-				},
-				"Mass": "10.000000",
-				"Orientation": {
-					"r": "1.000000",
-					"j": "0.000000",
-					"i": "0.000000",
-					"k": "0.000000"
-				},
-				"Acceleration": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"AngularVelocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"ColliderState": "1",
-				"Elasticity": "0.500000",
-				"InverseMass": "0.100000",
-				"Restitution": "0.350000",
-				"HasFiniteMass": "true",
-				"Damping": "0.750000",
-				"ColliderType": "Cube",
-				"AngularDamping": "0.400000",
-				"Friction": "0.300000",
-				"Scale": {
-					"x": "11.800000",
-					"y": "8.000000",
-					"z": "-1.100000"
 				}
 			}
 		},
@@ -680,204 +778,8 @@
 			}
 		}
 	},
-	"test ": {
-		"15": {
-			"Type": "Cube",
-			"Cube": {
-				"Velocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"RestingState": "false",
-				"Platform": "false",
-				"Position": {
-					"x": "-9.900000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"Mass": "10.000000",
-				"Orientation": {
-					"r": "1.000000",
-					"j": "0.000000",
-					"i": "0.000000",
-					"k": "0.000000"
-				},
-				"Acceleration": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"AngularVelocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"ColliderState": "1",
-				"Elasticity": "0.500000",
-				"InverseMass": "0.100000",
-				"Restitution": "0.350000",
-				"HasFiniteMass": "true",
-				"Damping": "0.750000",
-				"ColliderType": "Cube",
-				"AngularDamping": "0.400000",
-				"Friction": "0.300000",
-				"Scale": {
-					"x": "1.000000",
-					"y": "1.000000",
-					"z": "1.000000"
-				}
-			}
-		},
-		"16": {
-			"Type": "Cube",
-			"Cube": {
-				"Velocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"RestingState": "false",
-				"Platform": "false",
-				"Position": {
-					"x": "11.900000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"Mass": "10.000000",
-				"Orientation": {
-					"r": "1.000000",
-					"j": "0.000000",
-					"i": "0.000000",
-					"k": "0.000000"
-				},
-				"Acceleration": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"AngularVelocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"ColliderState": "1",
-				"Elasticity": "0.500000",
-				"InverseMass": "0.100000",
-				"Restitution": "0.350000",
-				"HasFiniteMass": "true",
-				"Damping": "0.750000",
-				"ColliderType": "Cube",
-				"AngularDamping": "0.400000",
-				"Friction": "0.300000",
-				"Scale": {
-					"x": "1.000000",
-					"y": "1.000000",
-					"z": "1.000000"
-				}
-			}
-		}
-	},
-	"cube vs sphere": {
-		"17": {
-			"Type": "Cube",
-			"Cube": {
-				"Velocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"RestingState": "false",
-				"Platform": "false",
-				"Position": {
-					"x": "-9.405000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"Mass": "10.000000",
-				"Orientation": {
-					"r": "1.000000",
-					"j": "0.000000",
-					"i": "0.000000",
-					"k": "0.000000"
-				},
-				"Acceleration": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"AngularVelocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"ColliderState": "1",
-				"Elasticity": "0.500000",
-				"InverseMass": "0.100000",
-				"Restitution": "0.350000",
-				"HasFiniteMass": "true",
-				"Damping": "0.750000",
-				"ColliderType": "Cube",
-				"AngularDamping": "0.400000",
-				"Friction": "0.300000",
-				"Scale": {
-					"x": "1.000000",
-					"y": "1.000000",
-					"z": "1.000000"
-				}
-			}
-		},
-		"18": {
-			"Type": "Cube",
-			"Cube": {
-				"Velocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"RestingState": "false",
-				"Platform": "false",
-				"Position": {
-					"x": "-2.514698",
-					"y": "-13.200000",
-					"z": "0.000000"
-				},
-				"Mass": "10.000000",
-				"Orientation": {
-					"r": "1.000000",
-					"j": "0.000000",
-					"i": "0.000000",
-					"k": "0.000000"
-				},
-				"Acceleration": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"AngularVelocity": {
-					"x": "0.000000",
-					"y": "0.000000",
-					"z": "0.000000"
-				},
-				"ColliderState": "1",
-				"Elasticity": "0.500000",
-				"InverseMass": "0.100000",
-				"Restitution": "0.350000",
-				"HasFiniteMass": "true",
-				"Damping": "0.750000",
-				"ColliderType": "Cube",
-				"AngularDamping": "0.400000",
-				"Friction": "0.300000",
-				"Scale": {
-					"x": "51.000000",
-					"y": "14.100000",
-					"z": "59.000000"
-				}
-			}
-		}
-	},
 	"cube vs sphereaa": {
-		"20": {
+		"15": {
 			"Type": "Cube",
 			"Cube": {
 				"Velocity": {
@@ -925,7 +827,7 @@
 				}
 			}
 		},
-		"21": {
+		"16": {
 			"Type": "Cube",
 			"Cube": {
 				"Velocity": {
@@ -970,6 +872,152 @@
 					"x": "1.000000",
 					"y": "1.000000",
 					"z": "1.000000"
+				}
+			}
+		},
+		"17": {
+			"Type": "Cube",
+			"Cube": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "true",
+				"Platform": "false",
+				"Position": {
+					"x": "0.000000",
+					"y": "-3.600000",
+					"z": "0.000000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Cube",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "34.099998",
+					"y": "1.000000",
+					"z": "27.200001"
+				}
+			}
+		}
+	},
+	"cube vs sphere": {
+		"20": {
+			"Type": "Cube",
+			"Cube": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "false",
+				"Platform": "false",
+				"Position": {
+					"x": "-9.405000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Cube",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "1.000000",
+					"y": "1.000000",
+					"z": "1.000000"
+				}
+			}
+		},
+		"21": {
+			"Type": "Cube",
+			"Cube": {
+				"Velocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"RestingState": "false",
+				"Platform": "false",
+				"Position": {
+					"x": "-2.514698",
+					"y": "-13.200000",
+					"z": "0.000000"
+				},
+				"Mass": "10.000000",
+				"Orientation": {
+					"r": "1.000000",
+					"j": "0.000000",
+					"i": "0.000000",
+					"k": "0.000000"
+				},
+				"Acceleration": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"AngularVelocity": {
+					"x": "0.000000",
+					"y": "0.000000",
+					"z": "0.000000"
+				},
+				"ColliderState": "1",
+				"Elasticity": "0.500000",
+				"InverseMass": "0.100000",
+				"Restitution": "0.350000",
+				"HasFiniteMass": "true",
+				"Damping": "0.750000",
+				"ColliderType": "Cube",
+				"AngularDamping": "0.400000",
+				"Friction": "0.300000",
+				"Scale": {
+					"x": "51.000000",
+					"y": "14.100000",
+					"z": "59.000000"
 				}
 			}
 		}

@@ -86,6 +86,11 @@ void ModelCapsuleUI::RenderOnScreen()
     if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 1.0f))
         m_RigidBody->SetFriction(m_Friction);
 
+    bool isResting = m_RigidBody->GetRestingState();
+    ImGui::TextColored(isResting ? ImVec4(0, 1, 0, 1) : 
+        ImVec4(1, 0, 0, 1),
+        "Resting State: %s", isResting ? "Yes" : "No");
+
     // === Collider UI ===
     ImGui::Spacing();
     ImGui::Text("Capsule Collider");

@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <random>
-#include <iostream>
 
 void CollisionResolver::ResolveContact(Contact& contact, float deltaTime, float totalTime)
 {
@@ -379,7 +378,6 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
 
     if (isStaticA && isStaticB)
     {
-        std::cout << "[Resolver] Both objects are static. Skipping.\n";
         return;
     }
 
@@ -389,7 +387,6 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
 
     if (totalInvMass <= 0.0f)
     {
-        std::cout << "[Resolver] Total inverse mass is zero. Skipping.\n";
         return;
     }
 
@@ -405,22 +402,12 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
     XMVECTOR vRel = vA - vB;
     float vRelAlongNormal = XMVectorGetX(XMVector3Dot(vRel, normal));
 
-    std::cout << "=== Cube vs Sphere Collision ===\n";
-    std::cout << "Contact Point: (" << contact.ContactPoint.x << ", " << contact.ContactPoint.y << ", " << contact.ContactPoint.z << ")\n";
-    std::cout << "Contact Normal: (" << contact.ContactNormal.x << ", " << contact.ContactNormal.y << ", " << contact.ContactNormal.z << ")\n";
-    std::cout << "Penetration Depth: " << contact.PenetrationDepth << "\n";
-    std::cout << "Relative Velocity Along Normal: " << vRelAlongNormal << "\n";
-
     if (contact.PenetrationDepth <= 0.0f && vRelAlongNormal > 1e-4f)
     {
-        std::cout << "[Resolver] No penetration and objects are separating. Skipping.\n";
         return;
     }
 
     float restitution = contact.Restitution * contact.Elasticity;
-    std::cout << "Combined Restitution: " << restitution << "\n";
-    std::cout << "Friction: " << contact.Friction << "\n";
-    std::cout << "Sphere Damping: " << bodyB->GetDamping() << ", Angular: " << bodyB->GetAngularDamping() << "\n";
 
     XMVECTOR raCrossN = XMVector3Cross(rA, normal);
     XMVECTOR raInertia = XMVector3Transform(raCrossN, bodyA->GetInverseInertiaTensorWorld());
@@ -434,12 +421,9 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
         angularTermB = XMVectorGetX(XMVector3Dot(rbInertia, rbCrossN));
     }
 
-    std::cout << "Angular Term A: " << angularTermA << ", Angular Term B: " << angularTermB << "\n";
-
     float denom = totalInvMass + angularTermA + angularTermB;
     if (denom <= 0.0f)
     {
-        std::cout << "[Resolver] Invalid denominator. Skipping.\n";
         return;
     }
 
@@ -450,8 +434,6 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
             float biasRestitution = 0.01f; // small bias to push them apart
             float jBias = -(1.0f + biasRestitution) * vRelAlongNormal / denom;
             XMVECTOR biasImpulse = XMVectorScale(normal, jBias);
-
-            std::cout << "[Bias Resolver] Applying bias impulse: " << jBias << "\n";
 
             if (!isStaticA)
             {
@@ -465,12 +447,6 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
                 bodyB->ApplyLinearImpulse(negBiasImpulse);
                 bodyB->ApplyAngularImpulse(negBiasImpulse, rB);
             }
-
-            std::cout << "[Bias Resolver] Applied.\n";
-        }
-        else
-        {
-            std::cout << "[Resolver] Separating. Skipping velocity resolution.\n";
         }
         return;
     }
@@ -478,19 +454,12 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
     float j = -(1.0f + restitution) * vRelAlongNormal / denom;
     contact.NormalImpulseMagnitude = j;
 
-    std::cout << "Impulse Magnitude (j): " << j << "\n";
-
-
     XMVECTOR impulse = XMVectorScale(normal, j);
 
     XMVECTOR velBefore = bodyB->GetVelocity(); // velocity before impulse
 
     if (!isStaticA)
     {
-        std::cout << "Applying impulse to Cube (A): "
-            << XMVectorGetX(impulse) << ", "
-            << XMVectorGetY(impulse) << ", "
-            << XMVectorGetZ(impulse) << "\n";
 
         bodyA->ApplyLinearImpulse(impulse);
         bodyA->ApplyAngularImpulse(impulse, rA);
@@ -500,26 +469,11 @@ void CollisionResolver::ResolveVelocityWithCubeVsSphere(Contact& contact, float 
     {
         XMVECTOR negImpulse = XMVectorNegate(impulse);
 
-        std::cout << "Applying impulse to Sphere (B): "
-            << XMVectorGetX(negImpulse) << ", "
-            << XMVectorGetY(negImpulse) << ", "
-            << XMVectorGetZ(negImpulse) << "\n";
-
         bodyB->ApplyLinearImpulse(negImpulse);
         bodyB->ApplyAngularImpulse(negImpulse, rB); // optional
 
         XMVECTOR velAfter = bodyB->GetVelocity();
-        std::cout << "Sphere Velocity Before: "
-            << XMVectorGetX(velBefore) << ", "
-            << XMVectorGetY(velBefore) << ", "
-            << XMVectorGetZ(velBefore) << "\n";
-        std::cout << "Sphere Velocity After:  "
-            << XMVectorGetX(velAfter) << ", "
-            << XMVectorGetY(velAfter) << ", "
-            << XMVectorGetZ(velAfter) << "\n";
     }
-
-    std::cout << "=== Collision Resolved ===\n\n";
 }
 
 void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, float deltaTime)
@@ -548,9 +502,6 @@ void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, flo
 
     XMVECTOR normal = XMVector3Normalize(XMLoadFloat3(&contact.ContactNormal));
 
-    std::cout << "[Penetration Resolver]\n";
-    std::cout << "Penetration to Resolve: " << penetration << "\n";
-
     // Calculate the correction vector
     XMVECTOR correction = XMVectorScale(normal, penetration * percent);
 
@@ -561,7 +512,6 @@ void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, flo
         posB = XMVectorAdd(posB, correction);
         bodyB->SetPosition(posB);
 
-        std::cout << "Static Cube: pushing Sphere by +correction\n";
     }
     else if (isStaticB)
     {
@@ -570,7 +520,6 @@ void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, flo
         posA = XMVectorSubtract(posA, correction);
         bodyA->SetPosition(posA);
 
-        std::cout << "Static Sphere: pushing Cube by -correction\n";
     }
     else
     {
@@ -590,13 +539,7 @@ void CollisionResolver::ResolvePenetrationWithCubeVsSphere(Contact& contact, flo
 
         bodyA->SetPosition(XMVectorSubtract(posA, pushA));
         bodyB->SetPosition(XMVectorAdd(posB, pushB));
-
-        std::cout << "Dynamic Both: Cube - "
-            << XMVectorGetX(pushA) << ", Sphere + "
-            << XMVectorGetX(pushB) << "\n";
     }
-
-    std::cout << "Penetration Resolution Complete.\n\n";
 }
 
 

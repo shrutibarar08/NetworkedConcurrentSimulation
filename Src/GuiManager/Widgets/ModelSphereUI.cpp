@@ -82,6 +82,11 @@ void ModelSphereUI::RenderOnScreen()
     if (ImGui::DragFloat("Friction", &m_Friction, 0.01f, 0.0f, 5.0f))
         m_RigidBody->SetFriction(m_Friction);
 
+    bool isResting = m_RigidBody->GetRestingState();
+    ImGui::TextColored(isResting ? ImVec4(0, 1, 0, 1) :
+        ImVec4(1, 0, 0, 1),
+        "Resting State: %s", isResting ? "Yes" : "No");
+
     // === Collider Section ===
     ImGui::Spacing();
     ImGui::Text("Collider Properties");

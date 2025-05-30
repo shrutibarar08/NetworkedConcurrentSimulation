@@ -96,6 +96,11 @@ void ModelCubeUI::RenderOnScreen()
         m_RigidBody->SetAsPlatform(m_Platform);
     }
 
+    bool isResting = m_RigidBody->GetRestingState();
+    ImGui::TextColored(isResting ? ImVec4(0, 1, 0, 1) :
+        ImVec4(1, 0, 0, 1),
+        "Resting State: %s", isResting ? "Yes" : "No");
+
     // === Collider Section ===
     ImGui::Spacing();
     ImGui::Text("Collider Properties");

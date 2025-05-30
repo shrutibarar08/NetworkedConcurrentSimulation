@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "ICollider.h"
 
-
 ICollider::ICollider(RigidBody* attachBody)
 	: m_RigidBody(attachBody)
 {}
@@ -75,11 +74,9 @@ void ICollider::Update(float deltaTime)
 	if (m_PlatformCollisionInfo.hitCount > 0 && 
 		mTotalElapsedTime - m_PlatformCollisionInfo.lastHitTime > mRestTimeThreshold)
 	{
-		m_RigidBody->SetRestingState(false);
 		m_PlatformCollisionInfo.hitCount = 0;
 		m_PlatformCollisionInfo.lastHitTime = 0.0f;
 	}
-
 	m_TransformationMatrix =
 		DirectX::XMMatrixScalingFromVector(GetScale()) *
 		DirectX::XMMatrixRotationQuaternion(m_RigidBody->GetOrientation().ToXmVector()) *
