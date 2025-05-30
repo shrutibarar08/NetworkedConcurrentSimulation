@@ -86,6 +86,9 @@ void ModelCapsuleUI::RenderOnScreen()
     if (ImGui::DragFloat("Damping", &m_Damping, 0.01f, 0.0f, 1.0f))
         m_RigidBody->SetDamping(m_Damping);
 
+    if (ImGui::DragFloat("Angular Damping", &m_AngularDamping, 0.01f, 0.0f, 1.0f))
+        m_RigidBody->SetAngularDamping(m_AngularDamping);
+
     if (ImGui::DragFloat("Elasticity", &m_Elasticity, 0.01f, 0.0f, 1.0f))
         m_RigidBody->SetElasticity(m_Elasticity);
 

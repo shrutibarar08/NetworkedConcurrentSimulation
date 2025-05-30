@@ -28,6 +28,7 @@ private:
     float m_Orientation[4]{};
     float m_Mass = 1.0f;
     float m_Damping = 0.99f;
+    float m_AngularDamping = 0.99f;
     float m_Elasticity = 0.5f;
     bool m_bStatic{ true };
     float m_Restitution = 0.0f;
