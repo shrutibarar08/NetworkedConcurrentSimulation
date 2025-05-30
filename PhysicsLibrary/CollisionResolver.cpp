@@ -874,7 +874,7 @@ DirectX::XMVECTOR CollisionResolver::GetVelocityAtPoint(RigidBody* body, const D
 	XMVECTOR linearVel = body->GetVelocity();
 	XMVECTOR angVel = body->GetAngularVelocity();
 
-	return linearVel + angVel;
+    return linearVel + XMVector3Cross(angVel, r);
 }
 
 float CollisionResolver::ComputeDenominator(float invMassA, float invMassB, const DirectX::XMVECTOR& rA,
