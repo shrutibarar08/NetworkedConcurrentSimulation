@@ -46,17 +46,28 @@ typedef struct MODEL_INIT_DESC
 
 typedef struct alignas(16) MODEL_VERTEX_CB
 {
-	DirectX::XMMATRIX Transformation;
-	DirectX::XMMATRIX ViewMatrix;
-	DirectX::XMMATRIX ProjectionMatrix;
-	DirectX::XMMATRIX WorldMatrix;
-}MODEL_VERTEX_CB;
+	DirectX::XMMATRIX Transformation;    // 64 bytes
+	DirectX::XMMATRIX ViewMatrix;        // 64 bytes
+	DirectX::XMMATRIX ProjectionMatrix;  // 64 bytes
+	DirectX::XMMATRIX WorldMatrix;       // 64 bytes
+
+	float DeltaTime;                     // 4 bytes
+	int IsStatic;                        // 4 bytes (bool padded to int for alignment)
+	float Padding0[2];                   // 8 bytes to align next XMVECTOR
+
+	DirectX::XMVECTOR AngularVelocity;   // 16 bytes
+	DirectX::XMVECTOR Velocity;          // 16 bytes
+} MODEL_VERTEX_CB;
 
 typedef struct alignas(16) MODEL_PIXEL_CB
 {
-	float TotalTime;
-	float Pad[3];
-}MODEL_PIXEL_CB;
+	float DeltaTime;                    // 4 bytes
+	int IsStatic;                       // 4 bytes
+	float Padding0[2];                  // 8 bytes to align next XMVECTOR
+
+	DirectX::XMVECTOR AngularVelocity;  // 16 bytes
+	DirectX::XMVECTOR Velocity;         // 16 bytes
+} MODEL_PIXEL_CB;
 
 typedef struct SYSTEM_EVENT_HANDLE
 {

@@ -78,12 +78,21 @@ void IModel::PresentModel(ID3D11DeviceContext* context)
 	ReleaseSRWLockShared(&m_Lock);
 }
 
-void IModel::UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB* cb)
+void IModel::UpdateVertexCB(ID3D11DeviceContext* context, MODEL_VERTEX_CB* cb)
 {
 	if (!IsBuilt()) return;
 
 	if (!cb || !context || !m_VertexConstantBuffer)
 		throw std::invalid_argument("Invalid input to UpdateVertexCB.");
+
+	ICollider* collider = GetCollider();
+	DirectX::XMVECTOR velocity = collider->GetRigidBody()->GetVelocity();
+	float deltaTime = m_Timer.Tick();
+
+	cb->Velocity = velocity;
+	cb->AngularVelocity = collider->GetRigidBody()->GetAngularVelocity();
+	cb->IsStatic = collider->GetColliderState() == ColliderState::Static;
+	cb->DeltaTime = deltaTime;
 
 	AcquireSRWLockExclusive(&m_Lock);
 
@@ -104,11 +113,20 @@ void IModel::UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB*
 	ReleaseSRWLockExclusive(&m_Lock);
 }
 
-void IModel::UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* cb)
+void IModel::UpdatePixelCB(ID3D11DeviceContext* context, MODEL_PIXEL_CB* cb)
 {
 	if (!IsBuilt()) return;
 	if (!cb || !context || !m_PixelConstantBuffer)
 		throw std::invalid_argument("Invalid input to UpdatePixelCB.");
+
+	ICollider* collider = GetCollider();
+	DirectX::XMVECTOR velocity = collider->GetRigidBody()->GetVelocity();
+	float deltaTime = m_Timer.Tick();
+
+	cb->Velocity = velocity;
+	cb->AngularVelocity = collider->GetRigidBody()->GetAngularVelocity();
+	cb->IsStatic = collider->GetColliderState() == ColliderState::Static;
+	cb->DeltaTime = deltaTime;
 
 	AcquireSRWLockExclusive(&m_Lock);
 

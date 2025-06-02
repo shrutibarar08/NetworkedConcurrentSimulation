@@ -87,7 +87,7 @@ bool Render3DQueue::UpdatePixelConstantBuffer(ID3D11DeviceContext* context)
 {
 	if (m_ModelsToRender.empty()) return false;
 	MODEL_PIXEL_CB cb{};
-	cb.TotalTime = 0.0f; // TODO: Implement a global timer class
+	cb.DeltaTime = 0.0f; // TODO: Implement a global timer class
 
 	std::vector<IModel*> models;
 

@@ -12,6 +12,7 @@
 
 #include "FileManager/FileLoader/SweetLoader.h"
 #include "GuiManager/Widgets/IWidget.h"
+#include "Utils/LocalTimer.h"
 
 enum class SPAWN_OBJECT : uint8_t
 {
@@ -68,8 +69,8 @@ public:
 	void Build(ID3D11Device* device);
 	void PresentModel(ID3D11DeviceContext* context);
 
-	void UpdateVertexCB(ID3D11DeviceContext* context, const MODEL_VERTEX_CB* cb);
-	void UpdatePixelCB(ID3D11DeviceContext* context, const MODEL_PIXEL_CB* cb);
+	void UpdateVertexCB(ID3D11DeviceContext* context, MODEL_VERTEX_CB* cb);
+	void UpdatePixelCB(ID3D11DeviceContext* context, MODEL_PIXEL_CB* cb);
 
 	uint64_t GetModelId() const;
 	bool IsBuilt() const { return m_Built; }
@@ -115,6 +116,7 @@ protected:
 	virtual std::vector<UINT> BuildIndex() = 0;
 
 protected:
+	LocalTimer m_Timer{};
 	bool m_UiControlNeeded{ true };
 	std::string m_Name{ "NO NAME" };
 	std::unique_ptr<IWidget> m_Widget{ nullptr };
